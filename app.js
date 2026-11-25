@@ -58,6 +58,16 @@ document.addEventListener('click',async e=>{const a=e.target.closest('[data-act]
   if(a.dataset.act==='logout'){if(await ask('ലോഗൗട്ട് ചെയ്യണോ? (Sign out?)')){cleanup();await A.signOut(auth)}}
   if(a.dataset.act==='back')show('v-dash')});
 function cleanup(){unsubs.forEach(u=>u());unsubs=[];entryUnsub&&entryUnsub();entryUnsub=null;detailUnsubs.forEach(u=>u());detailUnsubs=[];notifReady=false}
+/* ---------- jurisdiction banner (public/banner) ---------- */
+let jdText='';
+function applyJd(){$('#jdLines').textContent=jdText;$('#jd').classList.toggle('on',!!jdText);if(document.activeElement!==$('#jdText')){$('#jdText').value=jdText;jdCount()}}
+const jdLines=()=>jdText?jdText.split('\n').map(s=>s.trim()).filter(Boolean):[];
+const jdReportHTML=()=>jdText?`<div class="rp-jd">🏛️ അധികാര പരിധി (ഓഫീസ് / സർക്കിൾ)<b>${esc(jdLines().join('\n'))}</b></div>`:'';
+function jdCount(){$('#jdCount').textContent=$('#jdText').value.length+'/300'}
+$('#jdText').oninput=jdCount;
+onSnapshot(doc(db,'public','banner'),s=>{jdText=((s.exists()&&s.data().text)||'').trim();applyJd()},e=>console.warn('banner',e.code));
+$('#jdSave').onclick=async()=>{const t=$('#jdText').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6).join('\n').slice(0,300);
+  try{await setDoc(doc(db,'public','banner'),{text:t,updatedAt:serverTimestamp(),by:me.uid});$('#jdText').value=t;jdText=t;applyJd();toast(t?'✅ സേവ് ചെയ്തു (Saved)':'✅ മറച്ചു (Hidden)')}catch(e){console.error(e);toast('⚠️ '+(e.code||e.message))}};
 A.onAuthStateChanged(auth,async u=>{cleanup();me=u;meDoc=null;
   if(u&&u.isAnonymous){await A.signOut(auth);return}
   if(!u){$('#who').innerHTML='';$('#tabs').style.display='none';show('v-login');return}
@@ -76,7 +86,7 @@ function startApp(){unsubs.splice(1).forEach(u=>u());entryUnsub&&entryUnsub();en
   const r=role();
   if(r==='none'||r==='pending'||r==='disabled'){$('#tabs').style.display='none';$('#pendingMail').textContent=me.email+' · '+(ROLES[r]||'');show('v-pending');return}
   $('#tabs').style.display='flex';$('#tabNew').style.display=can.work()?'flex':'none';
-  $('#placesCard').style.display=can.sup()?'block':'none';$('#tabFb').style.display=can.staff()?'flex':'none';$('#qrCard').style.display=can.staff()?'block':'none';$('#usersCard').style.display=can.admin()?'block':'none';
+  $('#placesCard').style.display=can.sup()?'block':'none';$('#tabFb').style.display=can.staff()?'flex':'none';$('#qrCard').style.display=can.staff()?'block':'none';$('#usersCard').style.display=can.admin()?'block':'none';$('#jdCard').style.display=can.admin()?'block':'none';
   $('#sName').value=meDoc.name||'';$('#sPhone').value=meDoc.phone||'';$('#meInfo').textContent=`${me.email} · ${ROLES[r]}`;
   $('#phMode').textContent=OPT.storageEnabled?'☁️ ഫോട്ടോകൾ Firebase Storage-ൽ സൂക്ഷിക്കുന്നു (Photos stored in Cloud Storage)':'💾 ഫോട്ടോകൾ ചുരുക്കി (~200KB) ഡാറ്റാബേസിൽ സൂക്ഷിക്കുന്നു (Free-plan mode: compressed photos in Firestore)';
   $('#aboutTxt').innerHTML=`ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം (Bhadram Ee Bhoomi – Daily Cleaning) · പതിപ്പ് (version) team-3 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
@@ -293,7 +303,7 @@ function makeReport(){return rMode==='day'?makeDaily():makeMonthly()}
 const placeKey=e=>e.placeId||e.placeName;
 async function rangeFeedback(from,to,a,w,ty,pl){try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));
   return s.docs.map(d=>({id:d.id,...d.data()})).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||placeTypeOf(f)===ty)&&(!pl||f.placeId===pl))}catch(e){console.error(e);return []}}
-const REPORT_HEAD=t=>`<div class="rp-h"><div style="font-size:22px;font-weight:800;color:var(--g)">ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</div><div class="en">Bhadram Ee Bhoomi – Daily Cleaning</div><h2>${t}</h2>`;
+const REPORT_HEAD=t=>`<div class="rp-h"><div style="font-size:22px;font-weight:800;color:var(--g)">ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</div><div class="en">Bhadram Ee Bhoomi – Daily Cleaning</div><h2>${t}</h2>${jdReportHTML()}`;
 const CREDIT=()=>`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')} · ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)<br>ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ) · Developed by Rahul K T with Grok</p>`;
 function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:`<span class="badge pend">⏳ അഭിപ്രായം ബാക്കി (Awaiting remark)</span>`;
   const proof=e.hasBefore&&e.hasAfter?'✅ മുമ്പും ശേഷവും ഫോട്ടോ (Before+after)':e.hasBefore||e.hasAfter?'⚠️ ഭാഗിക ഫോട്ടോ (Partial photos)':'❌ ഫോട്ടോ ഇല്ല (No photos)';
@@ -331,7 +341,7 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   else h+='<div class="empty"><div class="big">📭</div>ഈ ദിവസം ജോലി എൻട്രികൾ ഇല്ല (No work entries this day)</div>';
   if(can.staff())h+=`<div class="rp-sub" style="font-size:15px">🗣️ നിവാസികളുടെ അഭിപ്രായം / നിർദ്ദേശങ്ങൾ (Resident feedback & suggestions)</div>`+dayFbHTML(fbList);
   h+=CREDIT();$('#reportOut').innerHTML=h;
-  const L=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,`📅 ദിവസ റിപ്പോർട്ട് (Daily report): ${fmtDate(d)}`,filt.replace(/<[^>]+>/g,'')==='എല്ലാം (All)'?'':`🔎 ${[a,w,pn,wk,rty?typeInfo(rty).ml:''].filter(Boolean).join(' · ')}`,
+  const L=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,...(jdText?[`🏛️ ${jdLines().join(' · ')}`]:[]),`📅 ദിവസ റിപ്പോർട്ട് (Daily report): ${fmtDate(d)}`,filt.replace(/<[^>]+>/g,'')==='എല്ലാം (All)'?'':`🔎 ${[a,w,pn,wk,rty?typeInfo(rty).ml:''].filter(Boolean).join(' · ')}`,
     `✅ സ്ഥലം പൂർത്തി (Places done): ${k?doneN:doneN+'/'+pls.length}`,`🧹 ജോലി (Entries): ${list.length}`,`⭐ സ്കോർ (Avg score): ${st.avg??'–'}`,`💬 അഭിപ്രായം (Remarks): ${rcount} · ബാക്കി (awaiting) ${st.awaiting}`,
     can.staff()?`🗣️ നിവാസി അഭിപ്രായം (Resident feedback): ${fbList.length}${fbAvg!=null?' · ശരാശരി '+fbAvg.toFixed(1)+'★':''}`:'',
     !k&&pending.length?`⏳ ബാക്കി (Not done): ${pending.map(p=>p.name).join(', ')}`:''].filter(Boolean);
@@ -344,7 +354,7 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   const a=$('#rArea').value,w=$('#rWard').value,k=$('#rWorker').value,rty=$('#rType').value;
   const list=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).filter(e=>(!rty||placeTypeOf(e)===rty)&&(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)&&(!pl||e.placeId===pl)).sort((x,z)=>(x.date+(x.time||'')).localeCompare(z.date+(z.time||'')));
   const st=stats(list);const wk=k?users.find(u=>u.uid===k)?.name:'';
-  let h=`<div class="rp-h"><div style="font-size:22px;font-weight:800;color:var(--g)">ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</div><div class="en">Bhadram Ee Bhoomi – Daily Cleaning</div><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2><div>${[a,w,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)'}</div></div>`;
+  let h=`<div class="rp-h"><div style="font-size:22px;font-weight:800;color:var(--g)">ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</div><div class="en">Bhadram Ee Bhoomi – Daily Cleaning</div><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2>${jdReportHTML()}<div>${[a,w,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)'}</div></div>`;
   const fbList=can.staff()?(await monthFeedback(m,last,a,w,rty)).filter(f=>!pl||f.placeId===pl):[];if(tok!==reportToken)return;
   if(!list.length){const fb=can.staff()?typeReportHTML([],fbList)+fbReportHTML(fbList):'';$('#reportOut').innerHTML=h+'<div class="empty"><div class="big">📭</div>ജോലി എൻട്രികൾ ഇല്ല (No work entries)</div>'+fb;return}
   h+=`<div class="rp-sum"><b>ആകെ (Summary):</b> ${list.length} ജോലി (entries) · ${st.days} ദിവസം (days) · ${st.places} സ്ഥലം (places) · ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos}${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}<br>
@@ -356,7 +366,7 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   for(const e of list){const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);if(tok!==reportToken)return;
     h+=entryHTML(e,ps?ps.docs.map(d=>d.data()).sort((x,z)=>x.ts-z.ts):[],rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}
   h+=`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')} · ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)<br>ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ) · Developed by Rahul K T with Grok</p>`;$('#reportOut').innerHTML=h;
-  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ നിവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'','— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
+  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ നിവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'','— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
 async function ensureShare(){if(!shareText||!$('#reportOut .rp-h'))await makeReport();return shareText||$('#reportOut').innerText.slice(0,1500)}
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(_){toast('⚠️ copy failed')}ta.remove()}}
 $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){try{await navigator.share({title:'ഭദ്രം ഈ ഭൂമി – റിപ്പോർട്ട്',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)};
@@ -422,9 +432,12 @@ function drawQR(p){const url=fbLink(p.id);const q=window.qrcode(0,'M');q.addData
   x.font=`700 66px ${F}`;x.fillText('ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം',W/2,128,W-120);x.font=`36px ${F}`;x.fillText('Bhadram Ee Bhoomi – Daily Cleaning · നിവാസികളുടെ അഭിപ്രായം (Resident feedback)',W/2,186,W-120);
   let y=290;x.fillStyle='#134e4a';x.font=`700 64px ${F}`;x.fillText('📍 '+p.name,W/2,y,W-120);y+=56;
   x.font=`38px ${F}`;x.fillStyle='#5b7f7b';const ti=typeInfo(p.type||'other',p);const sub=[ti.icon+' '+ti.ml,p.ward,p.area].filter(Boolean).join(' · ');if(sub){x.fillText(sub,W/2,y,W-120);y+=20}
+  const jl=jdLines();let jdH=0;if(jl.length){y+=30;x.font=`700 36px ${F}`;const wl=jl.flatMap(l=>wrapText(x,l,W-260));jdH=70+wl.length*48;
+    x.fillStyle='#f0fdf4';x.fillRect(110,y,W-220,jdH);x.strokeStyle='#059669';x.lineWidth=3;x.strokeRect(110,y,W-220,jdH);x.textAlign='center';
+    x.fillStyle='#047857';x.font=`600 28px ${F}`;x.fillText('🏛️ അധികാര പരിധി (ഓഫീസ് / സർക്കിൾ)',W/2,y+40);x.fillStyle='#134e4a';x.font=`700 36px ${F}`;let jy=y+88;for(const l of wl){x.fillText(l,W/2,jy);jy+=48}y+=jdH+10}
   y+=50;x.textAlign='left';x.fillStyle='#134e4a';x.font=`32px ${F}`;x.fillText('ഓഫീസ് / സീൽ (Office name / seal):',90,y);x.strokeStyle='#64748b';x.lineWidth=2;x.setLineDash([10,8]);
   x.beginPath();x.moveTo(600,y+6);x.lineTo(W-90,y+6);x.stroke();x.beginPath();x.moveTo(90,y+70);x.lineTo(W-90,y+70);x.stroke();x.setLineDash([]);y+=110;
-  const qs=Math.floor(620/(n+8))*(n+8),cell=qs/(n+8),ox=(W-qs)/2;x.fillStyle='#000';
+  const qs=Math.floor(Math.max(440,620-jdH)/(n+8))*(n+8),cell=qs/(n+8),ox=(W-qs)/2;x.fillStyle='#000';
   for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))x.fillRect(Math.floor(ox+(k+4)*cell),Math.floor(y+(r+4)*cell),Math.ceil(cell),Math.ceil(cell));
   y+=qs+10;x.textAlign='center';x.fillStyle='#0f766e';x.font=`700 44px ${F}`;x.fillText('📱 സ്കാൻ ചെയ്ത് അഭിപ്രായം അറിയിക്കുക',W/2,y,W-120);y+=44;
   x.font=`30px ${F}`;x.fillText('Scan to rate the cleaning & give suggestions',W/2,y,W-120);y+=52;
@@ -483,4 +496,4 @@ document.addEventListener('click',async e=>{const im=e.target.closest('img');if(
 /* ---------- tabs & SW ---------- */
 $$('nav.tabs button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='v-new'&&!editing)resetForm();show(b.dataset.v)});
 if('serviceWorker'in navigator&&location.protocol.startsWith('http')&&!EMU)navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.__app={get entries(){return entries},get meDoc(){return meDoc},db,F};
+window.__app={get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F};
