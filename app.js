@@ -342,7 +342,7 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   const filt=[a,w,pn,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)';
   let h=REPORT_HEAD(`📅 ദിവസ റിപ്പോർട്ട് (Daily Report) – ${fmtDate(d)}`)+`<div>${filt}</div></div>`;
   h+=`<div class="rp-sum"><div class="dr-kpi"><div><b>${list.length}</b>ജോലി<br>(Entries)</div><div><b>${k?doneN:doneN+'/'+pls.length}</b>സ്ഥലം പൂർത്തി<br>(Places done)</div><div><b style="color:${scoreColor(st.avg)}">${st.avg??'–'}</b>സ്കോർ<br>(Avg score)</div>
-    <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>സ്ഥലവാസി അഭിപ്രായം<br>(Resident fb)</div></div>${can.staff()?`<div class="sq-line">🏛️ സ്ക്വാഡ് പരിശോധന (Squad inspections): <b>${sqList.length}</b>${sqList.length?` · ✅ ${sqList.filter(f=>f.overall==='good').length} · ⚠️ ${sqList.filter(f=>f.overall==='partial').length} · ❌ ${sqList.filter(f=>f.overall==='poor').length} · ${(sqList.reduce((n,f)=>n+f.rating,0)/sqList.length).toFixed(1)}★`:''}</div>`:''}
+    <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>സ്ഥലവാസി അഭിപ്രായം<br>(Resident fb)</div></div>${can.staff()?`<div class="sq-line">🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ &amp; സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന <span class="en">(Inspections)</span>: <b>${sqList.length}</b>${sqList.length?` · ✅ ${sqList.filter(f=>f.overall==='good').length} · ⚠️ ${sqList.filter(f=>f.overall==='partial').length} · ❌ ${sqList.filter(f=>f.overall==='poor').length} · ${(sqList.reduce((n,f)=>n+f.rating,0)/sqList.length).toFixed(1)}★`:''}</div>`:''}
     👥 ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos} · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}%${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}</div>`;
   if(!k)h+=`<div class="rp-sub" style="font-size:15px">⏳ ബാക്കി സ്ഥലങ്ങൾ (Not done today): ${pending.length}</div>`+(pending.length?`<ul style="font-size:13px;margin:2px 0 10px;columns:2">${pending.map(p=>`<li class="pend">${typeInfo(placeTypeOf(p),p).icon} ${esc(p.name)}${p.ward?' – '+esc(p.ward):''}</li>`).join('')}</ul>`:'<p class="hint">✅ എല്ലാ സ്ഥലവും പൂർത്തിയായി (All places done)</p>');
   h+=typeReportHTML(list,fbList);
@@ -355,7 +355,7 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   const L=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,...(jdText?[`🏛️ ${jdLines().join(' · ')}`]:[]),`📅 ദിവസ റിപ്പോർട്ട് (Daily report): ${fmtDate(d)}`,filt.replace(/<[^>]+>/g,'')==='എല്ലാം (All)'?'':`🔎 ${[a,w,pn,wk,rty?typeInfo(rty).ml:''].filter(Boolean).join(' · ')}`,
     `✅ സ്ഥലം പൂർത്തി (Places done): ${k?doneN:doneN+'/'+pls.length}`,`🧹 ജോലി (Entries): ${list.length}`,`⭐ സ്കോർ (Avg score): ${st.avg??'–'}`,`💬 അഭിപ്രായം (Remarks): ${rcount} · ബാക്കി (awaiting) ${st.awaiting}`,
     can.staff()?`🗣️ സ്ഥലവാസി അഭിപ്രായം (Resident feedback): ${fbList.length}${fbAvg!=null?' · ശരാശരി '+fbAvg.toFixed(1)+'★':''}`:'',
-    can.staff()&&sqList.length?`🏛️ സ്ക്വാഡ് പരിശോധന (Squad inspections): ${sqList.length} · ${sqList.map(f=>`${f.officialName} (${f.designation}) – ${(SQ_OVR[f.overall]||[''])[0]} ${f.rating}★`).join('; ')}`:'',
+    can.staff()&&sqList.length?`🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ & സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന (Inspections): ${sqList.length} · ${sqList.map(f=>`${f.officialName} (${f.designation}) – ${(SQ_OVR[f.overall]||[''])[0]} ${f.rating}★`).join('; ')}`:'',
     !k&&pending.length?`⏳ ബാക്കി (Not done): ${pending.map(p=>p.name).join(', ')}`:''].filter(Boolean);
   const E=list.map(e=>`• ${e.time||''} ${e.placeName} – ${e.workerName||''} – ${worksText(e)}${e.score!=null?' – സ്കോർ '+e.score:''}`);
   shareText=L.join('\n')+(E.length?'\n\n'+E.join('\n'):'')+'\n\n— ഭദ്രം ഈ ഭൂമി app'}
@@ -431,8 +431,8 @@ const sqWhere=l=>esc(l.placeName||l.route||'')+(l.placeName&&l.route?` <span cla
 const sqState=l=>l.status==='used'?'used':l.status==='revoked'?'revoked':(l.expiresAt&&l.expiresAt.seconds*1000<Date.now())?'expired':'open';
 const SQ_ST={open:['pend','⏳ ബാക്കി (Pending)'],used:['ok','✅ ലഭിച്ചു (Received)'],expired:['','⌛ കാലഹരണം (Expired)'],revoked:['','🚫 റദ്ദാക്കി (Revoked)']};
 function sqMsg(l){const nm=l.officialName?` ${l.officialName}`:'';const where=l.placeName||l.route||'';
-  return `നമസ്കാരം${nm},\nഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം: ${where}${l.inspDate?' ('+fmtDate(l.inspDate)+')':''} ശുചീകരണ പരിശോധനയ്ക്ക് നന്ദി. നിങ്ങളുടെ പരിശോധനാ ഫീഡ്‌ബാക്ക് താഴെ ലിങ്കിൽ അറിയിക്കാമോ? (ലോഗിൻ വേണ്ട, ഒരു തവണ മാത്രം)\nThank you for the inspection. Please share your feedback (no login, one-time link):\n${sqUrl(l.id)}\n— ${meDoc?.name||''}`}
-async function sqShare(l){const t=sqMsg(l);if(navigator.share){try{await navigator.share({title:'സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് – ഭദ്രം ഈ ഭൂമി',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)}
+  return `🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ & സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന\n\nനമസ്കാരം${nm},\nഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം: ${where}${l.inspDate?' ('+fmtDate(l.inspDate)+')':''} ശുചീകരണ പരിശോധനയ്ക്ക് നന്ദി. നിങ്ങളുടെ പരിശോധനാ ഫീഡ്‌ബാക്ക് താഴെ ലിങ്കിൽ അറിയിക്കാമോ? (ലോഗിൻ വേണ്ട, ഒരു തവണ മാത്രം)\nThank you for the inspection. Please share your feedback (no login, one-time link):\n${sqUrl(l.id)}\n— ${meDoc?.name||''}`}
+async function sqShare(l){const t=sqMsg(l);if(navigator.share){try{await navigator.share({title:'SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ & സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന – ഭദ്രം ഈ ഭൂമി',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)}
 const sqWa=l=>window.open('https://wa.me/?text='+encodeURIComponent(sqMsg(l)),'_blank','noopener');
 function sqQR(url){try{const q=qrcode(0,'M');q.addData(url);q.make();return q.createSvgTag({cellSize:5,margin:2,scalable:true})}catch(e){return ''}}
 function subscribeSquad(){
@@ -440,13 +440,13 @@ function subscribeSquad(){
   const q=can.admin()?query(collection(db,'squadLinks'),orderBy('createdAt','desc'),limit(500)):query(collection(db,'squadLinks'),where('createdBy','==',me.uid));
   unsubs.push(onSnapshot(q,s=>{squadLinks=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));renderSquadLinks()},e=>console.error('squadLinks',e)))}
 function setFbMode(m){fbMode=m;$$('#fbMode button').forEach(x=>x.classList.toggle('on',x.dataset.m===m));$('#fbRes').style.display=m==='res'?'':'none';$('#fbSquad').style.display=m==='squad'?'':'none';
-  $('#fbEyebrow').textContent=m==='res'?'സ്ഥലവാസികൾ · Residents':'സ്ക്വാഡ് പരിശോധന · Squad inspection';
-  $('#fbTitle').innerHTML=m==='res'?'സ്ഥലവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span>':'സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് <span class="en">(Squad inspection feedback)</span>';if(m==='squad'){renderSquad();renderSquadLinks()}}
+  $('#fbEyebrow').textContent=m==='res'?'സ്ഥലവാസികൾ · Residents':'SPHI / PHI / സ്ക്വാഡ് പരിശോധന · Inspections';
+  $('#fbTitle').innerHTML=m==='res'?'സ്ഥലവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span>':'SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ &amp; സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന <span class="en">(SPHI, PHI, Other Officials &amp; Squad inspection feedback)</span>';if(m==='squad'){renderSquad();renderSquadLinks()}}
 $$('#fbMode button').forEach(b=>b.onclick=()=>setFbMode(b.dataset.m));
 $$('#sqLinkF button').forEach(b=>b.onclick=()=>{sqLinkFilter=b.dataset.f;$$('#sqLinkF button').forEach(x=>x.classList.toggle('on',x===b));renderSquadLinks()});
 ['#sqfPlace','#sqfShow'].forEach(s=>$(s).addEventListener('change',renderSquad));
 function fillSquadPlaces(){const o=places.map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}</option>`).join('');
-  const s1=$('#sqPlace'),c1=s1.value;s1.innerHTML='<option value="">— സ്ഥലം തിരഞ്ഞെടുക്കുക / റൂട്ട് മാത്രം (Pick place / route only) —</option>'+o;s1.value=c1;
+  const s1=$('#sqPlace'),c1=s1.value;s1.innerHTML='<option value="">— സ്ഥലം തിരഞ്ഞെടുക്കുക (Place) —</option>'+o;s1.value=c1;
   const s2=$('#sqfPlace'),c2=s2.value;s2.innerHTML='<option value="">എല്ലാ സ്ഥലങ്ങളും (All places)</option>'+o;s2.value=c2;$('#sqExpWrap').style.display=can.admin()?'':'none'}
 function sqOutHTML(l){const url=sqUrl(l.id);return `<div class="sq-ok">${ico('check','sm')} ലിങ്ക് തയ്യാർ <span class="en">(Link ready)</span> – ${sqWhere(l)}</div>
   <div class="sq-url"><input type="text" readonly value="${esc(url)}" aria-label="link"></div>
@@ -495,7 +495,7 @@ function renderSquad(){if(!can.staff())return;fillSquadPlaces();const pl=$('#sqf
     ${f.photo?`<img class="fbph" src="${f.photo}" alt="" loading="lazy">`:''}
     <div class="hint" style="margin-top:6px">🔗 ${esc(f.linkByName||'')}${f.hasPhone?(can.moderate()?` · 📞 <span class="sph-${f.id}">…</span>`:' · 📞 (ഉദ്യോഗസ്ഥർക്ക് മാത്രം / officers only)'):''}${f.status==='hidden'?' · 🙈 മറച്ചു (hidden)':''}</div>
     ${can.moderate()?`<div style="margin-top:8px"><button class="btn ${f.status==='hidden'?'sec':'danger'} sm" data-sqtoggle="${f.id}">${f.status==='hidden'?'👁️ വീണ്ടും കാണിക്കുക (Unhide)':'🙈 മറയ്ക്കുക (Hide)'}</button></div>`:''}</div>`}).join('');
-  $$('#sqList .fbph').forEach(im=>im.onclick=()=>openViewer([{src:im.src,cap:'🏛️ സ്ക്വാഡ് പരിശോധന ഫോട്ടോ (Inspection photo)'}],0));
+  $$('#sqList .fbph').forEach(im=>im.onclick=()=>openViewer([{src:im.src,cap:'🏛️ SPHI / PHI / സ്ക്വാഡ് പരിശോധന – ഫോട്ടോ (Inspection photo)'}],0));
   $$('[data-sqtoggle]').forEach(b=>b.onclick=async()=>{const f=squadFb.find(x=>x.id===b.dataset.sqtoggle);const to=f.status==='hidden'?'visible':'hidden';
     if(to==='hidden'&&!await ask('ഈ ഫീഡ്‌ബാക്ക് മറയ്ക്കണോ? (Hide this feedback?)'))return;
     updateDoc(doc(db,'squadFeedback',f.id),{status:to,moderatedBy:me.uid,moderatedAt:serverTimestamp()}).then(()=>toast(to==='hidden'?'🙈 മറച്ചു (Hidden)':'👁️ കാണിക്കുന്നു (Visible)')).catch(e=>toast('⚠️ '+e.code))});
@@ -505,21 +505,21 @@ function renderSquad(){if(!can.staff())return;fillSquadPlaces();const pl=$('#sqf
 function sqDashHTML(){if(!can.staff())return '';const f=$('#dFrom').value,t=$('#dTo').value,a=$('#dArea').value,w=$('#dWard').value;
   const list=squadFb.filter(x=>x.status!=='hidden'&&(!a||x.area===a)&&(!w||x.ward===w)).filter(x=>{const s=x.inspDate||(fbDate(x)?ymd(fbDate(x)):'');return !s||(s>=f&&s<=t)});
   const pend=squadLinks.filter(l=>sqState(l)==='open').length;
-  const head=`<div class="rp-sub">${ico('landmark','sm')}സ്ക്വാഡ് പരിശോധന <span class="en">(Squad inspections)</span>`;
+  const head=`<div class="rp-sub">${ico('landmark','sm')}SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ &amp; സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന <span class="en">(SPHI, PHI, Other Officials &amp; Squad inspection)</span>`;
   if(!list.length)return head+`</div><div class="hint">ഈ കാലയളവിൽ ഇല്ല (none in this period)${pend?` · ⏳ ${pend} ലിങ്ക് ബാക്കി (links pending)`:''}</div>`;
   const avg=list.reduce((s,x)=>s+x.rating,0)/list.length;const c=k=>list.filter(x=>x.overall===k).length;
   return head+` ${starsHTML(avg)} <b>${avg.toFixed(1)}/5</b> <span class="en">(${list.length})</span></div><div class="sq-dist"><span class="ovb good">✅ ${c('good')}</span><span class="ovb partial">⚠️ ${c('partial')}</span><span class="ovb poor">❌ ${c('poor')}</span>${pend?`<span class="hint">⏳ ${pend} ലിങ്ക് ബാക്കി (pending)</span>`:''}</div>`}
 async function rangeSquad(from,to,a,w,ty,pl){try{const s=await getDocs(query(collection(db,'squadFeedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));
   return s.docs.map(d=>({id:d.id,...d.data()})).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||(f.placeId&&placeTypeOf(f)===ty))&&(!pl||f.placeId===pl))}catch(e){console.error(e);return []}}
-const sqHead=`<div class="rp-sub" style="font-size:15px">🏛️ സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് (Squad inspection feedback)</div>`;
-function sqDayHTML(list){if(!list.length)return sqHead+'<p class="hint">ഈ ദിവസം സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് ഇല്ല (No squad inspection feedback this day)</p>';
+const sqHead=`<div class="rp-sub" style="font-size:15px">🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ &amp; സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന – ഫീഡ്‌ബാക്ക് <span class="en">(SPHI, PHI, Other Officials &amp; Squad inspection feedback)</span></div>`;
+function sqDayHTML(list){if(!list.length)return sqHead+'<p class="hint">ഈ ദിവസം SPHI / PHI / സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് ഇല്ല (No inspection feedback this day)</p>';
   return sqHead+list.map(f=>`<div class="dr-fb dr-sq"><div><b>📍 ${sqWhere(f)}</b>${f.ward?' · '+esc(f.ward):''} · ${sqOvrBadge(f.overall)} ${starsHTML(f.rating)} <b>${f.rating}/5</b></div>
     <div>👤 <b>${esc(f.officialName)}</b>, ${esc(f.designation)} – ${esc(f.institution)} <span class="hint">· 📅 പരിശോധന (Inspected) ${fmtDate(f.inspDate)}</span></div>
     ${f.concerns?`<div>🔎 <b>ശ്രദ്ധിക്കേണ്ടവ (Needs attention):</b> ${esc(f.concerns)}</div>`:''}${f.suggestions?`<div>💡 <b>നിർദ്ദേശങ്ങൾ (Suggestions):</b> ${esc(f.suggestions)}</div>`:''}${f.photo?`<img class="fbph" src="${f.photo}" alt="">`:''}</div>`).join('')}
-function sqMonthHTML(list){if(!list.length)return sqHead+'<p class="hint">ഈ മാസം സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് ഇല്ല (No squad inspection feedback this month)</p>';
+function sqMonthHTML(list){if(!list.length)return sqHead+'<p class="hint">ഈ മാസം SPHI / PHI / സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് ഇല്ല (No inspection feedback this month)</p>';
   const avg=list.reduce((s,f)=>s+f.rating,0)/list.length;const c=k=>list.filter(f=>f.overall===k).length;
-  return sqHead+`<table class="rp-tbl"><tr><th>ആകെ (Total)</th><th>✅ തൃപ്തികരം</th><th>⚠️ ഭാഗികം</th><th>❌ അല്ല (Not)</th><th>★ ശരാശരി</th></tr><tr><td>${list.length}</td><td>${c('good')}</td><td>${c('partial')}</td><td>${c('poor')}</td><td>${avg.toFixed(1)}</td></tr></table>
-  <table class="rp-tbl sq-tbl"><tr><th>തീയതി (Date)</th><th>സ്ഥലം (Place)</th><th>ഉദ്യോഗസ്ഥൻ (Official)</th><th>നില (Status)</th></tr>${list.map(f=>`<tr><td>${esc((f.inspDate||'').split('-').reverse().join('/'))}</td><td>${sqWhere(f)}</td><td>${esc(f.officialName)}<br><span class="en">${esc(f.designation)} – ${esc(f.institution)}</span></td><td>${SQ_OVR[f.overall]?SQ_OVR[f.overall][0]+' '+SQ_OVR[f.overall][1]:''}<br>★ ${f.rating}/5</td></tr>`).join('')}</table>`+
+  return sqHead+`<div class="sq-dist sq-sumrow"><span class="ovb tot">ആകെ (Total) ${list.length}</span><span class="ovb good">✅ തൃപ്തികരം ${c('good')}</span><span class="ovb partial">⚠️ ഭാഗികം ${c('partial')}</span><span class="ovb poor">❌ തൃപ്തികരമല്ല ${c('poor')}</span><span class="ovb tot">★ ${avg.toFixed(1)}/5</span></div>
+  <table class="rp-tbl sq-tbl"><tr><th style="width:30%">തീയതി · സ്ഥലം <span class="en">(Date · Place)</span></th><th style="width:36%">പേര് / പദവി <span class="en">(Official)</span></th><th style="width:34%">നില <span class="en">(Status)</span></th></tr>${list.map(f=>`<tr><td><b>${f.inspDate?fmtDate(f.inspDate):''}</b><br>${sqWhere(f)}</td><td>${esc(f.officialName)}<br><span class="en">${esc(f.designation)} – ${esc(f.institution)}</span></td><td>${SQ_OVR[f.overall]?SQ_OVR[f.overall][0]+' '+(f.overall==='partial'?'ഭാഗികം':SQ_OVR[f.overall][1]):''}<br>★ ${f.rating}/5</td></tr>`).join('')}</table>`+
   (list.some(f=>f.concerns||f.suggestions)?`<div class="rp-sub">🔎 ശ്രദ്ധിക്കേണ്ടവ / 💡 നിർദ്ദേശങ്ങൾ (Attention points / suggestions)</div><ul style="font-size:13px;margin-top:2px">${list.filter(f=>f.concerns||f.suggestions).map(f=>`<li><b>${sqWhere(f)}</b> (${esc(f.officialName)}, ${fmtDate(f.inspDate)}): ${f.concerns?'🔎 '+esc(f.concerns):''}${f.concerns&&f.suggestions?' · ':''}${f.suggestions?'💡 '+esc(f.suggestions):''}</li>`).join('')}</ul>`:'')}
 async function monthFeedback(m,last,a,w,ty){const from=new Date(m+'-01T00:00:00'),to=new Date(last+'T23:59:59.999');
   try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));return s.docs.map(d=>d.data()).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||placeTypeOf(f)===ty))}catch(e){console.error(e);return []}}

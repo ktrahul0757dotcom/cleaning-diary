@@ -224,7 +224,7 @@ div.thumb{background:var(--brand-50)!important}
 .sqc{border-left:4px solid var(--earth)}
 .flash{animation:flash 1.6s var(--ease)}@keyframes flash{0%,60%{box-shadow:0 0 0 4px color-mix(in srgb,var(--sun) 60%,transparent)}100%{box-shadow:var(--sh-1)}}
 .sq-line{margin:8px 0 4px;font-weight:600}
-.sq-tbl td:first-child{white-space:nowrap}
+#reportOut .sq-tbl{table-layout:fixed;font-size:12.5px}#reportOut .sq-tbl th,#reportOut .sq-tbl td{overflow-wrap:break-word;padding:6px 6px;vertical-align:top}.ovb.tot{background:var(--surface-2);color:var(--text)}.sq-sumrow{margin:4px 0 10px}
 .dr-sq{border-color:#e6d3c0;border-left-color:var(--earth);background:#fbf5ef}
 @media (prefers-reduced-motion:reduce){.sq-out,.flash{animation:none}}
 @media (min-width:760px){
@@ -269,3 +269,7 @@ div.thumb{background:var(--brand-50)!important}
   .appbar .who{max-width:38%}
 }
 .badge.ok{background:var(--good-50);color:var(--good)}.badge.pend{background:var(--warn-50);color:var(--warn)}
+#fbMode button{white-space:normal;text-align:center;line-height:1.25;padding:6px 8px;min-height:52px}
+#fbMode .sqs{font-size:13.5px}
+.sq-line .en{font-weight:500}
+@media (max-width:370px){.brandtxt small{font-size:11px;gap:4px;letter-spacing:-.1px}.brandtxt h1{font-size:16px}.appbar .who{font-size:11.5px}}
