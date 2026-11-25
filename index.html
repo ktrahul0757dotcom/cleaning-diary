@@ -73,6 +73,8 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
 .ulist .u{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eef7f5}
 .ulist img{width:38px;height:38px;border-radius:50%}.ulist .nm{flex:1;min-width:0;font-size:15px}.ulist select{width:150px;min-height:42px;padding:6px}
 .center{text-align:center}
+.place-list{display:flex;flex-wrap:wrap;gap:6px}.place-list span{background:var(--gl);color:var(--g);border-radius:20px;padding:6px 10px;font-size:14px;display:inline-flex;gap:6px;align-items:center}.place-list button{border:none;background:none;color:var(--red);font-size:16px;padding:0 2px}
+.tbadge{display:inline-block;font-size:12px;padding:1px 8px;border-radius:20px;background:#e0f2fe;color:#075985;margin:2px 4px 0 0;white-space:nowrap}
 .stars{color:#f59e0b;letter-spacing:1px;font-size:18px}.stars .off{color:#d1d5db}
 .fbc.hidden{opacity:.55;border:2px dashed #fca5a5}.fbc img.fbph{width:100%;max-height:240px;object-fit:cover;border-radius:10px;margin-top:6px}
 .qrrow{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #eef7f5}.qrrow .nm{flex:1;min-width:0;font-size:15px}
@@ -113,6 +115,7 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
         <div><label class="f">വരെ <span class="en">(To)</span></label><input type="date" id="dTo"></div>
       </div>
       <div class="row wrap" style="margin-top:8px"><select id="dArea"></select><select id="dWard"></select><select id="dWorker"></select></div>
+      <select id="dType" style="margin-top:8px"></select>
       <input type="search" id="dSearch" placeholder="🔍 തിരയുക (Search)" style="margin-top:8px">
     </div>
     <div class="card" id="dStats"></div>
@@ -125,6 +128,7 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
       <h2 id="formTitle">📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span></h2>
       <div class="row"><div><label class="f">തീയതി <span class="en">(Date)</span></label><input type="date" id="fDate"></div><div><label class="f">സമയം <span class="en">(Time)</span></label><input type="time" id="fTime"></div></div>
       <label class="f">സ്ഥലം / വാർഡ് <span class="en">(Place / Ward)</span></label>
+      <select id="fType" style="margin-bottom:6px"></select>
       <select id="fPlace"></select>
       <div class="hint" id="fPlaceHint"></div>
       <label class="f">ചെയ്ത ജോലി <span class="en">(Work done)</span></label>
@@ -188,7 +192,7 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
   <section id="v-report" class="view">
     <div class="card noprint">
       <h2>📄 മാസ റിപ്പോർട്ട് <span class="en">(Monthly report)</span></h2>
-      <div class="row wrap"><input type="month" id="rMonth"><select id="rArea"></select><select id="rWard"></select><select id="rWorker"></select></div>
+      <div class="row wrap"><input type="month" id="rMonth"><select id="rArea"></select><select id="rWard"></select><select id="rWorker"></select><select id="rType"></select></div>
       <label class="chip" style="margin-top:8px"><input type="checkbox" id="rPhotos" checked> ഫോട്ടോകൾ ഉൾപ്പെടുത്തുക (Include photos)</label>
       <div class="row" style="margin-top:10px"><button class="btn" id="rMake">🔄 തയ്യാറാക്കുക (Generate)</button><button class="btn sec" id="rPrint">🖨️ PDF / പ്രിൻ്റ്</button></div>
       <p class="hint">PDF: 🖨️ അമർത്തി "Save as PDF" തിരഞ്ഞെടുക്കുക, എന്നിട്ട് WhatsApp-ൽ അയക്കാം.</p>
@@ -209,8 +213,13 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
     </div>
     <div class="card" id="placesCard" style="display:none"><h2>📍 സ്ഥലങ്ങൾ <span class="en">(Areas, wards & places)</span></h2>
       <div class="row wrap"><input type="text" id="pArea" placeholder="ഏരിയ (Area)" list="areaList"><input type="text" id="pWard" placeholder="വാർഡ് (Ward)" list="wardList"><input type="text" id="pName" placeholder="സ്ഥലം (Place)"></div>
+      <label class="f">തരം <span class="en">(Type)</span></label><select id="pType"></select>
+      <input type="text" id="pTypeOther" placeholder="തരം എഴുതുക (Describe type)" maxlength="60" style="margin-top:6px;display:none">
       <datalist id="areaList"></datalist><datalist id="wardList"></datalist>
-      <button class="btn block" style="margin-top:8px" id="pAdd">➕ ചേർക്കുക (Add place)</button>
+      <div class="row" style="margin-top:8px"><button class="btn out" id="pCancel" style="display:none">✕ റദ്ദാക്കുക</button><button class="btn block" id="pAdd">➕ ചേർക്കുക (Add place)</button></div>
+      <details id="ctDetails" style="margin-top:10px;display:none"><summary class="hint" style="cursor:pointer;font-weight:600">➕ പുതിയ തരം ചേർക്കുക (Admin: add custom type)</summary>
+        <div class="row" style="margin-top:6px"><input type="text" id="ctIcon" placeholder="🏷️" maxlength="4" style="flex:0 0 64px"><input type="text" id="ctMl" placeholder="മലയാളം പേര്" maxlength="40"><input type="text" id="ctEn" placeholder="English" maxlength="40"></div>
+        <button class="btn sec block sm" id="ctAdd" style="margin-top:6px">➕ തരം ചേർക്കുക (Add type)</button><div id="ctList" class="place-list" style="margin-top:6px"></div></details>
       <div id="pList" style="margin-top:8px"></div></div>
     <div class="card" id="usersCard" style="display:none"><h2>👥 അംഗങ്ങളും റോളുകളും <span class="en">(Members & roles)</span></h2>
       <p class="hint">പുതിയ അംഗങ്ങൾ ലോഗിൻ ചെയ്താൽ ഇവിടെ "pending" ആയി വരും. റോൾ നൽകുക. (New sign-ins appear as pending – assign a role.)</p>

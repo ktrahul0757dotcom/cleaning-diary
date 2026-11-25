@@ -10,6 +10,18 @@ const fmtMonth=s=>{if(!s)return'';const[y,m]=s.split('-');return `${MONTHS[+m-1]
 const WORKS=[['sweep','🧹 തൂത്തുവാരൽ','Sweeping'],['waste','🗑️ മാലിന്യ ശേഖരണം','Waste collection'],['drain','🚰 ഓട വൃത്തിയാക്കൽ','Drain cleaning'],['grass','🌿 പുല്ല് വെട്ടൽ','Grass cutting'],['plastic','♻️ പ്ലാസ്റ്റിക് നീക്കൽ','Plastic removal'],['other','➕ മറ്റുള്ളവ','Other']];
 const WMAP=Object.fromEntries(WORKS.map(w=>[w[0],w]));
 const RATE={good:['👍 നല്ലത്','Good','r-good',100],ok:['👌 തൃപ്തികരം','Satisfactory','r-ok',70],bad:['⚠️ മെച്ചപ്പെടണം','Needs improvement','r-bad',40]};
+const BUILTIN_TYPES=[['main_road','🛣️','മെയിൻ റോഡ്','Main road'],['byroad','🛤️','ഇടറോഡ്','By-road'],['lane','🚶','ഇടവഴി','Lane / footpath'],['busstop','🚏','ബസ് സ്റ്റോപ്പ്','Bus stop'],
+  ['office_road','🏢','ഓഫീസുകൾക്ക് മുന്നിലെ റോഡ്','Road in front of offices'],['shop_road','🏪','കടകൾക്ക് മുന്നിലെ റോഡ്','Road in front of shops'],['house_road','🏘️','വീടുകൾക്ക് മുന്നിലെ റോഡ്','Road in front of houses'],
+  ['drain','🚰','ഓട','Drain'],['slab','🧱','സ്ലാബ്','Slab'],['mosquito','🦟','കൊതുക് നശീകരണം','Mosquito control'],['leafbin','🍂','കരിയില സംഭരണി','Dry-leaf storage / bin']].map(([id,icon,ml,en])=>({id,icon,ml,en}));
+const OTHER_TYPE={id:'other',icon:'📌',ml:'മറ്റുള്ളവ',en:'Other'};
+let customTypes=[];
+const allTypes=()=>[...BUILTIN_TYPES,...customTypes,OTHER_TYPE];
+const typeById=id=>allTypes().find(t=>t.id===id);
+function placeTypeOf(x){if(!x)return 'other';if(x.type!==undefined&&x.placeId===undefined)return x.type||'other';const p=places.find(q=>q.id===x.placeId);return x.placeType||p?.type||'other'}
+function typeInfo(id,obj){const t=typeById(id)||(obj&&obj.typeLabel?{id,icon:obj.typeIcon||'🏷️',ml:obj.typeLabel,en:''}:OTHER_TYPE);
+  const other=obj&&(obj.typeOther||obj.placeTypeOther);return (t.id==='other'&&other)?{...t,ml:'മറ്റുള്ളവ: '+other,en:'Other'}:t}
+const typeBadge=(id,obj)=>{const t=typeInfo(id,obj);return `<span class="tbadge">${t.icon} ${esc(t.ml)}${t.en?` <span style="opacity:.75">(${esc(t.en)})</span>`:''}</span>`};
+const typeOptions=(first)=>(first?`<option value="">${first}</option>`:'')+allTypes().map(t=>`<option value="${t.id}">${t.icon} ${esc(t.ml)}${t.en?' ('+esc(t.en)+')':''}</option>`).join('');
 const ROLES={admin:'👑 അഡ്മിൻ (Admin)',supervisor:'🧑‍💼 സൂപ്പർവൈസർ (Supervisor)',officer:'👮 ഉദ്യോഗസ്ഥൻ (Officer)',worker:'👷 തൊഴിലാളി (Worker)',pending:'⏳ കാത്തിരിക്കുന്നു (Pending)',disabled:'🚫 തടഞ്ഞു (Disabled)'};
 function toast(m,ms=2600){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms)}
 function ask(msg){return new Promise(res=>{$('#mMsg').textContent=msg;$('#modal').classList.add('show');const d=v=>{$('#modal').classList.remove('show');res(v)};$('#mYes').onclick=()=>d(true);$('#mNo').onclick=()=>d(false)})}
@@ -68,6 +80,7 @@ function startApp(){unsubs.splice(1).forEach(u=>u());entryUnsub&&entryUnsub();en
   $('#sName').value=meDoc.name||'';$('#sPhone').value=meDoc.phone||'';$('#meInfo').textContent=`${me.email} · ${ROLES[r]}`;
   $('#phMode').textContent=OPT.storageEnabled?'☁️ ഫോട്ടോകൾ Firebase Storage-ൽ സൂക്ഷിക്കുന്നു (Photos stored in Cloud Storage)':'💾 ഫോട്ടോകൾ ചുരുക്കി (~200KB) ഡാറ്റാബേസിൽ സൂക്ഷിക്കുന്നു (Free-plan mode: compressed photos in Firestore)';
   $('#aboutTxt').innerHTML=`നിറവ് – ദൈനംദിന ശുചീകരണം (Niravu – Daily Cleaning) · പതിപ്പ് (version) team-2 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
+  unsubs.push(onSnapshot(doc(db,'meta','placeTypes'),s=>{customTypes=(s.data()?.types||[]).filter(t=>t&&t.id&&t.ml);renderPlaces();fillFilters();if($('#v-dash').classList.contains('active'))renderDash()},e=>console.error('types',e)));
   unsubs.push(onSnapshot(collection(db,'places'),s=>{places=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.area+a.ward+a.name).localeCompare(b.area+b.ward+b.name));renderPlaces()},e=>console.error(e)));
   unsubs.push(onSnapshot(collection(db,'users'),s=>{users=s.docs.map(d=>({uid:d.id,...d.data()}));renderUsers();fillFilters()},e=>console.error(e)));
   unsubs.push(onSnapshot(query(collection(db,'users',me.uid,'notifications'),orderBy('createdAt','desc'),limit(100)),s=>{
@@ -83,15 +96,16 @@ function subscribeEntries(){entryUnsub&&entryUnsub();const f=$('#dFrom').value,t
   entryUnsub=onSnapshot(query(collection(db,'entries'),where('date','>=',f),where('date','<=',t),orderBy('date','desc')),{includeMetadataChanges:true},s=>{
     entries=s.docs.map(d=>({id:d.id,_pending:d.metadata.hasPendingWrites,...d.data({serverTimestamps:'estimate'})}));renderDash();if(detailId&&$('#v-detail').classList.contains('active'))renderDetail()},e=>{console.error(e);toast('⚠️ '+e.code)})}
 ['#dFrom','#dTo'].forEach(s=>$(s).addEventListener('change',()=>{if($('#dFrom').value&&$('#dTo').value)subscribeEntries()}));
-['#dArea','#dWard','#dWorker','#dSearch'].forEach(s=>$(s).addEventListener('input',()=>{if(s==='#dArea')fillFilters();renderDash()}));
+['#dArea','#dWard','#dWorker','#dType','#dSearch'].forEach(s=>$(s).addEventListener('input',()=>{if(s==='#dArea')fillFilters();renderDash()}));
 function uniq(a){return [...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y))}
 function fillFilters(){for(const p of ['d','r']){const ar=$(`#${p}Area`),wd=$(`#${p}Ward`),wk=$(`#${p}Worker`);const a=ar.value,w=wd.value,k=wk.value;
   ar.innerHTML='<option value="">എല്ലാ ഏരിയയും (All areas)</option>'+uniq(places.map(x=>x.area).concat(entries.map(e=>e.area))).map(x=>`<option>${esc(x)}</option>`).join('');ar.value=a;
   wd.innerHTML='<option value="">എല്ലാ വാർഡും (All wards)</option>'+uniq(places.filter(x=>!ar.value||x.area===ar.value).map(x=>x.ward).concat(entries.filter(e=>!ar.value||e.area===ar.value).map(e=>e.ward))).map(x=>`<option>${esc(x)}</option>`).join('');wd.value=w;
   wk.innerHTML='<option value="">എല്ലാ തൊഴിലാളികളും (All workers)</option>'+users.filter(u=>['worker','supervisor','admin'].includes(u.role)).map(u=>`<option value="${u.uid}">${esc(u.name)}</option>`).join('');wk.value=k}
+  for(const id of ['#dType','#rType']){const s=$(id),v=s.value;s.innerHTML=typeOptions('എല്ലാ തരവും (All types)');s.value=v}
   $('#areaList').innerHTML=uniq(places.map(x=>x.area)).map(x=>`<option value="${esc(x)}">`).join('');$('#wardList').innerHTML=uniq(places.map(x=>x.ward)).map(x=>`<option value="${esc(x)}">`).join('')}
-function filtered(p='d'){const a=$(`#${p}Area`).value,w=$(`#${p}Ward`).value,k=$(`#${p}Worker`).value,q=p==='d'?$('#dSearch').value.trim().toLowerCase():'';
-  return entries.filter(e=>(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)&&(!q||[e.placeName,e.area,e.ward,e.workerName,e.notes,worksText(e),worksText(e,1),fmtDate(e.date)].join(' ').toLowerCase().includes(q)))}
+function filtered(p='d'){const ty=$(`#${p}Type`).value,a=$(`#${p}Area`).value,w=$(`#${p}Ward`).value,k=$(`#${p}Worker`).value,q=p==='d'?$('#dSearch').value.trim().toLowerCase():'';
+  return entries.filter(e=>(!ty||placeTypeOf(e)===ty)&&(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)&&(!q||[e.placeName,e.area,e.ward,e.workerName,e.notes,worksText(e),worksText(e,1),fmtDate(e.date)].join(' ').toLowerCase().includes(q)))}
 function stats(list){const scored=list.filter(e=>e.score!=null);const avg=scored.length?Math.round(scored.reduce((s,e)=>s+e.score,0)/scored.length):null;
   const proof=list.length?Math.round(100*list.filter(e=>e.hasBefore&&e.hasAfter).length/list.length):0;
   const waste={};list.forEach(e=>{if(e.waste!=null){const u=e.wasteUnit||'kg';waste[u]=(waste[u]||0)+e.waste}});
@@ -101,21 +115,52 @@ function renderDash(){fillFilters();const list=filtered('d');const st=stats(list
   $('#dStats').innerHTML=`<div class="row" style="align-items:center"><div class="center" style="flex:0 0 130px"><div class="score" style="color:${scoreColor(st.avg)}">${st.avg??'–'}</div><div class="hint">ശുചിത്വ സ്കോർ<br>(Cleanliness score /100)</div></div>
     <div class="stats" style="flex:1"><div class="stat"><b>${list.length}</b><span>ജോലികൾ (Entries)</span></div><div class="stat"><b>${st.awaiting}</b><span>അഭിപ്രായം ബാക്കി (Awaiting remark)</span></div><div class="stat"><b>${st.proof}%</b><span>ഫോട്ടോ തെളിവ് (Before+after)</span></div><div class="stat"><b>${st.workers}</b><span>തൊഴിൽ (Worker-days)</span></div></div></div>
     ${fbDashHTML()}
+    ${typeDashHTML(list)}
     ${Object.keys(byWard).length>1?`<div class="rp-sub" style="margin-top:12px">വാർഡ് തിരിച്ച് (By ward)</div>`+Object.entries(byWard).map(([k,a])=>{const s=stats(a).avg;return `<div class="wardrow"><div>${esc(k)} <span class="en">(${a.length})</span></div><div class="bar"><i style="width:${s??0}%;background:${scoreColor(s)}"></i></div><b style="color:${scoreColor(s)}">${s??'–'}</b></div>`}).join(''):''}`;
   if(!list.length){$('#dList').innerHTML=`<div class="empty"><div class="big">📭</div>ഈ കാലയളവിൽ ജോലികൾ ഇല്ല<br><span class="en">No entries for this period</span></div>`;return}
   let h='',last='';for(const e of list){if(e.date!==last){h+=`<div class="dayhead">📅 ${fmtDate(e.date)}</div>`;last=e.date}const r=RATE[e.lastRating];
-    h+=`<div class="card entry" data-id="${e.id}">${e.thumb?`<img class="thumb" src="${e.thumb}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.placeName)} <span class="en">${esc(e.time||'')}</span></div><div class="s">👷 ${esc(e.workerName)} · ${esc(e.ward||'')}</div><div class="s">${esc(worksText(e))}</div><div>${e.photoCount?`<span class="badge">📷 ${e.photoCount}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:'<span class="badge">💬 അഭിപ്രായം ബാക്കി</span>'}${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">${e.score}</span>`:''}${e._pending?'<span class="badge r-ok">⏫ സിങ്ക് ബാക്കി</span>':''}</div></div></div>`}
+    h+=`<div class="card entry" data-id="${e.id}">${e.thumb?`<img class="thumb" src="${e.thumb}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.placeName)} <span class="en">${esc(e.time||'')}</span></div><div>${typeBadge(placeTypeOf(e),e)}</div><div class="s">👷 ${esc(e.workerName)} · ${esc(e.ward||'')}</div><div class="s">${esc(worksText(e))}</div><div>${e.photoCount?`<span class="badge">📷 ${e.photoCount}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:'<span class="badge">💬 അഭിപ്രായം ബാക്കി</span>'}${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">${e.score}</span>`:''}${e._pending?'<span class="badge r-ok">⏫ സിങ്ക് ബാക്കി</span>':''}</div></div></div>`}
   $('#dList').innerHTML=h;$$('#dList .entry').forEach(el=>el.onclick=()=>openDetail(el.dataset.id))}
 
 /* ---------- places & users (admin) ---------- */
-function renderPlaces(){const sel=$('#fPlace'),cur=sel.value;
-  sel.innerHTML='<option value="">-- സ്ഥലം തിരഞ്ഞെടുക്കുക (Select place) --</option>'+places.map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}${p.area?' ('+esc(p.area)+')':''}</option>`).join('');sel.value=cur;
+let editingPlace=null;
+function renderPlaces(){const sel=$('#fPlace'),cur=sel.value,ft=$('#fType').value;
+  const ftv=$('#fType').value;$('#fType').innerHTML=typeOptions('🔎 എല്ലാ തരവും (All types)');$('#fType').value=ftv;
+  const pv=$('#pType').value;$('#pType').innerHTML=typeOptions('-- തരം തിരഞ്ഞെടുക്കുക (Select type) --');$('#pType').value=pv;
+  const groups=allTypes().map(t=>({t,ps:places.filter(p=>(p.type||'other')===t.id||(t.id==='other'&&!typeById(p.type||'other')))})).filter(g=>g.ps.length&&(!ft||g.t.id===ft));
+  sel.innerHTML='<option value="">-- സ്ഥലം തിരഞ്ഞെടുക്കുക (Select place) --</option>'+groups.map(g=>`<optgroup label="${g.t.icon} ${esc(g.t.ml)}${g.t.en?' ('+esc(g.t.en)+')':''}">${g.ps.map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}${p.area?' ('+esc(p.area)+')':''}${p.typeOther?' · '+esc(p.typeOther):''}</option>`).join('')}</optgroup>`).join('');
+  sel.value=cur;if(sel.value!==cur)sel.value='';
   $('#fPlaceHint').textContent=places.length?'':(can.sup()?'⚙️ ക്രമീകരണത്തിൽ സ്ഥലങ്ങൾ ചേർക്കുക (Add places in Settings)':'സൂപ്പർവൈസർ സ്ഥലങ്ങൾ ചേർക്കണം (Supervisor must add places)');
-  $('#pList').innerHTML=places.map(p=>`<div class="u" style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #eef7f5"><div style="flex:1">📍 <b>${esc(p.name)}</b> <span class="en">${esc(p.ward)} · ${esc(p.area)}</span></div><button class="btn danger sm" data-pid="${p.id}">✕</button></div>`).join('')||'<p class="hint">ഇതുവരെ ഇല്ല (none yet)</p>';
+  $('#pList').innerHTML=places.map(p=>`<div class="u" style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #eef7f5"><div style="flex:1">📍 <b>${esc(p.name)}</b> <span class="en">${esc(p.ward)} · ${esc(p.area)}</span><br>${typeBadge(p.type||'other',p)}</div><button class="btn sec sm" data-pedit="${p.id}">✏️</button><button class="btn danger sm" data-pid="${p.id}">✕</button></div>`).join('')||'<p class="hint">ഇതുവരെ ഇല്ല (none yet)</p>';
+  $('#ctDetails').style.display=can.admin()?'block':'none';
+  $('#ctList').innerHTML=customTypes.map(t=>`<span>${t.icon} ${esc(t.ml)} ${t.en?'('+esc(t.en)+')':''}<button data-ctdel="${t.id}" title="remove">✕</button></span>`).join('');
+  $$('[data-ctdel]').forEach(b=>b.onclick=async()=>{const t=customTypes.find(x=>x.id===b.dataset.ctdel);if(!await ask(`"${t.ml}" തരം നീക്കണോ? (Remove type?) – ഈ തരത്തിലുള്ള സ്ഥലങ്ങൾ "മറ്റുള്ളവ" ആയി കാണിക്കും.`))return;
+    setDoc(doc(db,'meta','placeTypes'),{types:customTypes.filter(x=>x.id!==t.id),updatedBy:me.uid,updatedAt:serverTimestamp()}).catch(e=>toast('⚠️ '+e.code))});
   renderQRList();renderFeedback();
+  $$('#pList [data-pedit]').forEach(b=>b.onclick=()=>{const p=places.find(x=>x.id===b.dataset.pedit);editingPlace=p;$('#pArea').value=p.area||'';$('#pWard').value=p.ward||'';$('#pName').value=p.name||'';
+    $('#pType').value=typeById(p.type)?p.type:(p.type?'other':'');$('#pTypeOther').value=p.typeOther||'';$('#pTypeOther').style.display=$('#pType').value==='other'?'block':'none';
+    $('#pAdd').textContent='💾 മാറ്റം സേവ് (Save place)';$('#pCancel').style.display='flex';$('#pName').scrollIntoView({block:'center'})});
   $$('#pList [data-pid]').forEach(b=>b.onclick=async()=>{const p=places.find(x=>x.id===b.dataset.pid);if(await ask(`"${p.name}" നീക്കണോ? (Remove place?)`))deleteDoc(doc(db,'places',p.id)).catch(e=>toast('⚠️ '+e.code))});fillFilters()}
-$('#pAdd').onclick=async()=>{const area=$('#pArea').value.trim(),ward=$('#pWard').value.trim(),name=$('#pName').value.trim();if(!name)return toast('⚠️ സ്ഥലത്തിൻ്റെ പേര് നൽകുക (Enter place name)');
-  try{const r=doc(collection(db,'places'));setDoc(r,{area,ward,name,createdBy:me.uid,createdAt:serverTimestamp()}).catch(e=>toast('⚠️ '+e.code));$('#pName').value='';toast('✅ ചേർത്തു (Added)')}catch(e){toast('⚠️ '+e.message)}};
+$('#fType').onchange=renderPlaces;
+$('#pType').onchange=()=>{$('#pTypeOther').style.display=$('#pType').value==='other'?'block':'none'};
+function resetPlaceForm(){editingPlace=null;$('#pName').value='';$('#pType').value='';$('#pTypeOther').value='';$('#pTypeOther').style.display='none';$('#pAdd').textContent='➕ ചേർക്കുക (Add place)';$('#pCancel').style.display='none'}
+$('#pCancel').onclick=resetPlaceForm;
+$('#pAdd').onclick=async()=>{const area=$('#pArea').value.trim(),ward=$('#pWard').value.trim(),name=$('#pName').value.trim(),type=$('#pType').value;if(!name)return toast('⚠️ സ്ഥലത്തിൻ്റെ പേര് നൽകുക (Enter place name)');
+  if(!type)return toast('⚠️ തരം തിരഞ്ഞെടുക്കുക (Select a type)');const t=typeById(type);
+  const data={area,ward,name,type,typeOther:type==='other'?$('#pTypeOther').value.trim().slice(0,60):'',typeLabel:t.ml,typeIcon:t.icon};
+  try{if(editingPlace){updateDoc(doc(db,'places',editingPlace.id),{...data,updatedBy:me.uid,updatedAt:serverTimestamp()}).catch(e=>toast('⚠️ '+e.code));toast('✅ മാറ്റം സേവ് ചെയ്തു (Saved)')}
+    else{setDoc(doc(collection(db,'places')),{...data,createdBy:me.uid,createdAt:serverTimestamp()}).catch(e=>toast('⚠️ '+e.code));toast('✅ ചേർത്തു (Added)')}resetPlaceForm()}catch(e){toast('⚠️ '+e.message)}};
+$('#ctAdd').onclick=()=>{const ml=$('#ctMl').value.trim(),en=$('#ctEn').value.trim(),icon=$('#ctIcon').value.trim()||'🏷️';if(!ml)return toast('⚠️ മലയാളം പേര് നൽകുക');
+  const id='c_'+Date.now().toString(36);setDoc(doc(db,'meta','placeTypes'),{types:[...customTypes,{id,icon:icon.slice(0,4),ml:ml.slice(0,40),en:en.slice(0,40)}],updatedBy:me.uid,updatedAt:serverTimestamp()}).then(()=>toast('✅ തരം ചേർത്തു (Type added)')).catch(e=>toast('⚠️ '+e.code));
+  $('#ctMl').value='';$('#ctEn').value='';$('#ctIcon').value=''};
+function typeDashHTML(list){const m={};list.forEach(e=>{const k=placeTypeOf(e);(m[k]=m[k]||[]).push(e)});const ks=Object.keys(m);if(ks.length<1)return '';
+  return `<div class="rp-sub" style="margin-top:12px">🏷️ തരം തിരിച്ച് (By type)</div>`+ks.map(k=>{const t=typeInfo(k),s=stats(m[k]).avg;return `<div class="wardrow"><div>${t.icon} ${esc(t.ml)} <span class="en">(${m[k].length})</span></div><div class="bar"><i style="width:${s??0}%;background:${scoreColor(s)}"></i></div><b style="color:${scoreColor(s)}">${s??'–'}</b></div>`}).join('')}
+function typeReportHTML(list,fbList){const m={};const add=k=>m[k]=m[k]||{n:0,places:new Set(),fb:0,fbSum:0,score:[]};
+  list.forEach(e=>{const k=placeTypeOf(e);add(k);m[k].n++;m[k].places.add(e.placeId||e.placeName);if(e.score!=null)m[k].score.push(e.score)});
+  fbList.forEach(f=>{const k=placeTypeOf(f);add(k);m[k].fb++;m[k].fbSum+=f.rating});
+  const ks=allTypes().map(t=>t.id).filter(k=>m[k]).concat(Object.keys(m).filter(k=>!typeById(k)));if(!ks.length)return '';
+  return `<div class="rp-sub" style="font-size:15px">🏷️ തരം തിരിച്ചുള്ള സംഗ്രഹം (Summary by type)</div><table class="rp-tbl"><tr><th>തരം (Type)</th><th>ജോലി (Work)</th><th>സ്ഥലങ്ങൾ (Places)</th><th>സ്കോർ (Score)</th><th>നിവാസി ★ (Feedback avg)</th></tr>`+
+    ks.map(k=>{const o=m[k],t=typeInfo(k);return `<tr><td>${t.icon} ${esc(t.ml)}${t.en?' ('+esc(t.en)+')':''}</td><td>${o.n}</td><td>${o.places.size}</td><td>${o.score.length?Math.round(o.score.reduce((a,b)=>a+b,0)/o.score.length):'–'}</td><td>${o.fb?(o.fbSum/o.fb).toFixed(1)+' ('+o.fb+')':'–'}</td></tr>`}).join('')+'</table>'}
 function renderUsers(){if(!can.admin())return;const order={pending:0,admin:1,supervisor:2,officer:3,worker:4,disabled:5};
   $('#uList').innerHTML=users.slice().sort((a,b)=>(order[a.role]??9)-(order[b.role]??9)||String(a.name).localeCompare(b.name)).map(u=>`<div class="u">${u.photoURL?`<img src="${esc(u.photoURL)}" referrerpolicy="no-referrer" alt="">`:'<div style="font-size:30px">👤</div>'}<div class="nm"><b>${esc(u.name)}</b><br><span class="en">${esc(u.email)}</span></div>
     <select data-uid="${u.uid}" ${u.uid===me.uid?'disabled':''}>${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}</select></div>`).join('');
@@ -163,7 +208,7 @@ $('#saveBtn').onclick=async()=>{const works=$$('#fWork input:checked').map(i=>i.
     if(useStorage){toast('⏫ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുന്നു...');for(const p of newPh){try{const sr=S.ref(storage,`photos/${ref.id}/${p.id}.jpg`);await S.uploadBytes(sr,p.blob,{contentType:'image/jpeg'});p.url=await S.getDownloadURL(sr);p.path=sr.fullPath}catch(e){console.warn('storage upload failed, inline fallback',e)}}}
     const thumbP=live.find(p=>p.kind==='after')||live[0];let thumb=editing?.thumb||'';if(thumbP&&thumbP.thumb)thumb=thumbP.thumb;else if(!live.length)thumb='';
     else if(thumbP&&thumbP.id!==editing?.thumbId){try{thumb=(await toCanvasBlob(await loadImage(thumbP.src),240,0.6)).c.toDataURL('image/jpeg',0.6)}catch(e){}}
-    const data={date:$('#fDate').value||today(),time:$('#fTime').value,placeId:pl.id,placeName:pl.name,area:pl.area||'',ward:pl.ward||'',works,workOther:$('#fWorkOther').value.trim(),
+    const data={date:$('#fDate').value||today(),time:$('#fTime').value,placeId:pl.id,placeName:pl.name,area:pl.area||'',ward:pl.ward||'',placeType:pl.type||'other',placeTypeOther:pl.typeOther||'',works,workOther:$('#fWorkOther').value.trim(),
       workers:$('#fWorkers').value===''?null:+$('#fWorkers').value,waste:$('#fWaste').value===''?null:+$('#fWaste').value,wasteUnit:$('#fWasteUnit').value,notes:$('#fNotes').value.trim(),gps:gps||null,
       photoCount:live.length,hasBefore:live.some(p=>p.kind==='before'),hasAfter:live.some(p=>p.kind==='after'),thumb,thumbId:thumbP?.id||'',updatedAt:serverTimestamp()};
     const b=writeBatch(db);
@@ -183,7 +228,7 @@ function openDetail(id){detailId=id;detailUnsubs.forEach(u=>u());detPhotos=[];de
     onSnapshot(collection(db,'entries',id,'remarks'),s=>{detRemarks=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));renderDetail()},e=>console.error(e))];
   getDoc(doc(db,'entries',id)).then(s=>{if(s.exists()&&!entries.find(e=>e.id===id))entries.push({id,...s.data({serverTimestamps:'estimate'})});renderDetail()});
   $('#remarkForm').style.display=can.remark()?'block':'none';resetRemark();show('v-detail');setTimeout(()=>sig.size(),50)}
-function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🧹 ജോലി (Work)',worksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
+function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🧹 ജോലി (Work)',worksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
   const gpsRow=e.gps?`<tr><td>🛰️ GPS</td><td><a href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank" rel="noopener">${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}</a></td></tr>`:'';
   const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy">`).join('')}</div>`:''};
   return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.placeName)} ${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:''}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${esc(x[1])}</td></tr>`).join('')}${gpsRow}</table>
@@ -229,22 +274,23 @@ function renderNotifs(){const un=notifs.filter(n=>!n.read).length;$('#nBadge').t
 $('#nAllRead').onclick=()=>{const b=writeBatch(db);notifs.filter(n=>!n.read).forEach(n=>b.update(doc(db,'users',me.uid,'notifications',n.id),{read:true}));b.commit().catch(()=>{})};
 
 /* ---------- monthly report ---------- */
-['#rMonth','#rArea','#rWard','#rWorker','#rPhotos'].forEach(s=>$(s).addEventListener('change',()=>{if(s==='#rArea')fillFilters();makeReport()}));
+['#rMonth','#rArea','#rWard','#rWorker','#rType','#rPhotos'].forEach(s=>$(s).addEventListener('change',()=>{if(s==='#rArea')fillFilters();makeReport()}));
 $('#rMake').onclick=makeReport;
 let reportToken=0;
 async function makeReport(){const tok=++reportToken;const m=$('#rMonth').value||today().slice(0,7);const [y,mo]=m.split('-').map(Number);const last=ymd(new Date(y,mo,0));
   $('#reportOut').innerHTML='<div class="empty">⏳ തയ്യാറാക്കുന്നു... (Preparing)</div>';
   const s=await getDocs(query(collection(db,'entries'),where('date','>=',m+'-01'),where('date','<=',last),orderBy('date')));if(tok!==reportToken)return;
-  const a=$('#rArea').value,w=$('#rWard').value,k=$('#rWorker').value;
-  const list=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).filter(e=>(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)).sort((x,z)=>(x.date+(x.time||'')).localeCompare(z.date+(z.time||'')));
+  const a=$('#rArea').value,w=$('#rWard').value,k=$('#rWorker').value,rty=$('#rType').value;
+  const list=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).filter(e=>(!rty||placeTypeOf(e)===rty)&&(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)).sort((x,z)=>(x.date+(x.time||'')).localeCompare(z.date+(z.time||'')));
   const st=stats(list);const wk=k?users.find(u=>u.uid===k)?.name:'';
-  let h=`<div class="rp-h"><div style="font-size:22px;font-weight:800;color:var(--g)">നിറവ് – ദൈനംദിന ശുചീകരണം</div><div class="en">Niravu – Daily Cleaning</div><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2><div>${[a,w,wk].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)'}</div></div>`;
-  if(!list.length){const fb=can.staff()?await fbReportHTML(m,last,a,w):'';if(tok!==reportToken)return;$('#reportOut').innerHTML=h+'<div class="empty"><div class="big">📭</div>ജോലി എൻട്രികൾ ഇല്ല (No work entries)</div>'+fb;return}
+  let h=`<div class="rp-h"><div style="font-size:22px;font-weight:800;color:var(--g)">നിറവ് – ദൈനംദിന ശുചീകരണം</div><div class="en">Niravu – Daily Cleaning</div><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2><div>${[a,w,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)'}</div></div>`;
+  const fbList=can.staff()?await monthFeedback(m,last,a,w,rty):[];if(tok!==reportToken)return;
+  if(!list.length){const fb=can.staff()?typeReportHTML([],fbList)+fbReportHTML(fbList):'';$('#reportOut').innerHTML=h+'<div class="empty"><div class="big">📭</div>ജോലി എൻട്രികൾ ഇല്ല (No work entries)</div>'+fb;return}
   h+=`<div class="rp-sum"><b>ആകെ (Summary):</b> ${list.length} ജോലി (entries) · ${st.days} ദിവസം (days) · ${st.places} സ്ഥലം (places) · ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos}${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}<br>
     <b>ശുചിത്വ സ്കോർ (Cleanliness score): <span style="color:${scoreColor(st.avg)}">${st.avg??'–'}/100</span></b> · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}% · അഭിപ്രായം ബാക്കി (awaiting remark) ${st.awaiting}</div>`;
   const byW={};list.forEach(e=>{const key=e.ward||e.placeName;(byW[key]=byW[key]||[]).push(e)});
   h+=`<table class="rp-tbl"><tr><th>വാർഡ് (Ward)</th><th>ജോലി (Entries)</th><th>സ്കോർ (Score)</th></tr>${Object.entries(byW).map(([k2,v])=>`<tr><td>${esc(k2)}</td><td>${v.length}</td><td>${stats(v).avg??'–'}</td></tr>`).join('')}</table>`;
-  if(can.staff())h+=await fbReportHTML(m,last,a,w);
+  h+=typeReportHTML(list,fbList);if(can.staff())h+=fbReportHTML(fbList);
   const withPh=$('#rPhotos').checked;
   for(const e of list){const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);if(tok!==reportToken)return;
     h+=entryHTML(e,ps?ps.docs.map(d=>d.data()).sort((x,z)=>x.ts-z.ts):[],rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}
@@ -274,7 +320,7 @@ function renderFeedback(){if(!can.staff())return;const sel=$('#fbPlace'),cur=sel
   $('#fbSum').innerHTML=vis.length?`${starsHTML(vis.reduce((s,f)=>s+f.rating,0)/vis.length)} <b>${(vis.reduce((s,f)=>s+f.rating,0)/vis.length).toFixed(1)}/5</b> · ${vis.length} അഭിപ്രായം (feedback) · 💡 ${vis.filter(f=>f.suggestion).length} നിർദ്ദേശം (suggestions)`:'<span class="hint">ഇതുവരെ അഭിപ്രായം ഇല്ല (No feedback yet)</span>';
   if(!list.length){$('#fbList').innerHTML='<div class="empty"><div class="big">📭</div>ഒന്നുമില്ല (Nothing here)</div>';return}
   $('#fbList').innerHTML=list.map(f=>{const d=fbDate(f);return `<div class="card fbc ${f.status==='hidden'?'hidden':''}" data-id="${f.id}">
-    <div class="row" style="align-items:center"><div style="flex:3"><b>📍 ${esc(f.placeName)}</b> <span class="en">${esc(f.ward||'')}</span><br>${starsHTML(f.rating)} <b>${f.rating}/5</b></div><div class="hint" style="flex:2;text-align:right">${d?d.toLocaleString('en-IN'):''}</div></div>
+    <div class="row" style="align-items:center"><div style="flex:3"><b>📍 ${esc(f.placeName)}</b> <span class="en">${esc(f.ward||'')}</span><br>${typeBadge(placeTypeOf(f),places.find(p=>p.id===f.placeId))}<br>${starsHTML(f.rating)} <b>${f.rating}/5</b></div><div class="hint" style="flex:2;text-align:right">${d?d.toLocaleString('en-IN'):''}</div></div>
     ${f.comment?`<div style="margin-top:6px">💬 <b>അഭിപ്രായം (Comment):</b> ${esc(f.comment)}</div>`:''}
     ${f.suggestion?`<div class="remark" style="border-left-color:#f59e0b;background:#fffbeb">💡 <b>നിർദ്ദേശം (Suggestion):</b> ${esc(f.suggestion)}</div>`:''}
     ${f.photo?`<img class="fbph" src="${f.photo}" alt="" loading="lazy">`:''}
@@ -286,8 +332,9 @@ function renderFeedback(){if(!can.staff())return;const sel=$('#fbPlace'),cur=sel
   if(can.moderate())list.filter(f=>f.hasPhone).forEach(async f=>{const set=v=>$$('.ph-'+f.id).forEach(e=>e.innerHTML=v);
     if(!phoneCache.has(f.id))phoneCache.set(f.id,getDoc(doc(db,'feedback',f.id,'private','contact')).then(s=>s.exists()?s.data().phone:'').catch(()=>''));
     const ph=await phoneCache.get(f.id);set(ph?`<a href="tel:${esc(ph)}">${esc(ph)}</a>`:'-')})}
-async function fbReportHTML(m,last,a,w){const from=new Date(m+'-01T00:00:00'),to=new Date(last+'T23:59:59.999');
-  let list=[];try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));list=s.docs.map(d=>d.data()).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w))}catch(e){console.error(e)}
+async function monthFeedback(m,last,a,w,ty){const from=new Date(m+'-01T00:00:00'),to=new Date(last+'T23:59:59.999');
+  try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));return s.docs.map(d=>d.data()).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||placeTypeOf(f)===ty))}catch(e){console.error(e);return []}}
+function fbReportHTML(list){
   const head=`<div class="rp-sub" style="font-size:15px">🗣️ നിവാസികളുടെ അഭിപ്രായം (Resident feedback summary)</div>`;
   if(!list.length)return head+'<p class="hint">ഈ മാസം അഭിപ്രായം ഇല്ല (No resident feedback this month)</p>';
   const avg=list.reduce((s,f)=>s+f.rating,0)/list.length;
@@ -296,7 +343,7 @@ async function fbReportHTML(m,last,a,w){const from=new Date(m+'-01T00:00:00'),to
     (list.some(f=>f.suggestion)?`<div class="rp-sub">💡 നിർദ്ദേശങ്ങൾ (Suggestions)</div><ul style="font-size:13px;margin-top:2px">${list.filter(f=>f.suggestion).map(f=>`<li><b>${esc(f.placeName)}</b>: ${esc(f.suggestion)}</li>`).join('')}</ul>`:'')}
 /* QR codes */
 const fbLink=id=>{const u=new URL('feedback.html',location.href);u.search='';u.hash='';u.searchParams.set('place',id);if(EMU)u.searchParams.set('emulator','1');return u.toString()};
-function renderQRList(){if(!can.staff())return;$('#qrList').innerHTML=places.map(p=>`<div class="qrrow"><div class="nm">📍 <b>${esc(p.name)}</b><br><span class="en">${esc([p.ward,p.area].filter(Boolean).join(' · '))}</span></div><button class="btn sm" data-qr="${p.id}">🔳 QR</button></div>`).join('')||'<p class="hint">ആദ്യം സ്ഥലങ്ങൾ ചേർക്കുക (Add places first)</p>';
+function renderQRList(){if(!can.staff())return;$('#qrList').innerHTML=places.map(p=>`<div class="qrrow"><div class="nm">📍 <b>${esc(p.name)}</b> ${typeBadge(p.type||'other',p)}<br><span class="en">${esc([p.ward,p.area].filter(Boolean).join(' · '))}</span></div><button class="btn sm" data-qr="${p.id}">🔳 QR</button></div>`).join('')||'<p class="hint">ആദ്യം സ്ഥലങ്ങൾ ചേർക്കുക (Add places first)</p>';
   $$('[data-qr]').forEach(b=>b.onclick=()=>openQR(places.find(p=>p.id===b.dataset.qr)))}
 let qrPlace=null;
 function wrapText(x,t,maxW){const out=[];let line='';for(const w of t.split(' ')){const tt=line?line+' '+w:w;if(x.measureText(tt).width>maxW&&line){out.push(line);line=w}else line=tt}if(line)out.push(line);return out}
@@ -307,7 +354,7 @@ function drawQR(p){const url=fbLink(p.id);const q=window.qrcode(0,'M');q.addData
   x.fillStyle='#0f766e';x.fillRect(24,24,W-48,190);x.fillStyle='#fff';x.textAlign='center';
   x.font=`700 74px ${F}`;x.fillText('നിറവ് – ദൈനംദിന ശുചീകരണം',W/2,128,W-120);x.font=`36px ${F}`;x.fillText('Niravu – Daily Cleaning · നിവാസികളുടെ അഭിപ്രായം (Resident feedback)',W/2,186,W-120);
   let y=290;x.fillStyle='#134e4a';x.font=`700 64px ${F}`;x.fillText('📍 '+p.name,W/2,y,W-120);y+=56;
-  x.font=`38px ${F}`;x.fillStyle='#5b7f7b';const sub=[p.ward,p.area].filter(Boolean).join(' · ');if(sub){x.fillText(sub,W/2,y,W-120);y+=20}
+  x.font=`38px ${F}`;x.fillStyle='#5b7f7b';const ti=typeInfo(p.type||'other',p);const sub=[ti.icon+' '+ti.ml,p.ward,p.area].filter(Boolean).join(' · ');if(sub){x.fillText(sub,W/2,y,W-120);y+=20}
   y+=50;x.textAlign='left';x.fillStyle='#134e4a';x.font=`32px ${F}`;x.fillText('ഓഫീസ് / സീൽ (Office name / seal):',90,y);x.strokeStyle='#64748b';x.lineWidth=2;x.setLineDash([10,8]);
   x.beginPath();x.moveTo(600,y+6);x.lineTo(W-90,y+6);x.stroke();x.beginPath();x.moveTo(90,y+70);x.lineTo(W-90,y+70);x.stroke();x.setLineDash([]);y+=110;
   const qs=Math.floor(620/(n+8))*(n+8),cell=qs/(n+8),ox=(W-qs)/2;x.fillStyle='#000';

@@ -19,7 +19,7 @@ let place=null,rating=0,photo=null;
 try{if(!auth.currentUser)await A.signInAnonymously(auth);
   const s=await F.getDoc(F.doc(db,'places',placeId));if(!s.exists())return bad();place={id:s.id,...s.data()}}
 catch(e){console.error(e);return bad(`⚠️ കണക്ഷൻ പ്രശ്നം. ഇൻ്റർനെറ്റ് പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.<br><span class="en">Connection problem (${e.code||e.message}). Check internet and try again.</span>`)}
-$('#plName').textContent=place.name;$('#plSub').textContent=[place.ward,place.area].filter(Boolean).join(' · ');
+$('#plName').textContent=place.name;$('#plSub').textContent=[place.typeLabel?((place.typeIcon||'')+' '+place.typeLabel+(place.typeOther?': '+place.typeOther:'')):'',place.ward,place.area].filter(Boolean).join(' · ');
 $('#stars').innerHTML=[1,2,3,4,5].map(i=>`<button type="button" data-r="${i}" aria-label="${i} star">★</button>`).join('');
 $('#stars').onclick=e=>{const b=e.target.closest('button');if(!b)return;rating=+b.dataset.r;document.querySelectorAll('#stars button').forEach(x=>x.classList.toggle('on',+x.dataset.r<=rating));$('#slabel').textContent=LABELS[rating];$('#err').textContent=''};
 $('#comment').oninput=()=>$('#cc').textContent=$('#comment').value.length;
