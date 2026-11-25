@@ -53,6 +53,6 @@ $('#send').onclick=async()=>{$('#err').textContent='';
     await b.commit();localStorage.setItem(key,Date.now());
     $('#donePlace').textContent='📍 '+place.name;$('#doneStars').textContent='★'.repeat(rating)+'☆'.repeat(5-rating);show('v-done');window.scrollTo(0,0)}
   catch(e){console.error(e);$('#err').innerHTML=e.code==='permission-denied'?`⏳ അൽപ്പ സമയം മുമ്പ് ഈ സ്ഥലത്തിന് അഭിപ്രായം അയച്ചിട്ടുണ്ട്, അല്ലെങ്കിൽ വിവരങ്ങൾ ശരിയല്ല. ${WAIT_MIN} മിനിറ്റ് കഴിഞ്ഞ് ശ്രമിക്കുക.<br><span class="en">Feedback was sent recently or the data is invalid. Please try again in ${WAIT_MIN} min.</span>`:`⚠️ അയക്കാനായില്ല (${e.code||e.message}). ഇൻ്റർനെറ്റ് പരിശോധിക്കുക.`}
-  finally{btn.disabled=false;btn.innerHTML='📨 അയക്കുക <span class="en" style="color:#fff">(Submit)</span>'}};
+  finally{btn.disabled=false;btn.innerHTML='<svg class="ic"><use href="#i-send"/></svg>അയക്കുക <span class="en">(Submit)</span>'}};
 
 })();

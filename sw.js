@@ -1,4 +1,4 @@
-const C='cleaning-team-v9';const SHELL=['./','./index.html','./app.js','./firebase-config.js','./qrcode.js','./feedback.html','./feedback.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const C='cleaning-team-v10';const SHELL=['./','./index.html','./app.js','./ui.css','./app.css','./fonts/noto-malayalam.woff2','./fonts/inter-latin.woff2','./fonts/inter-latin-ext.woff2','./icon.svg','./icon-180.png','./icon-maskable-512.png','./firebase-config.js','./qrcode.js','./feedback.html','./feedback.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C&&x.startsWith('cleaning-team')).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);
