@@ -4,503 +4,216 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
-<title>ശുചീകരണ ഡയറി (Cleaning Diary)</title>
+<title>ശുചീകരണ ഡയറി ടീം (Cleaning Diary Team)</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
 <style>
-:root{--g:#0f766e;--g2:#14b8a6;--gl:#ccfbf1;--bg:#f0fdfa;--tx:#134e4a;--mut:#5b7f7b;--red:#dc2626;--card:#fff;--r:14px}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0}
-html{scroll-padding-top:70px;scroll-padding-bottom:96px}
+:root{--g:#0f766e;--g2:#14b8a6;--gl:#ccfbf1;--bg:#f0fdfa;--tx:#134e4a;--mut:#5b7f7b;--red:#dc2626;--r:14px}
+*{box-sizing:border-box}html,body{margin:0;padding:0}html{scroll-padding-top:70px;scroll-padding-bottom:96px}
 body{font-family:"Noto Sans Malayalam","Noto Sans",system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--tx);font-size:17px;line-height:1.45;padding-bottom:84px}
-header.top{position:sticky;top:0;z-index:5;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-header.top h1{font-size:19px;margin:0;font-weight:700}
-header.top small{display:block;font-size:12px;opacity:.9;font-weight:400}
-header.top .logo{font-size:28px}
-main{max-width:760px;margin:0 auto;padding:12px}
+header.top{position:sticky;top:0;z-index:5;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header.top h1{font-size:17px;margin:0;white-space:nowrap}header.top small{display:block;font-size:12px;opacity:.9;white-space:nowrap}
+header.top .logo{font-size:26px}header.top .who{margin-left:auto;text-align:right;font-size:12px;line-height:1.3;max-width:42%;overflow:hidden}
+header.top .who img{width:32px;height:32px;border-radius:50%;vertical-align:middle}
+.net{font-size:11px;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,.25)}
+main{max-width:860px;margin:0 auto;padding:12px}
 .view{display:none}.view.active{display:block}
-.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(15,118,110,.12)}
-.card h2{font-size:17px;margin:0 0 10px;color:var(--g);display:flex;align-items:center;gap:6px}
+.card{background:#fff;border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(15,118,110,.12)}
+.card h2{font-size:17px;margin:0 0 10px;color:var(--g)}
 label.f{display:block;font-weight:600;margin:10px 0 4px;font-size:15px}
 .en{color:var(--mut);font-weight:400;font-size:.85em}
-input[type=text],input[type=number],input[type=date],input[type=time],input[type=month],input[type=search],select,textarea{width:100%;font:inherit;padding:12px;border:1.5px solid #99d5cc;border-radius:10px;background:#fff;color:var(--tx);min-height:48px}
+input[type=text],input[type=number],input[type=date],input[type=time],input[type=month],input[type=search],input[type=tel],select,textarea{width:100%;font:inherit;padding:11px;border:1.5px solid #99d5cc;border-radius:10px;background:#fff;color:var(--tx);min-height:48px}
 textarea{min-height:80px;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 3px var(--gl)}
-.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-weight:600;border:none;border-radius:12px;padding:12px 16px;min-height:50px;cursor:pointer;background:var(--g);color:#fff;text-decoration:none}
-.btn:active{transform:scale(.98)}
-.btn.sec{background:var(--gl);color:var(--g)}
-.btn.out{background:#fff;color:var(--g);border:1.5px solid var(--g)}
-.btn.danger{background:#fee2e2;color:var(--red)}
-.btn.block{width:100%}
-.btn.sm{min-height:42px;padding:8px 12px;font-size:15px}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}.wrap{flex-wrap:wrap}.wrap>*{flex:1 1 140px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-weight:600;border:none;border-radius:12px;padding:12px 16px;min-height:50px;cursor:pointer;background:var(--g);color:#fff;text-decoration:none;text-align:center}
+.btn:active{transform:scale(.98)}.btn.sec{background:var(--gl);color:var(--g)}.btn.out{background:#fff;color:var(--g);border:1.5px solid var(--g)}
+.btn.danger{background:#fee2e2;color:var(--red)}.btn.block{width:100%}.btn.sm{min-height:42px;padding:8px 12px;font-size:15px}
+.btn[disabled]{opacity:.5}
 .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chip{display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #99d5cc;border-radius:10px;background:#fff;min-height:52px;font-size:15px;cursor:pointer}
-.chip input{width:22px;height:22px;accent-color:var(--g);flex:none}
-.chip.on{background:var(--gl);border-color:var(--g)}
+.chip input{width:22px;height:22px;accent-color:var(--g);flex:none}.chip.on{background:var(--gl);border-color:var(--g)}
 .rating{display:flex;gap:8px}
 .rating label{flex:1;text-align:center;padding:10px 4px;border:1.5px solid #99d5cc;border-radius:10px;font-size:14px;cursor:pointer;min-height:56px;display:flex;flex-direction:column;justify-content:center;background:#fff}
-.rating input{display:none}
-.rating input:checked+span{font-weight:700}
-.rating label.on{background:var(--gl);border-color:var(--g)}
+.rating input{display:none}.rating label.on{background:var(--gl);border-color:var(--g);font-weight:700}
 .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
 .ph{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#e2f3f0}
 .ph img{width:100%;height:100%;object-fit:cover;display:block}
-.ph button{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(220,38,38,.9);color:#fff;font-size:18px;line-height:1}
+.ph button{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(220,38,38,.9);color:#fff;font-size:18px}
 .phbtns{display:flex;gap:8px;margin-top:6px}.phbtns .btn{flex:1}
-.sig-wrap{border:1.5px dashed var(--g);border-radius:10px;background:#fff;touch-action:none;position:relative}
-#sig{width:100%;height:180px;display:block;touch-action:none}
+.sig-wrap{border:1.5px dashed var(--g);border-radius:10px;background:#fff;position:relative}
+.sig{width:100%;height:170px;display:block;touch-action:none}
 .sig-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9cc;pointer-events:none;font-size:15px}
 .hint{font-size:13px;color:var(--mut)}
-.gps{font-size:14px;color:var(--mut);margin-top:6px;word-break:break-all}
 nav.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;box-shadow:0 -2px 10px rgba(0,0,0,.1);z-index:10;padding-bottom:env(safe-area-inset-bottom)}
-nav.tabs button{flex:1;border:none;background:none;font:inherit;font-size:12px;padding:8px 2px 10px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:2px;min-height:64px}
-nav.tabs button .i{font-size:24px}
-nav.tabs button.active{color:var(--g);font-weight:700;background:var(--gl)}
-.entry{display:flex;gap:10px;align-items:stretch;cursor:pointer}
+nav.tabs button{flex:1;border:none;background:none;font:inherit;font-size:12px;padding:8px 2px 10px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:1px;min-height:64px;position:relative}
+nav.tabs button .i{font-size:23px}nav.tabs button.active{color:var(--g);font-weight:700;background:var(--gl)}
+nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--red);color:#fff;border-radius:10px;font-size:11px;padding:0 6px;min-width:18px;display:none}
+.entry{display:flex;gap:10px;cursor:pointer}
 .entry .thumb{width:76px;height:76px;border-radius:10px;object-fit:cover;background:#e2f3f0;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px}
-.entry .info{flex:1;min-width:0}
-.entry .t{font-weight:700}
+.entry .info{flex:1;min-width:0}.entry .t{font-weight:700}
 .entry .s{font-size:14px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:20px;background:var(--gl);color:var(--g);margin:2px 4px 0 0}
-.badge.r-good{background:#dcfce7;color:#166534}.badge.r-ok{background:#fef9c3;color:#854d0e}.badge.r-bad{background:#fee2e2;color:#991b1b}
+.r-good{background:#dcfce7!important;color:#166534!important}.r-ok{background:#fef9c3!important;color:#854d0e!important}.r-bad{background:#fee2e2!important;color:#991b1b!important}
 .dayhead{font-weight:700;color:var(--g);margin:14px 4px 6px;font-size:15px}
-.empty{text-align:center;color:var(--mut);padding:30px 10px}
-.empty .big{font-size:48px}
-.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#134e4a;color:#fff;padding:12px 18px;border-radius:12px;z-index:50;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+.empty{text-align:center;color:var(--mut);padding:26px 10px}.empty .big{font-size:46px}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#134e4a;color:#fff;padding:12px 18px;border-radius:12px;z-index:60;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:92%;text-align:center}
 .toast.show{opacity:1}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:none;align-items:center;justify-content:center;padding:16px}
-.modal.show{display:flex}
-.modal .box{background:#fff;border-radius:16px;padding:18px;max-width:420px;width:100%}
-.modal .box p{margin:0 0 14px}
-.place-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.place-list span{background:var(--gl);color:var(--g);border-radius:20px;padding:6px 10px;font-size:14px;display:inline-flex;gap:6px;align-items:center}
-.place-list button{border:none;background:none;color:var(--red);font-size:16px;padding:0 2px}
-/* report */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.show{display:flex}.modal .box{background:#fff;border-radius:16px;padding:18px;max-width:420px;width:100%}.modal .box p{margin:0 0 14px;white-space:pre-line}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:var(--gl);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:24px;color:var(--g)}.stat span{font-size:13px}
+.score{font-size:40px;font-weight:800}
+.bar{height:12px;border-radius:8px;background:#e5efed;overflow:hidden}.bar i{display:block;height:100%;border-radius:8px}
+.wardrow{display:grid;grid-template-columns:1fr 90px 44px;gap:8px;align-items:center;font-size:14px;margin:6px 0}
+.remark{border-left:4px solid var(--g2);background:#f7fdfc;border-radius:8px;padding:8px 10px;margin:8px 0}
+.remark img{max-height:70px;max-width:200px;display:block;margin-top:4px}
+.notif{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.notif.unread{border-left:5px solid var(--red)}
+.ulist .u{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eef7f5}
+.ulist img{width:38px;height:38px;border-radius:50%}.ulist .nm{flex:1;min-width:0;font-size:15px}.ulist select{width:150px;min-height:42px;padding:6px}
+.center{text-align:center}
+.login{max-width:420px;margin:40px auto;text-align:center}
+.gbtn{background:#fff;color:#333;border:1.5px solid #ccc;font-size:18px}
 #reportOut{background:#fff;border-radius:var(--r);padding:16px;margin-top:12px}
-.rp-h{text-align:center;border-bottom:3px solid var(--g);padding-bottom:8px;margin-bottom:10px}
-.rp-h h2{margin:0;color:var(--g);font-size:20px}
-.rp-e{border:1px solid #cfe9e4;border-radius:10px;padding:10px;margin-bottom:12px;page-break-inside:avoid;break-inside:avoid}
-.rp-e table{width:100%;border-collapse:collapse;font-size:14px}
-.rp-e td{padding:3px 4px;vertical-align:top;border-bottom:1px solid #eef7f5}
-.rp-e td:first-child{width:38%;color:var(--mut)}
-.rp-ph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}
-.rp-ph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px}
+.rp-h{text-align:center;border-bottom:3px solid var(--g);padding-bottom:8px;margin-bottom:10px}.rp-h h2{margin:0;color:var(--g);font-size:20px}
+.rp-e{border:1px solid #cfe9e4;border-radius:10px;padding:10px;margin-bottom:12px;break-inside:avoid;page-break-inside:avoid}
+.rp-e table{width:100%;border-collapse:collapse;font-size:14px}.rp-e td{padding:3px 4px;vertical-align:top;border-bottom:1px solid #eef7f5}.rp-e td:first-child{width:36%;color:var(--mut)}
+.rp-ph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}.rp-ph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px}
 .rp-sub{font-weight:700;color:var(--g);margin:8px 0 2px;font-size:14px}
-.rp-sig{max-height:80px;max-width:220px;border-bottom:1px solid #999}
 .rp-sum{background:var(--gl);border-radius:10px;padding:10px;font-size:14px;margin-bottom:12px}
-@media print{
-  body{background:#fff;padding:0;font-size:12px}
-  header.top,nav.tabs,.noprint,.toast,.modal{display:none!important}
-  main{max-width:none;padding:0}
-  .view{display:none!important}
-  #v-report{display:block!important}
-  #reportOut{padding:0;margin:0;box-shadow:none}
-  .card{box-shadow:none}
-}
+.rp-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}.rp-tbl th,.rp-tbl td{border:1px solid #cfe9e4;padding:4px 6px;text-align:left}.rp-tbl th{background:var(--gl)}
+@media print{body{background:#fff;padding:0;font-size:12px}header.top,nav.tabs,.noprint,.toast,.modal{display:none!important}main{max-width:none;padding:0}.view{display:none!important}#v-report{display:block!important}#reportOut{padding:0;margin:0}.card{box-shadow:none}}
 </style>
 </head>
 <body>
-<header class="top"><span class="logo">🧹</span><div><h1>ശുചീകരണ ഡയറി</h1><small>Daily Cleaning Work Diary</small></div></header>
-<main>
+<header class="top"><span class="logo">🧹</span><div><h1>ശുചീകരണ ഡയറി</h1><small>Cleaning Team <span class="net" id="net">●</span></small></div><div class="who" id="who"></div></header>
+<main id="main">
+  <section id="v-loading" class="view active"><div class="empty"><div class="big">⏳</div>ലോഡ് ചെയ്യുന്നു... (Loading)</div></section>
+  <section id="v-setup" class="view"><div class="card login"><div class="big" style="font-size:50px">🛠️</div><h2>സെറ്റപ്പ് പൂർത്തിയായിട്ടില്ല</h2><p>Online setup is not finished yet (Firebase not configured).</p><a class="btn block" href="offline/">📱 ഓഫ്‌ലൈൻ പതിപ്പ് തുറക്കുക (Open offline version)</a></div></section>
+  <section id="v-login" class="view"><div class="card login">
+    <div style="font-size:64px">🧹</div><h2 style="font-size:22px">ശുചീകരണ ഡയറി ടീം</h2><p class="hint">ദിവസേനയുള്ള ശുചീകരണ ജോലികൾ, ഫോട്ടോകൾ, ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായങ്ങൾ – ടീമിനൊപ്പം ലൈവ് ആയി.<br>(Daily cleaning work, photos and officer remarks – live with your team)</p>
+    <button class="btn gbtn block" id="loginBtn"><svg width="22" height="22" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg> Google ഉപയോഗിച്ച് ലോഗിൻ<br><span class="en">(Sign in with Google)</span></button>
+    <p class="hint" style="margin-top:16px"><a href="offline/">ഓഫ്‌ലൈൻ പതിപ്പ് (Offline-only version)</a></p></div></section>
+  <section id="v-pending" class="view"><div class="card login"><div style="font-size:56px">⏳</div><h2>അനുമതിക്കായി കാത്തിരിക്കുന്നു</h2><p>Waiting for admin approval. അഡ്മിൻ നിങ്ങൾക്ക് റോൾ നൽകിയാൽ ആപ്പ് തുറക്കും.</p><p class="hint" id="pendingMail"></p><button class="btn out block" data-act="logout">🚪 ലോഗൗട്ട് (Sign out)</button></div></section>
 
-<!-- ===== NEW / EDIT ENTRY ===== -->
-<section id="v-new" class="view active">
-  <div class="card">
-    <h2 id="formTitle">📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span></h2>
-    <div class="row">
-      <div><label class="f">തീയതി <span class="en">(Date)</span></label><input type="date" id="fDate"></div>
-      <div><label class="f">സമയം <span class="en">(Time)</span></label><input type="time" id="fTime"></div>
-    </div>
-    <label class="f">സ്ഥലം / വാർഡ് <span class="en">(Place / Ward)</span></label>
-    <div class="row" style="align-items:center">
-      <select id="fPlace" style="flex:3"></select>
-      <button class="btn sec sm" id="addPlaceBtn" type="button" style="flex:1">➕ പുതിയത്</button>
-    </div>
-    <label class="f">ചെയ്ത ജോലി <span class="en">(Work done)</span></label>
-    <div class="chips" id="fWork"></div>
-    <input type="text" id="fWorkOther" placeholder="മറ്റുള്ളവ എഴുതുക (Other work)" style="margin-top:8px;display:none">
-    <div class="row">
-      <div><label class="f">തൊഴിലാളികൾ <span class="en">(Workers)</span></label><input type="number" id="fWorkers" inputmode="numeric" min="0" placeholder="0"></div>
-      <div><label class="f">മാലിന്യം <span class="en">(Waste, optional)</span></label>
-        <div class="row" style="gap:4px"><input type="number" id="fWaste" inputmode="decimal" min="0" placeholder="0" style="flex:2"><select id="fWasteUnit" style="flex:2;padding:8px"><option>kg</option><option>ചാക്ക് (bags)</option><option>ലോഡ് (loads)</option></select></div>
+  <!-- DASHBOARD -->
+  <section id="v-dash" class="view">
+    <div class="card noprint">
+      <h2>🏠 ഡാഷ്ബോർഡ് <span class="en">(Dashboard)</span></h2>
+      <div class="row wrap">
+        <div><label class="f">മുതൽ <span class="en">(From)</span></label><input type="date" id="dFrom"></div>
+        <div><label class="f">വരെ <span class="en">(To)</span></label><input type="date" id="dTo"></div>
       </div>
+      <div class="row wrap" style="margin-top:8px"><select id="dArea"></select><select id="dWard"></select><select id="dWorker"></select></div>
+      <input type="search" id="dSearch" placeholder="🔍 തിരയുക (Search)" style="margin-top:8px">
     </div>
-    <label class="f">കുറിപ്പ് <span class="en">(Notes)</span></label>
-    <textarea id="fNotes" placeholder="കൂടുതൽ വിവരങ്ങൾ..."></textarea>
-  </div>
+    <div class="card" id="dStats"></div>
+    <div id="dList"></div>
+  </section>
 
-  <div class="card">
-    <h2>📷 ഫോട്ടോകൾ <span class="en">(Photos)</span></h2>
-    <label class="f">മുമ്പ് <span class="en">(Before)</span></label>
-    <div class="phbtns">
-      <label class="btn sec sm">📸 ക്യാമറ<input type="file" accept="image/*" capture="environment" hidden data-kind="before"></label>
-      <label class="btn out sm">🖼️ ഗാലറി<input type="file" accept="image/*" multiple hidden data-kind="before"></label>
+  <!-- NEW / EDIT -->
+  <section id="v-new" class="view">
+    <div class="card">
+      <h2 id="formTitle">📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span></h2>
+      <div class="row"><div><label class="f">തീയതി <span class="en">(Date)</span></label><input type="date" id="fDate"></div><div><label class="f">സമയം <span class="en">(Time)</span></label><input type="time" id="fTime"></div></div>
+      <label class="f">സ്ഥലം / വാർഡ് <span class="en">(Place / Ward)</span></label>
+      <select id="fPlace"></select>
+      <div class="hint" id="fPlaceHint"></div>
+      <label class="f">ചെയ്ത ജോലി <span class="en">(Work done)</span></label>
+      <div class="chips" id="fWork"></div>
+      <input type="text" id="fWorkOther" placeholder="മറ്റുള്ളവ എഴുതുക (Other work)" style="margin-top:8px;display:none">
+      <div class="row">
+        <div><label class="f">തൊഴിലാളികൾ <span class="en">(Workers)</span></label><input type="number" id="fWorkers" inputmode="numeric" min="0" placeholder="0"></div>
+        <div><label class="f">മാലിന്യം <span class="en">(Waste)</span></label><div class="row" style="gap:4px"><input type="number" id="fWaste" inputmode="decimal" min="0" placeholder="0"><select id="fWasteUnit" style="padding:6px"><option>kg</option><option>ചാക്ക് (bags)</option><option>ലോഡ് (loads)</option></select></div></div>
+      </div>
+      <label class="f">കുറിപ്പ് <span class="en">(Notes)</span></label><textarea id="fNotes"></textarea>
     </div>
-    <div class="photos" id="phBefore"></div>
-    <label class="f" style="margin-top:14px">ശേഷം <span class="en">(After)</span></label>
-    <div class="phbtns">
-      <label class="btn sec sm">📸 ക്യാമറ<input type="file" accept="image/*" capture="environment" hidden data-kind="after"></label>
-      <label class="btn out sm">🖼️ ഗാലറി<input type="file" accept="image/*" multiple hidden data-kind="after"></label>
+    <div class="card">
+      <h2>📷 ഫോട്ടോകൾ <span class="en">(Photos)</span></h2>
+      <label class="f">മുമ്പ് <span class="en">(Before)</span></label>
+      <div class="phbtns"><label class="btn sec sm">📸 ക്യാമറ<input type="file" accept="image/*" capture="environment" hidden data-kind="before"></label><label class="btn out sm">🖼️ ഗാലറി<input type="file" accept="image/*" multiple hidden data-kind="before"></label></div>
+      <div class="photos" id="phBefore"></div>
+      <label class="f" style="margin-top:14px">ശേഷം <span class="en">(After)</span></label>
+      <div class="phbtns"><label class="btn sec sm">📸 ക്യാമറ<input type="file" accept="image/*" capture="environment" hidden data-kind="after"></label><label class="btn out sm">🖼️ ഗാലറി<input type="file" accept="image/*" multiple hidden data-kind="after"></label></div>
+      <div class="photos" id="phAfter"></div>
+      <p class="hint" id="phMode"></p>
     </div>
-    <div class="photos" id="phAfter"></div>
-  </div>
+    <div class="card">
+      <h2>📍 സ്ഥാനം <span class="en">(GPS, optional)</span></h2>
+      <div class="row"><button class="btn out" type="button" id="gpsBtn">📍 ലൊക്കേഷൻ ചേർക്കുക</button><button class="btn danger sm" type="button" id="gpsClr" style="flex:0 0 60px;display:none">✕</button></div>
+      <div class="hint" id="gpsTxt" style="margin-top:6px"></div>
+    </div>
+    <div class="row"><button class="btn out" type="button" id="cancelEdit" style="display:none">✕ റദ്ദാക്കുക</button><button class="btn block" type="button" id="saveBtn" style="font-size:18px">💾 സേവ് ചെയ്യുക (Save)</button></div>
+  </section>
 
-  <div class="card">
-    <h2>📍 സ്ഥാനം <span class="en">(GPS location, optional)</span></h2>
-    <div class="row"><button class="btn out" type="button" id="gpsBtn">📍 ലൊക്കേഷൻ ചേർക്കുക</button><button class="btn danger sm" type="button" id="gpsClr" style="flex:0 0 60px;display:none">✕</button></div>
-    <div class="gps" id="gpsTxt"></div>
-  </div>
-
-  <div class="card">
-    <h2>👮 ഉദ്യോഗസ്ഥൻ്റെ അഭിപ്രായം <span class="en">(Officer remarks)</span></h2>
-    <div class="row">
-      <div><label class="f">പേര് <span class="en">(Name)</span></label><input type="text" id="oName" list="officerList" autocomplete="off"></div>
-      <div><label class="f">പദവി <span class="en">(Designation)</span></label><input type="text" id="oDesig" list="desigList" autocomplete="off"></div>
+  <!-- DETAIL -->
+  <section id="v-detail" class="view">
+    <div id="detOut"></div>
+    <div class="card" id="detRemarks"></div>
+    <div class="card" id="remarkForm" style="display:none">
+      <h2>👮 അഭിപ്രായം ചേർക്കുക <span class="en">(Add officer remark)</span></h2>
+      <label class="f">വിലയിരുത്തൽ <span class="en">(Rating)</span></label>
+      <div class="rating" id="rmRating">
+        <label><input type="radio" name="rmr" value="good">👍 നല്ലത്<span class="en">Good</span></label>
+        <label><input type="radio" name="rmr" value="ok">👌 തൃപ്തികരം<span class="en">Satisfactory</span></label>
+        <label><input type="radio" name="rmr" value="bad">⚠️ മെച്ചപ്പെടണം<span class="en">Needs improvement</span></label>
+      </div>
+      <label class="f">അഭിപ്രായം <span class="en">(Remark)</span></label><textarea id="rmText"></textarea>
+      <label class="f">പദവി <span class="en">(Designation)</span></label><input type="text" id="rmDesig" list="desigList">
+      <datalist id="desigList"><option value="ഹെൽത്ത് ഇൻസ്പെക്ടർ (Health Inspector)"><option value="ജൂനിയർ ഹെൽത്ത് ഇൻസ്പെക്ടർ (JHI)"><option value="സെക്രട്ടറി (Secretary)"><option value="സൂപ്പർവൈസർ (Supervisor)"><option value="വാർഡ് മെമ്പർ (Ward Member)"><option value="കൗൺസിലർ (Councillor)"></datalist>
+      <label class="f">ഒപ്പ് <span class="en">(Signature)</span></label>
+      <div class="sig-wrap"><canvas class="sig" id="rmSig"></canvas><div class="sig-ph" id="rmSigPh">✍️ ഇവിടെ ഒപ്പിടുക (sign here)</div></div>
+      <div class="row" style="margin-top:8px"><button class="btn danger sm" type="button" id="rmSigClr">🧽 മായ്ക്കുക</button><button class="btn" type="button" id="rmSave">✅ അഭിപ്രായം സേവ് (Save remark)</button></div>
     </div>
-    <datalist id="officerList"></datalist>
-    <datalist id="desigList"><option value="ഹെൽത്ത് ഇൻസ്പെക്ടർ (Health Inspector)"><option value="ജൂനിയർ ഹെൽത്ത് ഇൻസ്പെക്ടർ (JHI)"><option value="സെക്രട്ടറി (Secretary)"><option value="സൂപ്പർവൈസർ (Supervisor)"><option value="വാർഡ് മെമ്പർ (Ward Member)"><option value="കൗൺസിലർ (Councillor)"></datalist>
-    <label class="f">അഭിപ്രായം <span class="en">(Remark)</span></label>
-    <textarea id="oRemark"></textarea>
-    <label class="f">വിലയിരുത്തൽ <span class="en">(Rating)</span></label>
-    <div class="rating" id="oRating">
-      <label><input type="radio" name="rt" value="good"><span>👍 നല്ലത്<br><span class="en">Good</span></span></label>
-      <label><input type="radio" name="rt" value="ok"><span>👌 തൃപ്തികരം<br><span class="en">Satisfactory</span></span></label>
-      <label><input type="radio" name="rt" value="bad"><span>⚠️ മെച്ചപ്പെടണം<br><span class="en">Needs improvement</span></span></label>
-    </div>
-    <label class="f">ഒപ്പ് <span class="en">(Signature)</span></label>
-    <div class="sig-wrap"><canvas id="sig"></canvas><div class="sig-ph" id="sigPh">✍️ ഇവിടെ വിരൽ കൊണ്ട് ഒപ്പിടുക (sign here)</div></div>
-    <div style="margin-top:6px"><button class="btn danger sm" type="button" id="sigClr">🧽 മായ്ക്കുക (Clear)</button></div>
-  </div>
+    <div class="row noprint" id="detBtns"><button class="btn out" data-act="back">⬅ തിരികെ</button><button class="btn sec" id="detEdit">✏️ തിരുത്തുക</button><button class="btn danger" id="detDel">🗑️ നീക്കുക</button></div>
+  </section>
 
-  <div class="row noprint">
-    <button class="btn out" type="button" id="cancelEdit" style="display:none">✕ റദ്ദാക്കുക</button>
-    <button class="btn block" type="button" id="saveBtn" style="font-size:18px">💾 സേവ് ചെയ്യുക (Save)</button>
-  </div>
-</section>
-
-<!-- ===== HISTORY ===== -->
-<section id="v-hist" class="view">
-  <div class="card">
-    <input type="search" id="hSearch" placeholder="🔍 തിരയുക (Search)">
-    <div class="row" style="margin-top:8px">
-      <select id="hPlace"></select>
-      <input type="month" id="hMonth">
+  <!-- REPORT -->
+  <section id="v-report" class="view">
+    <div class="card noprint">
+      <h2>📄 മാസ റിപ്പോർട്ട് <span class="en">(Monthly report)</span></h2>
+      <div class="row wrap"><input type="month" id="rMonth"><select id="rArea"></select><select id="rWard"></select><select id="rWorker"></select></div>
+      <label class="chip" style="margin-top:8px"><input type="checkbox" id="rPhotos" checked> ഫോട്ടോകൾ ഉൾപ്പെടുത്തുക (Include photos)</label>
+      <div class="row" style="margin-top:10px"><button class="btn" id="rMake">🔄 തയ്യാറാക്കുക (Generate)</button><button class="btn sec" id="rPrint">🖨️ PDF / പ്രിൻ്റ്</button></div>
+      <p class="hint">PDF: 🖨️ അമർത്തി "Save as PDF" തിരഞ്ഞെടുക്കുക, എന്നിട്ട് WhatsApp-ൽ അയക്കാം.</p>
     </div>
-    <div class="hint" id="hCount" style="margin-top:6px"></div>
-  </div>
-  <div id="hList"></div>
-</section>
+    <div id="reportOut"></div>
+  </section>
 
-<!-- ===== DETAIL ===== -->
-<section id="v-detail" class="view">
-  <div id="dOut"></div>
-  <div class="row noprint" style="margin-top:8px">
-    <button class="btn out" id="dBack">⬅ തിരികെ</button>
-    <button class="btn sec" id="dEdit">✏️ തിരുത്തുക</button>
-    <button class="btn danger" id="dDel">🗑️ നീക്കുക</button>
-  </div>
-  <div class="row noprint" style="margin-top:8px">
-    <button class="btn block" id="dReport">📄 ഈ ദിവസത്തെ റിപ്പോർട്ട് (Day report)</button>
-  </div>
-</section>
+  <!-- NOTIFICATIONS -->
+  <section id="v-notif" class="view"><div class="card"><div class="row"><h2 style="margin:0">🔔 അറിയിപ്പുകൾ <span class="en">(Notifications)</span></h2><button class="btn sec sm" id="nAllRead" style="flex:0 0 auto">✔ എല്ലാം വായിച്ചു</button></div></div><div id="nList"></div></section>
 
-<!-- ===== REPORT ===== -->
-<section id="v-report" class="view">
-  <div class="card noprint">
-    <h2>📄 റിപ്പോർട്ട് <span class="en">(Report)</span></h2>
-    <div class="rating" id="rType">
-      <label class="on"><input type="radio" name="rtype" value="day" checked><span>📅 ദിവസം<br><span class="en">Daily</span></span></label>
-      <label><input type="radio" name="rtype" value="month"><span>🗓️ മാസം<br><span class="en">Monthly</span></span></label>
+  <!-- SETTINGS / ADMIN -->
+  <section id="v-set" class="view">
+    <div class="card"><h2>👤 എൻ്റെ വിവരം <span class="en">(My profile)</span></h2>
+      <div id="meInfo" class="hint"></div>
+      <label class="f">പേര് <span class="en">(Name)</span></label><input type="text" id="sName">
+      <label class="f">ഫോൺ <span class="en">(Phone, optional)</span></label><input type="tel" id="sPhone">
+      <div class="row" style="margin-top:10px"><button class="btn" id="sSave">💾 സേവ്</button><button class="btn out" data-act="logout">🚪 ലോഗൗട്ട്</button></div>
     </div>
-    <div class="row" style="margin-top:8px">
-      <input type="date" id="rDate"><input type="month" id="rMonth" style="display:none">
-      <select id="rPlace"></select>
-    </div>
-    <label class="chip" style="margin-top:8px"><input type="checkbox" id="rPhotos" checked> ഫോട്ടോകൾ ഉൾപ്പെടുത്തുക (Include photos)</label>
-    <div class="row" style="margin-top:10px">
-      <button class="btn" id="rPrint">🖨️ PDF / പ്രിൻ്റ്</button>
-      <button class="btn sec" id="rShare">📤 ഷെയർ (Share)</button>
-    </div>
-    <p class="hint">PDF: 🖨️ അമർത്തി "Save as PDF" തിരഞ്ഞെടുക്കുക. ഷെയർ: റിപ്പോർട്ട് ചിത്രമായി WhatsApp-ൽ അയക്കാം.</p>
-  </div>
-  <div id="reportOut"></div>
-</section>
-
-<!-- ===== SETTINGS ===== -->
-<section id="v-set" class="view">
-  <div class="card">
-    <h2>👤 എൻ്റെ വിവരം <span class="en">(My details – shown on report)</span></h2>
-    <label class="f">പേര് <span class="en">(Name)</span></label><input type="text" id="sName">
-    <label class="f">ഏരിയ / പഞ്ചായത്ത് / നഗരസഭ <span class="en">(Area / Office)</span></label><input type="text" id="sArea">
-    <button class="btn block" style="margin-top:10px" id="sSave">💾 സേവ് (Save)</button>
-  </div>
-  <div class="card">
-    <h2>📍 സ്ഥലങ്ങൾ <span class="en">(Places / Wards)</span></h2>
-    <div class="row"><input type="text" id="sPlace" placeholder="പുതിയ സ്ഥലം (New place)"><button class="btn sm" style="flex:0 0 80px" id="sPlaceAdd">➕</button></div>
-    <div class="place-list" id="sPlaces"></div>
-  </div>
-  <div class="card">
-    <h2>💾 ബാക്കപ്പ് <span class="en">(Backup)</span></h2>
-    <p class="hint">എല്ലാ വിവരങ്ങളും ഫോണിൽ മാത്രമാണ്. ഇടയ്ക്ക് ബാക്കപ്പ് എടുത്ത് സൂക്ഷിക്കുക. (All data is only on this phone. Export a backup regularly.)</p>
-    <button class="btn block" id="bExport">⬇️ ബാക്കപ്പ് എടുക്കുക (Export)</button>
-    <label class="btn out block" style="margin-top:8px">⬆️ ബാക്കപ്പ് തിരികെ ചേർക്കുക (Import)<input type="file" id="bImport" accept=".json,application/json" hidden></label>
-    <div class="hint" id="bStat" style="margin-top:8px"></div>
-  </div>
-</section>
+    <div class="card" id="placesCard" style="display:none"><h2>📍 സ്ഥലങ്ങൾ <span class="en">(Areas, wards & places)</span></h2>
+      <div class="row wrap"><input type="text" id="pArea" placeholder="ഏരിയ (Area)" list="areaList"><input type="text" id="pWard" placeholder="വാർഡ് (Ward)" list="wardList"><input type="text" id="pName" placeholder="സ്ഥലം (Place)"></div>
+      <datalist id="areaList"></datalist><datalist id="wardList"></datalist>
+      <button class="btn block" style="margin-top:8px" id="pAdd">➕ ചേർക്കുക (Add place)</button>
+      <div id="pList" style="margin-top:8px"></div></div>
+    <div class="card" id="usersCard" style="display:none"><h2>👥 അംഗങ്ങളും റോളുകളും <span class="en">(Members & roles)</span></h2>
+      <p class="hint">പുതിയ അംഗങ്ങൾ ലോഗിൻ ചെയ്താൽ ഇവിടെ "pending" ആയി വരും. റോൾ നൽകുക. (New sign-ins appear as pending – assign a role.)</p>
+      <div class="ulist" id="uList"></div></div>
+    <div class="card"><h2>ℹ️ ആപ്പ് <span class="en">(About)</span></h2><p class="hint" id="aboutTxt"></p><a class="btn out block" href="offline/">📱 ഓഫ്‌ലൈൻ പതിപ്പ് (Offline-only version)</a></div>
+  </section>
 </main>
 
-<nav class="tabs">
-  <button data-v="v-new" class="active"><span class="i">➕</span>പുതിയത്<span class="en">New</span></button>
-  <button data-v="v-hist"><span class="i">📚</span>ചരിത്രം<span class="en">History</span></button>
+<nav class="tabs" id="tabs" style="display:none">
+  <button data-v="v-dash"><span class="i">🏠</span>ഡാഷ്ബോർഡ്<span class="en">Dashboard</span></button>
+  <button data-v="v-new" id="tabNew"><span class="i">➕</span>പുതിയത്<span class="en">New</span></button>
   <button data-v="v-report"><span class="i">📄</span>റിപ്പോർട്ട്<span class="en">Report</span></button>
+  <button data-v="v-notif"><span class="i">🔔</span>അറിയിപ്പ്<span class="en">Alerts</span><span class="bdg" id="nBadge"></span></button>
   <button data-v="v-set"><span class="i">⚙️</span>ക്രമീകരണം<span class="en">Settings</span></button>
 </nav>
-
 <div class="toast" id="toast"></div>
-<div class="modal" id="modal"><div class="box"><p id="mMsg"></p><input type="text" id="mInput" style="display:none;margin-bottom:12px"><div class="row"><button class="btn out" id="mNo">റദ്ദാക്കുക</button><button class="btn" id="mYes">ശരി</button></div></div></div>
-
-<script>
-'use strict';
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const WORKS=[['sweep','🧹 തൂത്തുവാരൽ','Sweeping'],['waste','🗑️ മാലിന്യ ശേഖരണം','Waste collection'],['drain','🚰 ഓട വൃത്തിയാക്കൽ','Drain cleaning'],['grass','🌿 പുല്ല് വെട്ടൽ','Grass cutting'],['plastic','♻️ പ്ലാസ്റ്റിക് നീക്കൽ','Plastic removal'],['other','➕ മറ്റുള്ളവ','Other']];
-const WMAP=Object.fromEntries(WORKS.map(w=>[w[0],w]));
-const RATE={good:['👍 നല്ലത്','Good','r-good'],ok:['👌 തൃപ്തികരം','Satisfactory','r-ok'],bad:['⚠️ മെച്ചപ്പെടണം','Needs improvement','r-bad']};
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const pad=n=>String(n).padStart(2,'0');
-const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
-const nowTime=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())};
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-const MONTHS=['ജനുവരി','ഫെബ്രുവരി','മാർച്ച്','ഏപ്രിൽ','മേയ്','ജൂൺ','ജൂലൈ','ഓഗസ്റ്റ്','സെപ്റ്റംബർ','ഒക്ടോബർ','നവംബർ','ഡിസംബർ'];
-const fmtDate=s=>{if(!s)return'';const[y,m,d]=s.split('-');return `${+d} ${MONTHS[+m-1]} ${y}`};
-const fmtMonth=s=>{if(!s)return'';const[y,m]=s.split('-');return `${MONTHS[+m-1]} ${y}`};
-function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2400)}
-function ask(msg,withInput){return new Promise(res=>{const m=$('#modal');$('#mMsg').textContent=msg;const inp=$('#mInput');inp.style.display=withInput?'block':'none';inp.value='';m.classList.add('show');if(withInput)setTimeout(()=>inp.focus(),50);
-  const done=v=>{m.classList.remove('show');$('#mYes').onclick=$('#mNo').onclick=null;res(v)};
-  $('#mYes').onclick=()=>done(withInput?inp.value.trim():true);$('#mNo').onclick=()=>done(withInput?null:false)})}
-
-/* ---------- IndexedDB ---------- */
-let db;
-function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('cleaning-diary',1);
-  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('entries',{keyPath:'id'});const p=d.createObjectStore('photos',{keyPath:'id'});p.createIndex('entryId','entryId');d.createObjectStore('meta')};
-  r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)})}
-function tx(store,mode,fn){return new Promise((res,rej)=>{const t=db.transaction(store,mode);let out;const s=Array.isArray(store)?store.map(n=>t.objectStore(n)):t.objectStore(store);out=fn(s);t.oncomplete=()=>res(out instanceof IDBRequest?out.result:out);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
-const getAll=st=>tx(st,'readonly',s=>s.getAll());
-const getOne=(st,k)=>tx(st,'readonly',s=>s.get(k));
-const put=(st,v,k)=>tx(st,'readwrite',s=>k===undefined?s.put(v):s.put(v,k));
-const del=(st,k)=>tx(st,'readwrite',s=>s.delete(k));
-async function getMeta(k,def){const v=await getOne('meta',k);return v===undefined?def:v}
-const setMeta=(k,v)=>put('meta',v,k);
-
-/* ---------- state ---------- */
-let places=[],profile={name:'',area:''},editingId=null,curPhotos=[],gps=null,sigDirty=false,sigData=null,currentDetail=null;
-const urlCache=new Map();
-function photoURL(p){if(!urlCache.has(p.id))urlCache.set(p.id,URL.createObjectURL(p.blob));return urlCache.get(p.id)}
-
-/* ---------- tabs ---------- */
-function show(v){$$('.view').forEach(e=>e.classList.toggle('active',e.id===v));$$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));window.scrollTo(0,0);
-  if(v==='v-hist')renderHistory();if(v==='v-report')renderReport();if(v==='v-new')setTimeout(sizeSig,30)}
-$$('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
-
-/* ---------- places ---------- */
-function fillPlaceSelects(){const o=places.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
-  const cur=$('#fPlace').value;$('#fPlace').innerHTML=`<option value="">-- സ്ഥലം തിരഞ്ഞെടുക്കുക (Select place) --</option>`+o;if(cur)$('#fPlace').value=cur;
-  for(const id of ['#hPlace','#rPlace']){const c=$(id).value;$(id).innerHTML=`<option value="">എല്ലാ സ്ഥലങ്ങളും (All places)</option>`+o;$(id).value=c}
-  $('#sPlaces').innerHTML=places.map((p,i)=>`<span>${esc(p)}<button data-i="${i}" title="remove">✕</button></span>`).join('')||'<span class="hint">ഇതുവരെ ഇല്ല (none yet)</span>';
-  $$('#sPlaces button').forEach(b=>b.onclick=async()=>{if(await ask(`"${places[b.dataset.i]}" നീക്കണോ? (Remove place?)`)){places.splice(b.dataset.i,1);await setMeta('places',places);fillPlaceSelects()}})}
-async function addPlace(name){name=(name||'').trim();if(!name)return false;if(!places.includes(name)){places.push(name);places.sort((a,b)=>a.localeCompare(b));await setMeta('places',places)}fillPlaceSelects();return name}
-$('#addPlaceBtn').onclick=async()=>{const n=await ask('പുതിയ സ്ഥലം / വാർഡ് പേര് (New place name)',true);const r=await addPlace(n);if(r){$('#fPlace').value=r;toast('✅ ചേർത്തു (Added)')}};
-$('#sPlaceAdd').onclick=async()=>{if(await addPlace($('#sPlace').value)){$('#sPlace').value='';toast('✅ ചേർത്തു (Added)')}};
-
-/* ---------- work chips ---------- */
-$('#fWork').innerHTML=WORKS.map(w=>`<label class="chip"><input type="checkbox" value="${w[0]}"><span>${w[1]}<br><span class="en">${w[2]}</span></span></label>`).join('');
-$('#fWork').addEventListener('change',e=>{e.target.closest('.chip').classList.toggle('on',e.target.checked);if(e.target.value==='other')$('#fWorkOther').style.display=e.target.checked?'block':'none'});
-$('#oRating').addEventListener('change',()=>$$('#oRating label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked)));
-$('#oRating').addEventListener('click',e=>{const l=e.target.closest('label');if(!l)return;const i=l.querySelector('input');if(i.checked&&l.classList.contains('on')&&e.target.tagName!=='INPUT'){e.preventDefault();i.checked=false;l.classList.remove('on')}});
-
-/* ---------- photos ---------- */
-function compress(file,max=1280,q=0.8){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const img=new Image();
-  img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight;const s=Math.min(1,max/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
-    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
-    c.toBlob(b=>b?res(b):rej(new Error('compress failed')),'image/jpeg',q)};
-  img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('bad image'))};img.src=url})}
-$$('input[type=file][data-kind]').forEach(inp=>inp.onchange=async()=>{const files=[...inp.files];inp.value='';if(!files.length)return;toast('⏳ ഫോട്ടോ ചേർക്കുന്നു...');
-  for(const f of files){try{const blob=await compress(f);curPhotos.push({id:uid(),kind:inp.dataset.kind,blob,ts:Date.now(),isNew:true})}catch(e){toast('⚠️ ഫോട്ടോ ചേർക്കാനായില്ല')}}
-  renderFormPhotos();toast('✅ ഫോട്ടോ ചേർത്തു')});
-function renderFormPhotos(){for(const k of ['before','after']){const el=k==='before'?$('#phBefore'):$('#phAfter');
-  el.innerHTML=curPhotos.filter(p=>p.kind===k&&!p.removed).map(p=>`<div class="ph"><img src="${photoURL(p)}" alt=""><button type="button" data-id="${p.id}">×</button></div>`).join('')}
-  $$('.photos .ph button').forEach(b=>b.onclick=()=>{const p=curPhotos.find(x=>x.id===b.dataset.id);if(p)p.removed=true;renderFormPhotos()})}
-
-/* ---------- GPS ---------- */
-function renderGPS(){$('#gpsTxt').innerHTML=gps?`✅ ${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)} (±${Math.round(gps.acc)} m) · <a href="https://maps.google.com/?q=${gps.lat},${gps.lng}" target="_blank" rel="noopener">മാപ്പ് (Map)</a>`:'';$('#gpsClr').style.display=gps?'block':'none'}
-$('#gpsBtn').onclick=()=>{if(!navigator.geolocation)return toast('⚠️ GPS ലഭ്യമല്ല');$('#gpsTxt').textContent='⏳ ലൊക്കേഷൻ എടുക്കുന്നു... (Getting location)';
-  navigator.geolocation.getCurrentPosition(p=>{gps={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,ts:Date.now()};renderGPS();toast('📍 ലൊക്കേഷൻ ചേർത്തു')},
-    e=>{$('#gpsTxt').textContent='⚠️ ലൊക്കേഷൻ കിട്ടിയില്ല. GPS ഓൺ ആക്കി അനുവാദം നൽകുക. ('+e.message+')'},{enableHighAccuracy:true,timeout:20000,maximumAge:0})};
-$('#gpsClr').onclick=()=>{gps=null;renderGPS()};
-
-/* ---------- signature ---------- */
-const sig=$('#sig'),sctx=sig.getContext('2d');let drawing=false,last=null;
-function sizeSig(){const r=sig.getBoundingClientRect();if(!r.width)return;const dpr=window.devicePixelRatio||1;const W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);if(sig.width===W&&sig.height===H)return;
-  sig.width=W;sig.height=H;sctx.setTransform(dpr,0,0,dpr,0,0);sctx.lineCap='round';sctx.lineJoin='round';sctx.lineWidth=2.6;sctx.strokeStyle='#0b2f4a';if(sigData)drawSigImage(sigData)}
-function drawSigImage(src){const i=new Image();i.onload=()=>{const r=sig.getBoundingClientRect();sctx.clearRect(0,0,r.width,r.height);const s=Math.min(r.width/i.width,r.height/i.height);sctx.drawImage(i,(r.width-i.width*s)/2,(r.height-i.height*s)/2,i.width*s,i.height*s)};i.src=src;$('#sigPh').style.display='none'}
-function pos(e){const r=sig.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
-sig.addEventListener('pointerdown',e=>{e.preventDefault();sizeSig();drawing=true;last=pos(e);sig.setPointerCapture(e.pointerId);sctx.beginPath();sctx.arc(last.x,last.y,1.2,0,Math.PI*2);sctx.fillStyle='#0b2f4a';sctx.fill();sigDirty=true;$('#sigPh').style.display='none'});
-sig.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);sctx.beginPath();sctx.moveTo(last.x,last.y);sctx.lineTo(p.x,p.y);sctx.stroke();last=p});
-['pointerup','pointercancel','pointerleave'].forEach(ev=>sig.addEventListener(ev,()=>{drawing=false}));
-function clearSig(){const r=sig.getBoundingClientRect();sctx.clearRect(0,0,r.width||sig.width,r.height||sig.height);sigDirty=false;sigData=null;$('#sigPh').style.display='flex'}
-$('#sigClr').onclick=clearSig;
-window.addEventListener('resize',()=>{if(sigDirty){sigData=sig.toDataURL('image/png');sigDirty=false}sizeSig()});
-
-/* ---------- form ---------- */
-function resetForm(){editingId=null;curPhotos=[];gps=null;sigData=null;
-  $('#fDate').value=today();$('#fTime').value=nowTime();$('#fPlace').value=places.length===1?places[0]:'';
-  $$('#fWork input').forEach(i=>{i.checked=false;i.closest('.chip').classList.remove('on')});$('#fWorkOther').value='';$('#fWorkOther').style.display='none';
-  ['#fWorkers','#fWaste','#fNotes','#oName','#oDesig','#oRemark'].forEach(s=>$(s).value='');$('#fWasteUnit').selectedIndex=0;
-  $$('#oRating input').forEach(i=>i.checked=false);$$('#oRating label').forEach(l=>l.classList.remove('on'));
-  clearSig();renderFormPhotos();renderGPS();$('#formTitle').innerHTML='📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span>';$('#cancelEdit').style.display='none'}
-async function loadIntoForm(e){resetForm();editingId=e.id;
-  $('#fDate').value=e.date;$('#fTime').value=e.time||'';if(e.place&&!places.includes(e.place))await addPlace(e.place);$('#fPlace').value=e.place||'';
-  $$('#fWork input').forEach(i=>{i.checked=(e.works||[]).includes(i.value);i.closest('.chip').classList.toggle('on',i.checked)});
-  $('#fWorkOther').value=e.workOther||'';$('#fWorkOther').style.display=(e.works||[]).includes('other')?'block':'none';
-  $('#fWorkers').value=e.workers??'';$('#fWaste').value=e.waste??'';if(e.wasteUnit)$('#fWasteUnit').value=e.wasteUnit;$('#fNotes').value=e.notes||'';
-  const o=e.officer||{};$('#oName').value=o.name||'';$('#oDesig').value=o.desig||'';$('#oRemark').value=o.remark||'';
-  $$('#oRating input').forEach(i=>{i.checked=i.value===o.rating;i.closest('label').classList.toggle('on',i.checked)});
-  gps=e.gps||null;renderGPS();
-  curPhotos=(await photosFor(e.id)).map(p=>({...p,isNew:false}));renderFormPhotos();
-  show('v-new');sigData=o.signature||null;sizeSig();if(sigData)drawSigImage(sigData);
-  $('#formTitle').innerHTML='✏️ തിരുത്തുന്നു <span class="en">(Editing entry)</span>';$('#cancelEdit').style.display='inline-flex'}
-$('#cancelEdit').onclick=()=>{resetForm();show('v-hist')};
-function photosFor(entryId){return tx('photos','readonly',s=>s.index('entryId').getAll(entryId)).then(a=>a.sort((x,y)=>x.ts-y.ts))}
-$('#saveBtn').onclick=async()=>{
-  const works=$$('#fWork input:checked').map(i=>i.value);
-  if(!$('#fPlace').value){toast('⚠️ സ്ഥലം തിരഞ്ഞെടുക്കുക (Select a place)');$('#fPlace').focus();return}
-  if(!works.length&&!$('#fNotes').value.trim()){toast('⚠️ ചെയ്ത ജോലി തിരഞ്ഞെടുക്കുക (Select work done)');return}
-  let signature=sigData;if(sigDirty)signature=sig.toDataURL('image/png');
-  const old=editingId?await getOne('entries',editingId):null;
-  const e={id:editingId||uid(),date:$('#fDate').value||today(),time:$('#fTime').value,place:$('#fPlace').value,works,workOther:$('#fWorkOther').value.trim(),
-    workers:$('#fWorkers').value===''?null:+$('#fWorkers').value,waste:$('#fWaste').value===''?null:+$('#fWaste').value,wasteUnit:$('#fWasteUnit').value,notes:$('#fNotes').value.trim(),gps,
-    officer:{name:$('#oName').value.trim(),desig:$('#oDesig').value.trim(),remark:$('#oRemark').value.trim(),rating:($('#oRating input:checked')||{}).value||'',signature:signature||null},
-    created:old?old.created:Date.now(),updated:Date.now()};
-  try{await tx(['entries','photos'],'readwrite',([es,ps])=>{es.put(e);for(const p of curPhotos){if(p.removed){if(!p.isNew)ps.delete(p.id)}else if(p.isNew)ps.put({id:p.id,entryId:e.id,kind:p.kind,blob:p.blob,ts:p.ts})}});
-    if(e.officer.name){const ofs=await getMeta('officers',[]);if(!ofs.includes(e.officer.name)){ofs.push(e.officer.name);await setMeta('officers',ofs);fillOfficers(ofs)}}
-    toast(editingId?'✅ മാറ്റങ്ങൾ സേവ് ചെയ്തു (Updated)':'✅ സേവ് ചെയ്തു (Saved)');const wasEdit=!!editingId;resetForm();if(wasEdit){openDetail(e.id)}else show('v-hist')}
-  catch(err){console.error(err);toast('⚠️ സേവ് ചെയ്യാനായില്ല: '+err.message)}};
-function fillOfficers(ofs){$('#officerList').innerHTML=ofs.map(o=>`<option value="${esc(o)}">`).join('')}
-
-/* ---------- history ---------- */
-function worksText(e,en){return (e.works||[]).map(w=>w==='other'&&e.workOther?e.workOther:(WMAP[w]?(en?WMAP[w][2]:WMAP[w][1]):w)).join(', ')}
-async function renderHistory(){const all=await getAll('entries');const q=$('#hSearch').value.trim().toLowerCase(),pl=$('#hPlace').value,mo=$('#hMonth').value;
-  let list=all.filter(e=>(!pl||e.place===pl)&&(!mo||e.date.startsWith(mo))&&(!q||[e.place,e.notes,worksText(e),worksText(e,1),e.workOther,e.officer?.name,e.officer?.remark,e.date,fmtDate(e.date)].join(' ').toLowerCase().includes(q)));
-  list.sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
-  $('#hCount').textContent=`${list.length} എണ്ണം (entries)`;
-  if(!list.length){$('#hList').innerHTML=`<div class="empty"><div class="big">📭</div>${all.length?'ഒന്നും കണ്ടെത്തിയില്ല (Nothing found)':'ഇതുവരെ ജോലികൾ ചേർത്തിട്ടില്ല.<br>➕ പുതിയത് അമർത്തി തുടങ്ങുക.<br><span class="en">No entries yet</span>'}</div>`;return}
-  let html='',lastD='';
-  for(const e of list){if(e.date!==lastD){html+=`<div class="dayhead">📅 ${fmtDate(e.date)}</div>`;lastD=e.date}
-    const ph=(await photosFor(e.id));const th=ph.find(p=>p.kind==='after')||ph[0];const r=RATE[e.officer?.rating];
-    html+=`<div class="card entry" data-id="${e.id}">${th?`<img class="thumb" src="${photoURL(th)}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.place)} <span class="en">${esc(e.time||'')}</span></div><div class="s">${esc(worksText(e))||esc(e.notes)}</div><div>${ph.length?`<span class="badge">📷 ${ph.length}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:''}${e.officer?.signature?'<span class="badge">✍️</span>':''}${e.gps?'<span class="badge">📍GPS</span>':''}</div></div></div>`}
-  $('#hList').innerHTML=html;$$('#hList .entry').forEach(el=>el.onclick=()=>openDetail(el.dataset.id))}
-['#hSearch','#hPlace','#hMonth'].forEach(s=>$(s).addEventListener('input',renderHistory));
-
-/* ---------- detail ---------- */
-async function openDetail(id){const e=await getOne('entries',id);if(!e)return show('v-hist');currentDetail=e;const ph=await photosFor(id);
-  $('#dOut').innerHTML=entryHTML(e,ph,true);show('v-detail')}
-$('#dBack').onclick=()=>show('v-hist');
-$('#dEdit').onclick=()=>currentDetail&&loadIntoForm(currentDetail);
-$('#dDel').onclick=async()=>{if(!currentDetail)return;if(!await ask(`ഈ എൻട്രി നീക്കം ചെയ്യണോ? (Delete this entry?)\n📍 ${currentDetail.place} – ${fmtDate(currentDetail.date)}`))return;
-  const ph=await photosFor(currentDetail.id);await tx(['entries','photos'],'readwrite',([es,ps])=>{es.delete(currentDetail.id);ph.forEach(p=>ps.delete(p.id))});toast('🗑️ നീക്കം ചെയ്തു (Deleted)');currentDetail=null;show('v-hist')};
-$('#dReport').onclick=()=>{if(!currentDetail)return;setRType('day');$('#rDate').value=currentDetail.date;$('#rPlace').value='';show('v-report')};
-
-function entryHTML(e,ph,withPhotos){const o=e.officer||{},r=RATE[o.rating];
-  const rows=[['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',e.place],['🧹 ജോലി (Work)',worksText(e)],['👷 തൊഴിലാളികൾ (Workers)',e.workers],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes],
-    ['🛰️ GPS',e.gps?`<a href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank" rel="noopener">${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}</a>`:'',true]].filter(x=>x[1]!==''&&x[1]!=null&&x[1]!==undefined);
-  const grid=k=>{const a=ph.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}</div><div class="rp-ph">${a.map(p=>`<img src="${photoURL(p)}" alt="">`).join('')}</div>`:''};
-  const hasO=o.name||o.remark||o.rating||o.signature;
-  return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.place)}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${x[2]?x[1]:esc(x[1])}</td></tr>`).join('')}</table>
-  ${withPhotos?grid('before')+grid('after'):''}
-  ${hasO?`<div class="rp-sub">👮 ഉദ്യോഗസ്ഥൻ്റെ അഭിപ്രായം (Officer remarks)</div><table>${o.name?`<tr><td>പേര് (Name)</td><td>${esc(o.name)}${o.desig?', '+esc(o.desig):''}</td></tr>`:''}${r?`<tr><td>വിലയിരുത്തൽ (Rating)</td><td><span class="badge ${r[2]}">${r[0]} (${r[1]})</span></td></tr>`:''}${o.remark?`<tr><td>അഭിപ്രായം (Remark)</td><td>${esc(o.remark)}</td></tr>`:''}${o.signature?`<tr><td>ഒപ്പ് (Signature)</td><td><img class="rp-sig" src="${o.signature}" alt="signature"></td></tr>`:''}</table>`:''}</div>`}
-
-/* ---------- report ---------- */
-function setRType(t){$$('#rType input').forEach(i=>{i.checked=i.value===t;i.closest('label').classList.toggle('on',i.checked)});$('#rDate').style.display=t==='day'?'block':'none';$('#rMonth').style.display=t==='month'?'block':'none'}
-$('#rType').addEventListener('change',()=>{setRType($('#rType input:checked').value);renderReport()});
-['#rDate','#rMonth','#rPlace','#rPhotos'].forEach(s=>$(s).addEventListener('change',renderReport));
-async function reportData(){const t=$('#rType input:checked').value,d=$('#rDate').value,m=$('#rMonth').value,pl=$('#rPlace').value;
-  const all=await getAll('entries');const list=all.filter(e=>(t==='day'?e.date===d:e.date.startsWith(m))&&(!pl||e.place===pl)).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
-  const title=t==='day'?`ദിവസ റിപ്പോർട്ട് (Daily Report) – ${fmtDate(d)}`:`മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}`;return{t,d,m,pl,list,title}}
-async function renderReport(){const R=await reportData();const withPh=$('#rPhotos').checked;
-  let html=`<div class="rp-h"><h2>🧹 ${esc(R.title)}</h2>${profile.name?`<div>${esc(profile.name)}</div>`:''}${profile.area?`<div class="en">${esc(profile.area)}</div>`:''}${R.pl?`<div>📍 ${esc(R.pl)}</div>`:''}</div>`;
-  if(!R.list.length){$('#reportOut').innerHTML=html+`<div class="empty"><div class="big">📭</div>ഈ കാലയളവിൽ എൻട്രികൾ ഇല്ല<br><span class="en">No entries for this period</span></div>`;return}
-  const days=new Set(R.list.map(e=>e.date)).size,plc=new Set(R.list.map(e=>e.place)).size,wk=R.list.reduce((s,e)=>s+(e.workers||0),0);
-  const wcount={};R.list.forEach(e=>(e.works||[]).forEach(w=>wcount[w]=(wcount[w]||0)+1));
-  const waste={};R.list.forEach(e=>{if(e.waste!=null){const u=e.wasteUnit||'kg';waste[u]=(waste[u]||0)+e.waste}});
-  html+=`<div class="rp-sum"><b>ആകെ (Summary):</b> ${R.list.length} എൻട്രി · ${days} ദിവസം (days) · ${plc} സ്ഥലം (places)${wk?` · ${wk} തൊഴിൽ (worker-days)`:''}${Object.keys(waste).length?' · 🗑️ '+Object.entries(waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}<br>${Object.entries(wcount).map(([w,c])=>`<span class="badge">${WMAP[w]?WMAP[w][1]:w} × ${c}</span>`).join('')}</div>`;
-  for(const e of R.list)html+=entryHTML(e,withPh?await photosFor(e.id):[],withPh);
-  html+=`<p class="hint" style="text-align:center">തയ്യാറാക്കിയത്: ${new Date().toLocaleString('en-IN')} · ശുചീകരണ ഡയറി</p>`;
-  $('#reportOut').innerHTML=html}
-$('#rPrint').onclick=async()=>{await renderReport();await waitImgs($('#reportOut'));window.print()};
-function waitImgs(el){return Promise.all([...el.querySelectorAll('img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})))}
-
-/* share: render report as a tall JPEG image */
-function loadImg(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src})}
-function wrap(ctx,text,maxW){const out=[];for(const para of String(text).split('\n')){let line='';for(const w of para.split(' ')){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w}else line=t}out.push(line)}return out}
-async function reportImage(){const R=await reportData();if(!R.list.length)return null;const withPh=$('#rPhotos').checked;const W=1080,P=40,F='"Noto Sans Malayalam","Noto Sans",sans-serif';
-  const ops=[];let y=0;const c0=document.createElement('canvas').getContext('2d');
-  const text=(t,size,color,bold,indent=0)=>{c0.font=`${bold?'700 ':''}${size}px ${F}`;for(const l of wrap(c0,t,W-2*P-indent)){y+=size*1.45;const yy=y;ops.push(x=>{x.font=`${bold?'700 ':''}${size}px ${F}`;x.fillStyle=color;x.fillText(l,P+indent,yy)})}};
-  y+=20;ops.push(x=>{x.fillStyle='#0f766e';x.fillRect(0,0,W,10)});
-  text('🧹 '+R.title,40,'#0f766e',true);if(profile.name)text(profile.name+(profile.area?' · '+profile.area:''),28,'#134e4a');if(R.pl)text('📍 '+R.pl,28,'#134e4a');y+=14;
-  for(const e of R.list){const top=y;y+=10;const o=e.officer||{},r=RATE[o.rating];
-    text(`📅 ${fmtDate(e.date)} ${e.time||''} · 📍 ${e.place}`,32,'#0f766e',true);
-    if((e.works||[]).length)text('🧹 '+worksText(e)+' ('+worksText(e,1)+')',27,'#134e4a');
-    const meta=[e.workers!=null?`👷 ${e.workers} തൊഴിലാളികൾ`:'',e.waste!=null?`🗑️ ${e.waste} ${e.wasteUnit||''}`:'',e.gps?`🛰️ ${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}`:''].filter(Boolean).join('   ');if(meta)text(meta,26,'#5b7f7b');
-    if(e.notes)text('📝 '+e.notes,26,'#134e4a');
-    if(withPh){const ph=await photosFor(e.id);for(const k of ['before','after']){const a=ph.filter(p=>p.kind===k);if(!a.length)continue;text(k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)',27,'#0f766e',true);y+=8;
-      const cols=a.length>=3?3:2,gap=12,cw=(W-2*P-gap*(cols-1))/cols,ch=cw*0.75;
-      for(let i=0;i<a.length;i++){const im=await loadImg(photoURL(a[i]));const cx=P+(i%cols)*(cw+gap),cy=y+Math.floor(i/cols)*(ch+gap);if(im)ops.push(x=>{const s=Math.max(cw/im.width,ch/im.height),sw=cw/s,sh=ch/s;x.drawImage(im,(im.width-sw)/2,(im.height-sh)/2,sw,sh,cx,cy,cw,ch)})}
-      y+=Math.ceil(a.length/cols)*(ch+gap)}}
-    if(o.name||o.remark||r||o.signature){text('👮 ഉദ്യോഗസ്ഥൻ (Officer): '+[o.name,o.desig].filter(Boolean).join(', '),27,'#0f766e',true);if(r)text(`${r[0]} (${r[1]})`,27,r[2]==='r-good'?'#166534':r[2]==='r-ok'?'#854d0e':'#991b1b',true);if(o.remark)text('“'+o.remark+'”',27,'#134e4a');
-      if(o.signature){const im=await loadImg(o.signature);if(im){const h=110,w=Math.min(420,im.width*h/im.height),yy=y+10;ops.push(x=>{x.drawImage(im,P,yy,w,h);x.strokeStyle='#999';x.beginPath();x.moveTo(P,yy+h+4);x.lineTo(P+w,yy+h+4);x.stroke()});y+=h+24}}}
-    y+=18;const bt=top,bh=y-top;ops.unshift(x=>{x.strokeStyle='#99d5cc';x.lineWidth=2;x.strokeRect(P/2,bt,W-P,bh)});y+=16}
-  text('തയ്യാറാക്കിയത് (Generated): '+new Date().toLocaleString('en-IN'),22,'#5b7f7b');y+=30;
-  const H=Math.min(Math.ceil(y),30000);const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.textBaseline='alphabetic';ops.forEach(f=>f(x));
-  return new Promise(r=>c.toBlob(b=>r(b),'image/jpeg',0.85))}
-$('#rShare').onclick=async()=>{toast('⏳ തയ്യാറാക്കുന്നു...');const R=await reportData();if(!R.list.length)return toast('📭 എൻട്രികൾ ഇല്ല');
-  const blob=await reportImage();const name=`cleaning-report-${R.t==='day'?R.d:R.m}.jpg`;const file=new File([blob],name,{type:'image/jpeg'});
-  const summary=`🧹 ${R.title}\n`+R.list.map(e=>`• ${fmtDate(e.date)} ${e.time||''} – ${e.place}: ${worksText(e)}${e.officer?.rating?' – '+RATE[e.officer.rating][0]:''}`).join('\n');
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:R.title,text:summary});return}
-    if(navigator.share){await navigator.share({title:R.title,text:summary})}else throw new Error('no share')}
-  catch(err){if(err&&err.name==='AbortError')return;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();toast('⬇️ ചിത്രം ഡൗൺലോഡ് ചെയ്തു (Image downloaded)')}};
-
-/* ---------- settings / backup ---------- */
-$('#sSave').onclick=async()=>{profile={name:$('#sName').value.trim(),area:$('#sArea').value.trim()};await setMeta('profile',profile);toast('✅ സേവ് ചെയ്തു (Saved)')};
-const blobToDataURL=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
-const dataURLToBlob=async d=>(await fetch(d)).blob();
-$('#bExport').onclick=async()=>{toast('⏳ ബാക്കപ്പ് തയ്യാറാക്കുന്നു...');const entries=await getAll('entries'),photos=await getAll('photos');
-  const ph=[];for(const p of photos)ph.push({id:p.id,entryId:p.entryId,kind:p.kind,ts:p.ts,data:await blobToDataURL(p.blob)});
-  const data={app:'cleaning-diary',version:1,exported:new Date().toISOString(),profile,places,officers:await getMeta('officers',[]),entries,photos:ph};
-  const blob=new Blob([JSON.stringify(data)],{type:'application/json'});const name=`cleaning-diary-backup-${today()}.json`;
-  const file=new File([blob],name,{type:'application/json'});
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})&&await ask('ബാക്കപ്പ് ഷെയർ ചെയ്യണോ (ഉദാ: Google Drive)? "റദ്ദാക്കുക" = ഡൗൺലോഡ് ചെയ്യുക.\n(Share backup? Cancel = download)')){await navigator.share({files:[file],title:name});return}}catch(e){if(e.name==='AbortError')return}
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
-  $('#bStat').textContent=`✅ ${entries.length} എൻട്രി, ${photos.length} ഫോട്ടോ – ${name}`;toast('⬇️ ബാക്കപ്പ് ഡൗൺലോഡ് ചെയ്തു')};
-$('#bImport').onchange=async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;
-  try{const data=JSON.parse(await f.text());if(data.app!=='cleaning-diary'||!Array.isArray(data.entries))throw new Error('ശരിയായ ബാക്കപ്പ് ഫയൽ അല്ല (not a valid backup)');
-    if(!await ask(`${data.entries.length} എൻട്രികളും ${(data.photos||[]).length} ഫോട്ടോകളും ചേർക്കണോ? ഒരേ എൻട്രികൾ പുതുക്കും. (Import & merge?)`))return;
-    toast('⏳ ചേർക്കുന്നു...');const phs=[];for(const p of data.photos||[])phs.push({id:p.id,entryId:p.entryId,kind:p.kind,ts:p.ts,blob:await dataURLToBlob(p.data)});
-    await tx(['entries','photos'],'readwrite',([es,ps])=>{data.entries.forEach(e=>es.put(e));phs.forEach(p=>ps.put(p))});
-    for(const p of data.places||[])if(!places.includes(p))places.push(p);places.sort((a,b)=>a.localeCompare(b));await setMeta('places',places);
-    const ofs=await getMeta('officers',[]);for(const o of data.officers||[])if(!ofs.includes(o))ofs.push(o);await setMeta('officers',ofs);fillOfficers(ofs);
-    if(data.profile&&!profile.name){profile=data.profile;await setMeta('profile',profile);$('#sName').value=profile.name||'';$('#sArea').value=profile.area||''}
-    fillPlaceSelects();$('#bStat').textContent=`✅ ${data.entries.length} എൻട്രി ചേർത്തു (imported)`;toast('✅ ബാക്കപ്പ് ചേർത്തു (Imported)')}
-  catch(err){console.error(err);toast('⚠️ '+err.message)}};
-
-/* ---------- init ---------- */
-(async function init(){try{await openDB()}catch(e){document.querySelector('main').innerHTML='<div class="card">⚠️ ഈ ബ്രൗസറിൽ സ്റ്റോറേജ് ലഭ്യമല്ല. Chrome-ൽ തുറക്കുക. (Storage not available – please open in Chrome)</div>';return}
-  places=await getMeta('places',[]);profile=await getMeta('profile',{name:'',area:''});fillOfficers(await getMeta('officers',[]));
-  $('#sName').value=profile.name||'';$('#sArea').value=profile.area||'';
-  fillPlaceSelects();resetForm();$('#rDate').value=today();$('#rMonth').value=today().slice(0,7);setRType('day');setTimeout(sizeSig,50);
-  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
-  if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
-})();
-</script>
+<div class="modal" id="modal"><div class="box"><p id="mMsg"></p><div class="row"><button class="btn out" id="mNo">റദ്ദാക്കുക</button><button class="btn" id="mYes">ശരി</button></div></div></div>
+<script src="firebase-config.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
