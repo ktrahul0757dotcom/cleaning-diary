@@ -181,7 +181,7 @@ function typeReportHTML(list,fbList){const m={};const add=k=>m[k]=m[k]||{n:0,pla
   list.forEach(e=>{const k=placeTypeOf(e);add(k);m[k].n++;m[k].places.add(e.placeId||e.placeName);if(e.score!=null)m[k].score.push(e.score)});
   fbList.forEach(f=>{const k=placeTypeOf(f);add(k);m[k].fb++;m[k].fbSum+=f.rating});
   const ks=allTypes().map(t=>t.id).filter(k=>m[k]).concat(Object.keys(m).filter(k=>!typeById(k)));if(!ks.length)return '';
-  return `<div class="rp-sub" style="font-size:15px">🏷️ തരം തിരിച്ചുള്ള സംഗ്രഹം (Summary by type)</div><table class="rp-tbl"><tr><th>തരം (Type)</th><th>ജോലി (Work)</th><th>സ്ഥലങ്ങൾ (Places)</th><th>സ്കോർ (Score)</th><th>നിവാസി ★ (Feedback avg)</th></tr>`+
+  return `<div class="rp-sub" style="font-size:15px">🏷️ തരം തിരിച്ചുള്ള സംഗ്രഹം (Summary by type)</div><table class="rp-tbl"><tr><th>തരം (Type)</th><th>ജോലി (Work)</th><th>സ്ഥലങ്ങൾ (Places)</th><th>സ്കോർ (Score)</th><th>സ്ഥലവാസി ★ (Feedback avg)</th></tr>`+
     ks.map(k=>{const o=m[k],t=typeInfo(k);return `<tr><td>${t.icon} ${esc(t.ml)}${t.en?' ('+esc(t.en)+')':''}</td><td>${o.n}</td><td>${o.places.size}</td><td>${o.score.length?Math.round(o.score.reduce((a,b)=>a+b,0)/o.score.length):'–'}</td><td>${o.fb?(o.fbSum/o.fb).toFixed(1)+' ('+o.fb+')':'–'}</td></tr>`}).join('')+'</table>'}
 function renderUsers(){if(!can.admin())return;const order={pending:0,admin:1,supervisor:2,officer:3,worker:4,disabled:5};
   $('#uList').innerHTML=users.slice().sort((a,b)=>(order[a.role]??9)-(order[b.role]??9)||String(a.name).localeCompare(b.name)).map(u=>`<div class="u">${u.photoURL?`<img src="${esc(u.photoURL)}" referrerpolicy="no-referrer" alt="">`:hic('user')}<div class="nm"><b>${esc(u.name)}</b><br><span class="en">${esc(u.email)}</span></div>
@@ -326,7 +326,7 @@ function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class=
   <tr><td>📋 നില (Status)</td><td>${proof}${e.remarkCount?` · 💬 ${e.remarkCount}`:''}</td></tr>${e.notes?`<tr><td>📝 കുറിപ്പ് (Notes)</td><td>${esc(e.notes)}</td></tr>`:''}</table>
   ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c}</figcaption></figure>`}).join('')}</div>`:''}
   ${remarksHTML(rs)}</div>`}
-function dayFbHTML(list){if(!list.length)return '<p class="hint">ഈ ദിവസം നിവാസികളുടെ അഭിപ്രായം ഇല്ല (No resident feedback this day)</p>';
+function dayFbHTML(list){if(!list.length)return '<p class="hint">ഈ ദിവസം സ്ഥലവാസികളുടെ അഭിപ്രായം ഇല്ല (No resident feedback this day)</p>';
   return list.map(f=>`<div class="dr-fb">${starsHTML(f.rating)} <b>${f.rating}/5</b> · <b>${esc(f.placeName||'')}</b>${f.ward?' · '+esc(f.ward):''} <span class="hint">${fbDate(f)?fbDate(f).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):''}${f.name?' · '+esc(f.name):''}</span>
     ${f.comment?`<div>💬 ${esc(f.comment)}</div>`:''}${f.suggestion?`<div>💡 <b>നിർദ്ദേശം (Suggestion):</b> ${esc(f.suggestion)}</div>`:''}${f.photo?`<img class="fbph" src="${f.photo}" alt="">`:''}</div>`).join('')}
 async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($('#rDate').value=today());
@@ -342,7 +342,7 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   const filt=[a,w,pn,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)';
   let h=REPORT_HEAD(`📅 ദിവസ റിപ്പോർട്ട് (Daily Report) – ${fmtDate(d)}`)+`<div>${filt}</div></div>`;
   h+=`<div class="rp-sum"><div class="dr-kpi"><div><b>${list.length}</b>ജോലി<br>(Entries)</div><div><b>${k?doneN:doneN+'/'+pls.length}</b>സ്ഥലം പൂർത്തി<br>(Places done)</div><div><b style="color:${scoreColor(st.avg)}">${st.avg??'–'}</b>സ്കോർ<br>(Avg score)</div>
-    <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>നിവാസി അഭിപ്രായം<br>(Resident fb)</div></div>
+    <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>സ്ഥലവാസി അഭിപ്രായം<br>(Resident fb)</div></div>
     👥 ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos} · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}%${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}</div>`;
   if(!k)h+=`<div class="rp-sub" style="font-size:15px">⏳ ബാക്കി സ്ഥലങ്ങൾ (Not done today): ${pending.length}</div>`+(pending.length?`<ul style="font-size:13px;margin:2px 0 10px;columns:2">${pending.map(p=>`<li class="pend">${typeInfo(placeTypeOf(p),p).icon} ${esc(p.name)}${p.ward?' – '+esc(p.ward):''}</li>`).join('')}</ul>`:'<p class="hint">✅ എല്ലാ സ്ഥലവും പൂർത്തിയായി (All places done)</p>');
   h+=typeReportHTML(list,fbList);
@@ -350,11 +350,11 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
     const parts=await Promise.all(list.map(async e=>{const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);
       return dailyEntryHTML(e,ps?ps.docs.map(x=>x.data()):[],rs.docs.map(x=>x.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}));if(tok!==reportToken)return;h+=parts.join('')}
   else h+=emptyHTML('inbox','ഈ ദിവസം ജോലി എൻട്രികൾ ഇല്ല','No work entries this day');
-  if(can.staff())h+=`<div class="rp-sub" style="font-size:15px">🗣️ നിവാസികളുടെ അഭിപ്രായം / നിർദ്ദേശങ്ങൾ (Resident feedback & suggestions)</div>`+dayFbHTML(fbList);
+  if(can.staff())h+=`<div class="rp-sub" style="font-size:15px">🗣️ സ്ഥലവാസികളുടെ അഭിപ്രായം / നിർദ്ദേശങ്ങൾ (Resident feedback & suggestions)</div>`+dayFbHTML(fbList);
   h+=CREDIT();$('#reportOut').innerHTML=h;
   const L=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,...(jdText?[`🏛️ ${jdLines().join(' · ')}`]:[]),`📅 ദിവസ റിപ്പോർട്ട് (Daily report): ${fmtDate(d)}`,filt.replace(/<[^>]+>/g,'')==='എല്ലാം (All)'?'':`🔎 ${[a,w,pn,wk,rty?typeInfo(rty).ml:''].filter(Boolean).join(' · ')}`,
     `✅ സ്ഥലം പൂർത്തി (Places done): ${k?doneN:doneN+'/'+pls.length}`,`🧹 ജോലി (Entries): ${list.length}`,`⭐ സ്കോർ (Avg score): ${st.avg??'–'}`,`💬 അഭിപ്രായം (Remarks): ${rcount} · ബാക്കി (awaiting) ${st.awaiting}`,
-    can.staff()?`🗣️ നിവാസി അഭിപ്രായം (Resident feedback): ${fbList.length}${fbAvg!=null?' · ശരാശരി '+fbAvg.toFixed(1)+'★':''}`:'',
+    can.staff()?`🗣️ സ്ഥലവാസി അഭിപ്രായം (Resident feedback): ${fbList.length}${fbAvg!=null?' · ശരാശരി '+fbAvg.toFixed(1)+'★':''}`:'',
     !k&&pending.length?`⏳ ബാക്കി (Not done): ${pending.map(p=>p.name).join(', ')}`:''].filter(Boolean);
   const E=list.map(e=>`• ${e.time||''} ${e.placeName} – ${e.workerName||''} – ${worksText(e)}${e.score!=null?' – സ്കോർ '+e.score:''}`);
   shareText=L.join('\n')+(E.length?'\n\n'+E.join('\n'):'')+'\n\n— ഭദ്രം ഈ ഭൂമി app'}
@@ -377,7 +377,7 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   for(const e of list){const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);if(tok!==reportToken)return;
     h+=entryHTML(e,ps?ps.docs.map(d=>d.data()).sort((x,z)=>x.ts-z.ts):[],rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}
   h+=`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')} · ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)<br>ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ) · Developed by Rahul K T with Grok</p>`;$('#reportOut').innerHTML=h;
-  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ നിവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'','— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
+  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ സ്ഥലവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'','— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
 async function ensureShare(){if(!shareText||!$('#reportOut .rp-h'))await makeReport();return shareText||$('#reportOut').innerText.slice(0,1500)}
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(_){toast('⚠️ copy failed')}ta.remove()}}
 $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){try{await navigator.share({title:'ഭദ്രം ഈ ഭൂമി – റിപ്പോർട്ട്',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)};
@@ -396,9 +396,9 @@ function fbAgg(list){const m={};list.forEach(f=>{const k=f.placeId;const o=m[k]=
   return Object.values(m).map(o=>({...o,avg:o.sum/o.n})).sort((a,b)=>a.avg-b.avg)}
 function fbDashHTML(){if(!can.staff())return '';const f=$('#dFrom').value,t=$('#dTo').value,a=$('#dArea').value,w=$('#dWard').value;
   const list=feedback.filter(x=>x.status!=='hidden'&&(!a||x.area===a)&&(!w||x.ward===w)).filter(x=>{const d=fbDate(x);if(!d)return true;const s=ymd(d);return s>=f&&s<=t});
-  if(!list.length)return `<div class="rp-sub" style="margin-top:0">${ico('msg','sm')}നിവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span></div><div class="hint">ഈ കാലയളവിൽ ഇല്ല (none in this period)</div>`;
+  if(!list.length)return `<div class="rp-sub" style="margin-top:0">${ico('msg','sm')}സ്ഥലവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span></div><div class="hint">ഈ കാലയളവിൽ ഇല്ല (none in this period)</div>`;
   const avg=list.reduce((s,x)=>s+x.rating,0)/list.length;
-  return `<div class="rp-sub" style="margin-top:0">${ico('msg','sm')}നിവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span> ${starsHTML(avg)} <b>${avg.toFixed(1)}/5</b> <span class="en">(${list.length})</span></div>`+
+  return `<div class="rp-sub" style="margin-top:0">${ico('msg','sm')}സ്ഥലവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span> ${starsHTML(avg)} <b>${avg.toFixed(1)}/5</b> <span class="en">(${list.length})</span></div>`+
     fbAgg(list).map(o=>`<div class="wardrow"><div>${esc(o.name)} <span class="en">(${o.n})</span></div><div class="bar"><i style="width:${o.avg*20}%;background:${scoreColor(o.avg*20)}"></i></div><b style="color:${scoreColor(o.avg*20)}">${o.avg.toFixed(1)}★</b></div>`).join('')}
 ['#fbPlace','#fbShow'].forEach(s=>$(s).addEventListener('change',renderFeedback));
 function renderFeedback(){if(!can.staff())return;const sel=$('#fbPlace'),cur=sel.value;
@@ -423,7 +423,7 @@ function renderFeedback(){if(!can.staff())return;const sel=$('#fbPlace'),cur=sel
 async function monthFeedback(m,last,a,w,ty){const from=new Date(m+'-01T00:00:00'),to=new Date(last+'T23:59:59.999');
   try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));return s.docs.map(d=>d.data()).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||placeTypeOf(f)===ty))}catch(e){console.error(e);return []}}
 function fbReportHTML(list){
-  const head=`<div class="rp-sub" style="font-size:15px">🗣️ നിവാസികളുടെ അഭിപ്രായം (Resident feedback summary)</div>`;
+  const head=`<div class="rp-sub" style="font-size:15px">🗣️ സ്ഥലവാസികളുടെ അഭിപ്രായം (Resident feedback summary)</div>`;
   if(!list.length)return head+'<p class="hint">ഈ മാസം അഭിപ്രായം ഇല്ല (No resident feedback this month)</p>';
   const avg=list.reduce((s,f)=>s+f.rating,0)/list.length;
   return head+`<table class="rp-tbl"><tr><th>സ്ഥലം (Place)</th><th>അഭിപ്രായം (Feedback)</th><th>ശരാശരി (Avg ★)</th><th>നിർദ്ദേശം (Suggestions)</th></tr>${fbAgg(list).map(o=>`<tr><td>${esc(o.name)}${o.ward?' – '+esc(o.ward):''}</td><td>${o.n}</td><td>${o.avg.toFixed(1)}</td><td>${o.sug}</td></tr>`).join('')}
@@ -458,7 +458,7 @@ function drawQR(p){const url=fbLink(p.id);const q=window.qrcode(0,'M');q.addData
   x.font=`600 42px ${F}`;x.fillStyle='rgba(255,255,255,.95)';x.fillText('– ദൈനംദിന ശുചീകരണം',258,198,W-420);
   x.font=`500 28px ${F}`;x.fillStyle='rgba(255,255,255,.8)';x.fillText('Bhadram Ee Bhoomi – Daily Cleaning',258,244,W-420);
   // pill
-  x.font=`700 26px ${F}`;const pill='നിവാസികളുടെ അഭിപ്രായം · Resident feedback';const pw=x.measureText(pill).width+56;x.fillStyle='rgba(255,255,255,.16)';rr(x,72,282,pw,52,26);x.fill();x.fillStyle='#fff';x.fillText(pill,100,317);
+  x.font=`700 26px ${F}`;const pill='സ്ഥലവാസികളുടെ അഭിപ്രായം · Resident feedback';const pw=x.measureText(pill).width+56;x.fillStyle='rgba(255,255,255,.16)';rr(x,72,282,pw,52,26);x.fill();x.fillStyle='#fff';x.fillText(pill,100,317);
   // place card
   let y=372;const cx0=60,cw=W-120;
   const jl=jdLines();x.font=`700 34px ${F}`;const wl=jl.flatMap(l=>wrapText(x,l,cw-140));
@@ -536,7 +536,7 @@ document.addEventListener('click',async e=>{const im=e.target.closest('img');if(
   const grid=im.closest('.rp-ph,.photos,.dr-ph');
   if(grid){e.preventDefault();e.stopPropagation();const imgs=[...grid.closest('.dr-e,.rp-e,.card,#v-new')?.querySelectorAll('.rp-ph img,.photos img,.dr-ph img')||grid.querySelectorAll('img')];
     const list=imgs.map(x=>({src:x.src,cap:x.closest('.photos')?.id==='phBefore'?'📷 മുമ്പ് (Before)':x.closest('.photos')?.id==='phAfter'?'✨ ശേഷം (After)':(x.dataset.cap||'')}));openViewer(list,imgs.indexOf(im));return}
-  if(im.classList.contains('fbph')){e.stopPropagation();openViewer([{src:im.src,cap:'🗣️ നിവാസിയുടെ ഫോട്ടോ (Resident photo)'}]);return}
+  if(im.classList.contains('fbph')){e.stopPropagation();openViewer([{src:im.src,cap:'🗣️ സ്ഥലവാസിയുടെ ഫോട്ടോ (Resident photo)'}]);return}
   if(im.classList.contains('thumb')){const card=im.closest('.entry');if(!card)return;e.stopPropagation();toast('⏳');
     try{const s=await getDocs(collection(db,'entries',card.dataset.id,'photos'));const ps=s.docs.map(d=>d.data()).sort((a,b)=>(a.kind===b.kind?0:a.kind==='before'?-1:1)||a.ts-b.ts);
       if(ps.length)openViewer(ps.map(p=>({src:p.url||p.data,cap:p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'})),0);else openDetail(card.dataset.id)}catch(err){openDetail(card.dataset.id)}}},true);

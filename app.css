@@ -35,10 +35,11 @@ main{max-width:900px;margin:0 auto;padding:14px 14px 0}
 #v-pending .art{width:160px;display:block;margin:0 auto}
 /* nav */
 nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom));width:calc(100% - 20px);max-width:620px;z-index:30;display:flex;gap:2px;padding:6px;background:var(--glass);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border:1px solid var(--glass-line);border-radius:24px;box-shadow:0 10px 30px rgba(16,32,26,.14)}
-nav.tabs button{flex:1;min-width:0;border:none;background:none;font:inherit;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:1px;min-height:58px;padding:4px 2px;border-radius:18px;position:relative;cursor:pointer;transition:color .2s}
+nav.tabs button{flex:1 1 auto;min-width:0;border:none;background:none;font:inherit;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:1px;min-height:58px;padding:4px 2px;border-radius:18px;position:relative;cursor:pointer;transition:color .2s}
 nav.tabs .i{display:grid;place-items:center;width:46px;height:30px;border-radius:999px;transition:background .25s var(--ease)}
 nav.tabs .i .ic{width:22px;height:22px}
-nav.tabs .lb{font-size:11px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+nav.tabs .lb{font-size:10.5px;font-weight:700;letter-spacing:-.15px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media (max-width:400px){nav.tabs .lb{font-size:9.5px;letter-spacing:-.3px}nav.tabs button{padding:4px 0}nav.tabs{gap:0;padding:6px 4px}}
 nav.tabs .en{font-size:9.5px;line-height:1.1;color:inherit;opacity:.8;white-space:nowrap}
 nav.tabs button.active{color:var(--brand)}
 nav.tabs button.active .i{background:var(--brand-50)}

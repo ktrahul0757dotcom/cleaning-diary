@@ -208,7 +208,7 @@
 
   <!-- RESIDENT FEEDBACK -->
   <section id="v-fb" class="view">
-    <div class="pagehead"><div><div class="eyebrow">നിവാസികൾ · Residents</div><h2 class="ph-title">നിവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span></h2></div></div>
+    <div class="pagehead"><div><div class="eyebrow">സ്ഥലവാസികൾ · Residents</div><h2 class="ph-title">സ്ഥലവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span></h2></div></div>
     <div class="card">
       <div class="row wrap"><select id="fbPlace"></select><select id="fbShow"><option value="visible">കാണിക്കുന്നവ (Visible)</option><option value="hidden">മറച്ചവ (Hidden)</option><option value="all">എല്ലാം (All)</option></select></div>
       <div id="fbSum" style="margin-top:12px"></div></div>
@@ -256,10 +256,10 @@
       <p class="hint" style="margin-top:-6px">പുതിയ അംഗങ്ങൾ ലോഗിൻ ചെയ്താൽ ഇവിടെ "pending" ആയി വരും. റോൾ നൽകുക. (New sign-ins appear as pending – assign a role.)</p>
       <div class="ulist" id="uList"></div></div>
     <div class="card" id="qrCard" style="display:none"><h2><span class="hic earth"><svg class="ic"><use href="#i-qr"/></svg></span>അഭിപ്രായ QR കോഡുകൾ <span class="en">(Resident feedback QR codes)</span></h2>
-      <p class="hint" style="margin-top:-6px">ഓരോ സ്ഥലത്തും ഈ QR ഒട്ടിക്കുക. നിവാസികൾക്ക് ലോഗിൻ ഇല്ലാതെ അഭിപ്രായം അയക്കാം. (Print and put up the QR at each place – residents can give feedback without login.)</p>
+      <p class="hint" style="margin-top:-6px">ഓരോ സ്ഥലത്തും ഈ QR ഒട്ടിക്കുക. സ്ഥലവാസികൾക്ക് ലോഗിൻ ഇല്ലാതെ അഭിപ്രായം അയക്കാം. (Print and put up the QR at each place – residents can give feedback without login.)</p>
       <div id="qrList"></div></div>
     <div class="card" id="jdCard" style="display:none"><h2><span class="hic"><svg class="ic"><use href="#i-landmark"/></svg></span>അധികാര പരിധി <span class="en">(Jurisdiction – office / circle)</span></h2>
-      <p class="hint" style="margin-top:-6px">ഓരോ വരിയിലും ഒന്ന് – ഉദാ: ഓഫീസിൻ്റെ പേര്, സർക്കിൾ. എല്ലാ സ്ക്രീനിലും, റിപ്പോർട്ടിലും, QR പോസ്റ്ററിലും, നിവാസി ഫോമിലും കാണിക്കും. ശൂന്യമാക്കിയാൽ മറയ്ക്കും. (One per line, e.g. office name, circle. Shown on every screen, reports, QR posters and the resident form. Leave empty to hide.)</p>
+      <p class="hint" style="margin-top:-6px">ഓരോ വരിയിലും ഒന്ന് – ഉദാ: ഓഫീസിൻ്റെ പേര്, സർക്കിൾ. എല്ലാ സ്ക്രീനിലും, റിപ്പോർട്ടിലും, QR പോസ്റ്ററിലും, സ്ഥലവാസി ഫോമിലും കാണിക്കും. ശൂന്യമാക്കിയാൽ മറയ്ക്കും. (One per line, e.g. office name, circle. Shown on every screen, reports, QR posters and the resident form. Leave empty to hide.)</p>
       <textarea id="jdText" rows="3" maxlength="300" placeholder="ഉദാ: ആരോഗ്യ വിഭാഗം, തൃശ്ശൂർ കോർപ്പറേഷൻ&#10;സർക്കിൾ 4 – സൗത്ത്"></textarea>
       <div class="row" style="margin-top:10px;align-items:center"><span class="hint" id="jdCount" style="flex:1"></span><button class="btn" id="jdSave" style="flex:0 0 auto"><svg class="ic"><use href="#i-save"/></svg>സേവ് <span class="en">(Save)</span></button></div></div>
     <div class="card"><h2><span class="hic"><svg class="ic"><use href="#i-info"/></svg></span>ആപ്പ് <span class="en">(About)</span></h2><p class="hint" id="aboutTxt"></p><a class="btn out block" href="offline/"><svg class="ic"><use href="#i-phone"/></svg>ഓഫ്‌ലൈൻ പതിപ്പ് <span class="en">(Offline-only version)</span></a><div class="credit">ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ)<br><span class="en">Developed by Rahul K T with Grok</span></div></div>
@@ -269,7 +269,7 @@
 <nav class="tabs" id="tabs" style="display:none" aria-label="Main">
   <button data-v="v-dash" aria-label="Dashboard"><span class="i"><svg class="ic"><use href="#i-home"/></svg></span><span class="lb">ഹോം</span><span class="en">Home</span></button>
   <button data-v="v-new" id="tabNew" aria-label="New entry" class="fab"><span class="i"><svg class="ic"><use href="#i-plus"/></svg></span><span class="lb">പുതിയത്</span><span class="en">New</span></button>
-  <button data-v="v-fb" id="tabFb" style="display:none" aria-label="Feedback"><span class="i"><svg class="ic"><use href="#i-msg"/></svg></span><span class="lb">നിവാസി</span><span class="en">Feedback</span></button>
+  <button data-v="v-fb" id="tabFb" style="display:none" aria-label="Feedback"><span class="i"><svg class="ic"><use href="#i-msg"/></svg></span><span class="lb">സ്ഥലവാസി</span><span class="en">Feedback</span></button>
   <button data-v="v-report" aria-label="Report"><span class="i"><svg class="ic"><use href="#i-report"/></svg></span><span class="lb">റിപ്പോർട്ട്</span><span class="en">Report</span></button>
   <button data-v="v-notif" aria-label="Alerts"><span class="i"><svg class="ic"><use href="#i-bell"/></svg></span><span class="lb">അറിയിപ്പ്</span><span class="en">Alerts</span><span class="bdg" id="nBadge"></span></button>
   <button data-v="v-set" aria-label="Settings"><span class="i"><svg class="ic"><use href="#i-settings"/></svg></span><span class="lb">ക്രമീകരണം</span><span class="en">Settings</span></button>
