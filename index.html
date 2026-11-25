@@ -73,6 +73,8 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
 .ulist .u{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eef7f5}
 .ulist img{width:38px;height:38px;border-radius:50%}.ulist .nm{flex:1;min-width:0;font-size:15px}.ulist select{width:150px;min-height:42px;padding:6px}
 .center{text-align:center}
+.credit{font-size:12px;color:var(--mut);text-align:center;margin-top:18px;padding-top:10px;border-top:1px solid #e2f3f0;line-height:1.5}
+.credit .en{font-size:11px}
 .login{max-width:420px;margin:40px auto;text-align:center}
 .gbtn{background:#fff;color:#333;border:1.5px solid #ccc;font-size:18px}
 #reportOut{background:#fff;border-radius:var(--r);padding:16px;margin-top:12px}
@@ -94,7 +96,7 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
   <section id="v-login" class="view"><div class="card login">
     <div style="font-size:64px">🧹</div><h2 style="font-size:30px;margin-bottom:0">നിറവ്</h2><div style="font-size:19px;font-weight:600;color:var(--g)">ദൈനംദിന ശുചീകരണം</div><div class="en" style="margin-bottom:8px">Niravu – Daily Cleaning</div><p class="hint">ദിവസേനയുള്ള ശുചീകരണ ജോലികൾ, ഫോട്ടോകൾ, ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായങ്ങൾ – ടീമിനൊപ്പം ലൈവ് ആയി.<br>(Daily cleaning work, photos and officer remarks – live with your team)</p>
     <button class="btn gbtn block" id="loginBtn"><svg width="22" height="22" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg> Google ഉപയോഗിച്ച് ലോഗിൻ<br><span class="en">(Sign in with Google)</span></button>
-    <p class="hint" style="margin-top:16px"><a href="offline/">ഓഫ്‌ലൈൻ പതിപ്പ് (Offline-only version)</a></p></div></section>
+    <p class="hint" style="margin-top:16px"><a href="offline/">ഓഫ്‌ലൈൻ പതിപ്പ് (Offline-only version)</a></p><div class="credit">ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ)<br><span class="en">Developed by Rahul K T with Grok</span></div></div></section>
   <section id="v-pending" class="view"><div class="card login"><div style="font-size:56px">⏳</div><h2>അനുമതിക്കായി കാത്തിരിക്കുന്നു</h2><p>Waiting for admin approval. അഡ്മിൻ നിങ്ങൾക്ക് റോൾ നൽകിയാൽ ആപ്പ് തുറക്കും.</p><p class="hint" id="pendingMail"></p><button class="btn out block" data-act="logout">🚪 ലോഗൗട്ട് (Sign out)</button></div></section>
 
   <!-- DASHBOARD -->
@@ -200,7 +202,7 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
     <div class="card" id="usersCard" style="display:none"><h2>👥 അംഗങ്ങളും റോളുകളും <span class="en">(Members & roles)</span></h2>
       <p class="hint">പുതിയ അംഗങ്ങൾ ലോഗിൻ ചെയ്താൽ ഇവിടെ "pending" ആയി വരും. റോൾ നൽകുക. (New sign-ins appear as pending – assign a role.)</p>
       <div class="ulist" id="uList"></div></div>
-    <div class="card"><h2>ℹ️ ആപ്പ് <span class="en">(About)</span></h2><p class="hint" id="aboutTxt"></p><a class="btn out block" href="offline/">📱 ഓഫ്‌ലൈൻ പതിപ്പ് (Offline-only version)</a></div>
+    <div class="card"><h2>ℹ️ ആപ്പ് <span class="en">(About)</span></h2><p class="hint" id="aboutTxt"></p><a class="btn out block" href="offline/">📱 ഓഫ്‌ലൈൻ പതിപ്പ് (Offline-only version)</a><div class="credit">ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ)<br><span class="en">Developed by Rahul K T with Grok</span></div></div>
   </section>
 </main>
 
