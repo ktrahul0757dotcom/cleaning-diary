@@ -73,6 +73,11 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
 .ulist .u{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eef7f5}
 .ulist img{width:38px;height:38px;border-radius:50%}.ulist .nm{flex:1;min-width:0;font-size:15px}.ulist select{width:150px;min-height:42px;padding:6px}
 .center{text-align:center}
+.stars{color:#f59e0b;letter-spacing:1px;font-size:18px}.stars .off{color:#d1d5db}
+.fbc.hidden{opacity:.55;border:2px dashed #fca5a5}.fbc img.fbph{width:100%;max-height:240px;object-fit:cover;border-radius:10px;margin-top:6px}
+.qrrow{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #eef7f5}.qrrow .nm{flex:1;min-width:0;font-size:15px}
+#qrModal .box{max-width:460px;text-align:center}#qrCanvas{width:100%;max-width:300px;border:1px solid #e2f3f0;border-radius:8px}
+.linkbox{font-size:12px;word-break:break-all;background:#f1f5f4;border-radius:8px;padding:6px;margin:8px 0;user-select:all}
 .credit{font-size:12px;color:var(--mut);text-align:center;margin-top:18px;padding-top:10px;border-top:1px solid #e2f3f0;line-height:1.5}
 .credit .en{font-size:11px}
 .login{max-width:420px;margin:40px auto;text-align:center}
@@ -171,6 +176,14 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
     <div class="row noprint" id="detBtns"><button class="btn out" data-act="back">⬅ തിരികെ</button><button class="btn sec" id="detEdit">✏️ തിരുത്തുക</button><button class="btn danger" id="detDel">🗑️ നീക്കുക</button></div>
   </section>
 
+  <!-- RESIDENT FEEDBACK -->
+  <section id="v-fb" class="view">
+    <div class="card"><h2>🗣️ നിവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span></h2>
+      <div class="row wrap"><select id="fbPlace"></select><select id="fbShow"><option value="visible">കാണിക്കുന്നവ (Visible)</option><option value="hidden">മറച്ചവ (Hidden)</option><option value="all">എല്ലാം (All)</option></select></div>
+      <div id="fbSum" style="margin-top:10px"></div></div>
+    <div id="fbList"></div>
+  </section>
+
   <!-- REPORT -->
   <section id="v-report" class="view">
     <div class="card noprint">
@@ -202,6 +215,9 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
     <div class="card" id="usersCard" style="display:none"><h2>👥 അംഗങ്ങളും റോളുകളും <span class="en">(Members & roles)</span></h2>
       <p class="hint">പുതിയ അംഗങ്ങൾ ലോഗിൻ ചെയ്താൽ ഇവിടെ "pending" ആയി വരും. റോൾ നൽകുക. (New sign-ins appear as pending – assign a role.)</p>
       <div class="ulist" id="uList"></div></div>
+    <div class="card" id="qrCard" style="display:none"><h2>🔳 അഭിപ്രായ QR കോഡുകൾ <span class="en">(Resident feedback QR codes)</span></h2>
+      <p class="hint">ഓരോ സ്ഥലത്തും ഈ QR ഒട്ടിക്കുക. നിവാസികൾക്ക് ലോഗിൻ ഇല്ലാതെ അഭിപ്രായം അയക്കാം. (Print and put up the QR at each place – residents can give feedback without login.)</p>
+      <div id="qrList"></div></div>
     <div class="card"><h2>ℹ️ ആപ്പ് <span class="en">(About)</span></h2><p class="hint" id="aboutTxt"></p><a class="btn out block" href="offline/">📱 ഓഫ്‌ലൈൻ പതിപ്പ് (Offline-only version)</a><div class="credit">ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ)<br><span class="en">Developed by Rahul K T with Grok</span></div></div>
   </section>
 </main>
@@ -209,12 +225,17 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
 <nav class="tabs" id="tabs" style="display:none">
   <button data-v="v-dash"><span class="i">🏠</span>ഡാഷ്ബോർഡ്<span class="en">Dashboard</span></button>
   <button data-v="v-new" id="tabNew"><span class="i">➕</span>പുതിയത്<span class="en">New</span></button>
+  <button data-v="v-fb" id="tabFb" style="display:none"><span class="i">🗣️</span>നിവാസി<span class="en">Feedback</span></button>
   <button data-v="v-report"><span class="i">📄</span>റിപ്പോർട്ട്<span class="en">Report</span></button>
   <button data-v="v-notif"><span class="i">🔔</span>അറിയിപ്പ്<span class="en">Alerts</span><span class="bdg" id="nBadge"></span></button>
   <button data-v="v-set"><span class="i">⚙️</span>ക്രമീകരണം<span class="en">Settings</span></button>
 </nav>
 <div class="toast" id="toast"></div>
 <div class="modal" id="modal"><div class="box"><p id="mMsg"></p><div class="row"><button class="btn out" id="mNo">റദ്ദാക്കുക</button><button class="btn" id="mYes">ശരി</button></div></div></div>
+<div class="modal" id="qrModal"><div class="box"><canvas id="qrCanvas"></canvas><div class="linkbox" id="qrLink"></div>
+  <div class="row wrap"><button class="btn sm" id="qrDl">⬇️ PNG</button><button class="btn sec sm" id="qrPrint">🖨️ A4 പോസ്റ്റർ</button><button class="btn sec sm" id="qrPrintA5">🖨️ A5</button><button class="btn sec sm" id="qrCopy">🔗 കോപ്പി (Copy)</button></div>
+  <div class="row" style="margin-top:8px"><a class="btn out sm" id="qrOpen" target="_blank" rel="noopener">↗ തുറക്കുക (Open)</a><button class="btn out sm" id="qrClose">✕ അടയ്ക്കുക</button></div></div></div>
+<script src="qrcode.js"></script>
 <script src="firebase-config.js"></script>
 <script type="module" src="app.js"></script>
 </body>
