@@ -206,13 +206,40 @@
     <div class="row noprint" id="detBtns"><button class="btn out" data-act="back"><svg class="ic"><use href="#i-left"/></svg>തിരികെ</button><button class="btn sec" id="detEdit"><svg class="ic"><use href="#i-edit"/></svg>തിരുത്തുക</button><button class="btn danger" id="detDel"><svg class="ic"><use href="#i-trash"/></svg>നീക്കുക</button></div>
   </section>
 
-  <!-- RESIDENT FEEDBACK -->
+  <!-- FEEDBACK: RESIDENTS + SQUAD INSPECTION -->
   <section id="v-fb" class="view">
-    <div class="pagehead"><div><div class="eyebrow">സ്ഥലവാസികൾ · Residents</div><h2 class="ph-title">സ്ഥലവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span></h2></div></div>
+    <div class="pagehead"><div><div class="eyebrow" id="fbEyebrow">സ്ഥലവാസികൾ · Residents</div><h2 class="ph-title" id="fbTitle">സ്ഥലവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span></h2></div></div>
+    <div class="seg" id="fbMode" role="tablist"><button data-m="res" class="on"><svg class="ic sm"><use href="#i-users"/></svg>സ്ഥലവാസി <span class="en">(Residents)</span></button><button data-m="squad"><svg class="ic sm"><use href="#i-landmark"/></svg>സ്ക്വാഡ് പരിശോധന <span class="en">(Squad)</span></button></div>
+    <div id="fbRes">
     <div class="card">
       <div class="row wrap"><select id="fbPlace"></select><select id="fbShow"><option value="visible">കാണിക്കുന്നവ (Visible)</option><option value="hidden">മറച്ചവ (Hidden)</option><option value="all">എല്ലാം (All)</option></select></div>
       <div id="fbSum" style="margin-top:12px"></div></div>
     <div id="fbList"></div>
+    </div>
+    <div id="fbSquad" style="display:none">
+      <div class="card sq-new">
+        <h2><span class="hic"><svg class="ic"><use href="#i-link"/></svg></span>പുതിയ ഫീഡ്‌ബാക്ക് ലിങ്ക് <span class="en">(New feedback link)</span></h2>
+        <p class="hint" style="margin-top:0">പരിശോധന കഴിഞ്ഞ ശേഷം ഉദ്യോഗസ്ഥന് വ്യക്തിപരമായി അയക്കുക. ലോഗിൻ വേണ്ട, ഒരു തവണ മാത്രം. <span class="en">(Send personally to the inspecting official after the visit. No login, single use.)</span></p>
+        <label class="f">സ്ഥലം <span class="en">(Place)</span></label><select id="sqPlace"></select>
+        <label class="f">റൂട്ട് / മറ്റു സ്ഥലം <span class="en">(Route / other area, optional)</span></label><input type="text" id="sqRoute" maxlength="150" placeholder="ഉദാ: മാർക്കറ്റ് – ബസ് സ്റ്റാൻഡ് റോഡ് (e.g. Market – bus stand road)">
+        <div class="row wrap"><div><label class="f">പരിശോധന തീയതി <span class="en">(Inspection date, optional)</span></label><input type="date" id="sqDate"></div>
+        <div><label class="f">ഉദ്യോഗസ്ഥൻ്റെ പേര് <span class="en">(Official's name, optional)</span></label><input type="text" id="sqName" maxlength="80"></div></div>
+        <div id="sqExpWrap" style="display:none"><label class="f">കാലാവധി <span class="en">(Expiry – admin only)</span></label><select id="sqExp"><option value="">കാലാവധി ഇല്ല (No expiry)</option><option value="7">7 ദിവസം (7 days)</option><option value="30">30 ദിവസം (30 days)</option><option value="90">90 ദിവസം (90 days)</option></select></div>
+        <button class="btn" id="sqCreate" style="margin-top:14px;width:100%"><svg class="ic"><use href="#i-link"/></svg>ലിങ്ക് ഉണ്ടാക്കുക <span class="en">(Create link)</span></button>
+        <div id="sqOut" class="sq-out" style="display:none"></div>
+      </div>
+      <div class="card">
+        <h2><span class="hic earth"><svg class="ic"><use href="#i-share"/></svg></span>അയച്ച ലിങ്കുകൾ <span class="en">(Sent links)</span></h2>
+        <div class="seg sm" id="sqLinkF"><button data-f="open" class="on">ബാക്കി <span class="en">(Pending)</span></button><button data-f="used">ലഭിച്ചു <span class="en">(Used)</span></button><button data-f="closed">റദ്ദായവ <span class="en">(Expired / revoked)</span></button><button data-f="all">എല്ലാം <span class="en">(All)</span></button></div>
+        <div id="sqLinks"></div>
+      </div>
+      <div class="card">
+        <h2><span class="hic"><svg class="ic"><use href="#i-landmark"/></svg></span>സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് <span class="en">(Squad inspection feedback)</span></h2>
+        <div class="row wrap"><select id="sqfPlace"></select><select id="sqfShow"><option value="visible">കാണിക്കുന്നവ (Visible)</option><option value="hidden">മറച്ചവ (Hidden)</option><option value="all">എല്ലാം (All)</option></select></div>
+        <div id="sqSum" style="margin-top:12px"></div>
+      </div>
+      <div id="sqList"></div>
+    </div>
   </section>
 
   <!-- REPORT -->
@@ -269,7 +296,7 @@
 <nav class="tabs" id="tabs" style="display:none" aria-label="Main">
   <button data-v="v-dash" aria-label="Dashboard"><span class="i"><svg class="ic"><use href="#i-home"/></svg></span><span class="lb">ഹോം</span><span class="en">Home</span></button>
   <button data-v="v-new" id="tabNew" aria-label="New entry" class="fab"><span class="i"><svg class="ic"><use href="#i-plus"/></svg></span><span class="lb">പുതിയത്</span><span class="en">New</span></button>
-  <button data-v="v-fb" id="tabFb" style="display:none" aria-label="Feedback"><span class="i"><svg class="ic"><use href="#i-msg"/></svg></span><span class="lb">സ്ഥലവാസി</span><span class="en">Feedback</span></button>
+  <button data-v="v-fb" id="tabFb" style="display:none" aria-label="Feedback"><span class="i"><svg class="ic"><use href="#i-msg"/></svg></span><span class="lb">ഫീഡ്‌ബാക്ക്</span><span class="en">Feedback</span></button>
   <button data-v="v-report" aria-label="Report"><span class="i"><svg class="ic"><use href="#i-report"/></svg></span><span class="lb">റിപ്പോർട്ട്</span><span class="en">Report</span></button>
   <button data-v="v-notif" aria-label="Alerts"><span class="i"><svg class="ic"><use href="#i-bell"/></svg></span><span class="lb">അറിയിപ്പ്</span><span class="en">Alerts</span><span class="bdg" id="nBadge"></span></button>
   <button data-v="v-set" aria-label="Settings"><span class="i"><svg class="ic"><use href="#i-settings"/></svg></span><span class="lb">ക്രമീകരണം</span><span class="en">Settings</span></button>

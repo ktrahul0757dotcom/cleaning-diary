@@ -34,7 +34,7 @@ const scoreColor=s=>s==null?'#94a3b8':s>=85?'#15803d':s>=65?'#b45309':'#b91c1c';
 const worksText=(e,en)=>(e.works||[]).map(w=>w==='other'&&e.workOther?e.workOther:(WMAP[w]?(en?WMAP[w][2]:WMAP[w][1]):w)).join(', ');
 
 function show(v){$$('.view').forEach(e=>e.classList.toggle('active',e.id===v));$$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));window.scrollTo(0,0);
-  if(v==='v-new'&&!editing)setTimeout(()=>{},0);if(v==='v-report'&&!$('#reportOut').innerHTML)makeReport()}
+  if(v==='v-new'&&!editing)setTimeout(()=>{},0);if(v==='v-report'&&!$('#reportOut').innerHTML)makeReport();if(v==='v-dash'&&meDoc)renderDash()}
 const params=new URLSearchParams(location.search);const EMU=params.has('emulator');
 let cfg=window.FIREBASE_CONFIG;if(!cfg&&EMU)cfg={apiKey:'demo-key',authDomain:'demo-cleaning.firebaseapp.com',projectId:'demo-cleaning',storageBucket:'demo-cleaning.appspot.com',appId:'1:1:web:1'};
 const OPT=window.APP_OPTIONS||{};
@@ -96,13 +96,13 @@ function startApp(){unsubs.splice(1).forEach(u=>u());entryUnsub&&entryUnsub();en
   $('#phMode').textContent=OPT.storageEnabled?'☁️ ഫോട്ടോകൾ Firebase Storage-ൽ സൂക്ഷിക്കുന്നു (Photos stored in Cloud Storage)':'💾 ഫോട്ടോകൾ ചുരുക്കി (~200KB) ഡാറ്റാബേസിൽ സൂക്ഷിക്കുന്നു (Free-plan mode: compressed photos in Firestore)';
   $('#aboutTxt').innerHTML=`ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം (Bhadram Ee Bhoomi – Daily Cleaning) · പതിപ്പ് (version) team-3 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
   unsubs.push(onSnapshot(doc(db,'meta','placeTypes'),s=>{customTypes=(s.data()?.types||[]).filter(t=>t&&t.id&&t.ml);renderPlaces();fillFilters();if($('#v-dash').classList.contains('active'))renderDash()},e=>console.error('types',e)));
-  unsubs.push(onSnapshot(collection(db,'places'),s=>{places=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.area+a.ward+a.name).localeCompare(b.area+b.ward+b.name));renderPlaces()},e=>console.error(e)));
+  unsubs.push(onSnapshot(collection(db,'places'),s=>{places=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.area+a.ward+a.name).localeCompare(b.area+b.ward+b.name));renderPlaces();if(can.staff())fillSquadPlaces()},e=>console.error(e)));
   unsubs.push(onSnapshot(collection(db,'users'),s=>{users=s.docs.map(d=>({uid:d.id,...d.data()}));renderUsers();fillFilters()},e=>console.error(e)));
   unsubs.push(onSnapshot(query(collection(db,'users',me.uid,'notifications'),orderBy('createdAt','desc'),limit(100)),s=>{
     if(notifReady)s.docChanges().forEach(c=>{if(c.type==='added'&&!c.doc.metadata.hasPendingWrites){const n=c.doc.data();toast('🔔 '+n.text,4500);try{if(Notification.permission==='granted')new Notification('ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം',{body:n.text,icon:'icon-192.png'})}catch(e){}}});
     notifReady=true;notifs=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})}));renderNotifs()},e=>console.error(e)));
   if(!$('#dFrom').value){const d=new Date();$('#dFrom').value=ymd(new Date(d.getFullYear(),d.getMonth(),1));$('#dTo').value=today();$('#rMonth').value=today().slice(0,7);$('#rDate').value=today()}
-  subscribeEntries();resetForm();feedback=[];if(can.staff())subscribeFeedback();
+  subscribeEntries();resetForm();feedback=[];squadFb=[];squadLinks=[];if(can.staff()){subscribeFeedback();subscribeSquad()}
   try{if('Notification'in window&&Notification.permission==='default')setTimeout(()=>Notification.requestPermission().catch(()=>{}),4000)}catch(e){}
   show(can.work()&&!entries.length&&false?'v-new':'v-dash')}
 
@@ -137,7 +137,7 @@ function renderDash(){fillFilters();const list=filtered('d');const st=stats(list
   $('#dStats').innerHTML=`<div class="kpis"><div class="scorecard">${ringHTML(st.avg)}<div class="lbl">ശുചിത്വ സ്കോർ<br><span class="en">Cleanliness score / 100</span></div></div>
     <div class="kgrid">${kpi('check2','','<span>'+list.length+'</span>','ജോലികൾ','Entries')}${kpi('badge','earth',st.awaiting,'അഭിപ്രായം ബാക്കി','Awaiting remark')}${kpi('camera','info',st.proof+'%','ഫോട്ടോ തെളിവ്','Before + after')}${kpi('users','warn',st.workers,'തൊഴിൽ','Worker-days')}</div></div>
     <div class="card"><div class="secttl">${hic('chart')}പ്രവർത്തനം <span class="en">(Activity – last 14 days)</span></div>${chartHTML(list)}</div>
-    <div class="card dash-more">${fbDashHTML()}${typeDashHTML(list)}${ward}</div>`;
+    <div class="card dash-more">${fbDashHTML()}${sqDashHTML()}${typeDashHTML(list)}${ward}</div>`;
   if(!$('#dStats .dash-more').textContent.trim())$('#dStats .dash-more').remove();
   if(!list.length){$('#dList').innerHTML=emptyHTML('inbox','ഈ കാലയളവിൽ ജോലികൾ ഇല്ല','No entries for this period');return}
   let h='',last='';for(const e of list){if(e.date!==last){h+=`<div class="dayhead">${ico('cal','sm')} ${fmtDate(e.date)}</div>`;last=e.date}const r=RATE[e.lastRating];
@@ -334,7 +334,7 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   const a=$('#rArea').value,w=$('#rWard').value,k=$('#rWorker').value,rty=$('#rType').value,pl=$('#rPlace').value;
   const s=await getDocs(query(collection(db,'entries'),where('date','==',d)));if(tok!==reportToken)return;
   const list=s.docs.map(x=>({id:x.id,...x.data({serverTimestamps:'estimate'})})).filter(e=>(!rty||placeTypeOf(e)===rty)&&(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)&&(!pl||e.placeId===pl)).sort((x,z)=>(x.time||'').localeCompare(z.time||''));
-  const fbList=can.staff()?await rangeFeedback(new Date(d+'T00:00:00'),new Date(d+'T23:59:59.999'),a,w,rty,pl):[];if(tok!==reportToken)return;
+  const [fbList,sqList]=can.staff()?await Promise.all([rangeFeedback(new Date(d+'T00:00:00'),new Date(d+'T23:59:59.999'),a,w,rty,pl),rangeSquad(new Date(d+'T00:00:00'),new Date(d+'T23:59:59.999'),a,w,rty,pl)]):[[],[]];if(tok!==reportToken)return;
   const pls=places.filter(p=>(!rty||placeTypeOf(p)===rty)&&(!a||p.area===a)&&(!w||p.ward===w)&&(!pl||p.id===pl));
   const done=new Set(list.map(placeKey));const pending=k?[]:pls.filter(p=>!done.has(p.id));const doneN=k?done.size:pls.filter(p=>done.has(p.id)).length;
   const st=stats(list);const rcount=list.reduce((n,e)=>n+(e.remarkCount||0),0);const fbAvg=fbList.length?fbList.reduce((n,f)=>n+f.rating,0)/fbList.length:null;
@@ -342,7 +342,7 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   const filt=[a,w,pn,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)';
   let h=REPORT_HEAD(`📅 ദിവസ റിപ്പോർട്ട് (Daily Report) – ${fmtDate(d)}`)+`<div>${filt}</div></div>`;
   h+=`<div class="rp-sum"><div class="dr-kpi"><div><b>${list.length}</b>ജോലി<br>(Entries)</div><div><b>${k?doneN:doneN+'/'+pls.length}</b>സ്ഥലം പൂർത്തി<br>(Places done)</div><div><b style="color:${scoreColor(st.avg)}">${st.avg??'–'}</b>സ്കോർ<br>(Avg score)</div>
-    <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>സ്ഥലവാസി അഭിപ്രായം<br>(Resident fb)</div></div>
+    <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>സ്ഥലവാസി അഭിപ്രായം<br>(Resident fb)</div></div>${can.staff()?`<div class="sq-line">🏛️ സ്ക്വാഡ് പരിശോധന (Squad inspections): <b>${sqList.length}</b>${sqList.length?` · ✅ ${sqList.filter(f=>f.overall==='good').length} · ⚠️ ${sqList.filter(f=>f.overall==='partial').length} · ❌ ${sqList.filter(f=>f.overall==='poor').length} · ${(sqList.reduce((n,f)=>n+f.rating,0)/sqList.length).toFixed(1)}★`:''}</div>`:''}
     👥 ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos} · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}%${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}</div>`;
   if(!k)h+=`<div class="rp-sub" style="font-size:15px">⏳ ബാക്കി സ്ഥലങ്ങൾ (Not done today): ${pending.length}</div>`+(pending.length?`<ul style="font-size:13px;margin:2px 0 10px;columns:2">${pending.map(p=>`<li class="pend">${typeInfo(placeTypeOf(p),p).icon} ${esc(p.name)}${p.ward?' – '+esc(p.ward):''}</li>`).join('')}</ul>`:'<p class="hint">✅ എല്ലാ സ്ഥലവും പൂർത്തിയായി (All places done)</p>');
   h+=typeReportHTML(list,fbList);
@@ -350,11 +350,12 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
     const parts=await Promise.all(list.map(async e=>{const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);
       return dailyEntryHTML(e,ps?ps.docs.map(x=>x.data()):[],rs.docs.map(x=>x.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}));if(tok!==reportToken)return;h+=parts.join('')}
   else h+=emptyHTML('inbox','ഈ ദിവസം ജോലി എൻട്രികൾ ഇല്ല','No work entries this day');
-  if(can.staff())h+=`<div class="rp-sub" style="font-size:15px">🗣️ സ്ഥലവാസികളുടെ അഭിപ്രായം / നിർദ്ദേശങ്ങൾ (Resident feedback & suggestions)</div>`+dayFbHTML(fbList);
+  if(can.staff())h+=`<div class="rp-sub" style="font-size:15px">🗣️ സ്ഥലവാസികളുടെ അഭിപ്രായം / നിർദ്ദേശങ്ങൾ (Resident feedback & suggestions)</div>`+dayFbHTML(fbList)+sqDayHTML(sqList);
   h+=CREDIT();$('#reportOut').innerHTML=h;
   const L=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,...(jdText?[`🏛️ ${jdLines().join(' · ')}`]:[]),`📅 ദിവസ റിപ്പോർട്ട് (Daily report): ${fmtDate(d)}`,filt.replace(/<[^>]+>/g,'')==='എല്ലാം (All)'?'':`🔎 ${[a,w,pn,wk,rty?typeInfo(rty).ml:''].filter(Boolean).join(' · ')}`,
     `✅ സ്ഥലം പൂർത്തി (Places done): ${k?doneN:doneN+'/'+pls.length}`,`🧹 ജോലി (Entries): ${list.length}`,`⭐ സ്കോർ (Avg score): ${st.avg??'–'}`,`💬 അഭിപ്രായം (Remarks): ${rcount} · ബാക്കി (awaiting) ${st.awaiting}`,
     can.staff()?`🗣️ സ്ഥലവാസി അഭിപ്രായം (Resident feedback): ${fbList.length}${fbAvg!=null?' · ശരാശരി '+fbAvg.toFixed(1)+'★':''}`:'',
+    can.staff()&&sqList.length?`🏛️ സ്ക്വാഡ് പരിശോധന (Squad inspections): ${sqList.length} · ${sqList.map(f=>`${f.officialName} (${f.designation}) – ${(SQ_OVR[f.overall]||[''])[0]} ${f.rating}★`).join('; ')}`:'',
     !k&&pending.length?`⏳ ബാക്കി (Not done): ${pending.map(p=>p.name).join(', ')}`:''].filter(Boolean);
   const E=list.map(e=>`• ${e.time||''} ${e.placeName} – ${e.workerName||''} – ${worksText(e)}${e.score!=null?' – സ്കോർ '+e.score:''}`);
   shareText=L.join('\n')+(E.length?'\n\n'+E.join('\n'):'')+'\n\n— ഭദ്രം ഈ ഭൂമി app'}
@@ -366,13 +367,13 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   const list=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).filter(e=>(!rty||placeTypeOf(e)===rty)&&(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)&&(!pl||e.placeId===pl)).sort((x,z)=>(x.date+(x.time||'')).localeCompare(z.date+(z.time||'')));
   const st=stats(list);const wk=k?users.find(u=>u.uid===k)?.name:'';
   let h=`<div class="rp-h"><div class="rp-brand"><span class="mark">${MARK_SVG}</span><b>ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</b></div><div class="en">Bhadram Ee Bhoomi – Daily Cleaning</div><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2>${jdReportHTML()}<div>${[a,w,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)'}</div></div>`;
-  const fbList=can.staff()?(await monthFeedback(m,last,a,w,rty)).filter(f=>!pl||f.placeId===pl):[];if(tok!==reportToken)return;
-  if(!list.length){const fb=can.staff()?typeReportHTML([],fbList)+fbReportHTML(fbList):'';$('#reportOut').innerHTML=h+emptyHTML('inbox','ജോലി എൻട്രികൾ ഇല്ല','No work entries')+fb;return}
+  const fbList=can.staff()?(await monthFeedback(m,last,a,w,rty)).filter(f=>!pl||f.placeId===pl):[];const sqList=can.staff()?await rangeSquad(new Date(m+'-01T00:00:00'),new Date(last+'T23:59:59.999'),a,w,rty,pl):[];if(tok!==reportToken)return;
+  if(!list.length){const fb=can.staff()?typeReportHTML([],fbList)+fbReportHTML(fbList)+sqMonthHTML(sqList):'';$('#reportOut').innerHTML=h+emptyHTML('inbox','ജോലി എൻട്രികൾ ഇല്ല','No work entries')+fb+CREDIT();return}
   h+=`<div class="rp-sum"><b>ആകെ (Summary):</b> ${list.length} ജോലി (entries) · ${st.days} ദിവസം (days) · ${st.places} സ്ഥലം (places) · ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos}${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}<br>
     <b>ശുചിത്വ സ്കോർ (Cleanliness score): <span style="color:${scoreColor(st.avg)}">${st.avg??'–'}/100</span></b> · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}% · അഭിപ്രായം ബാക്കി (awaiting remark) ${st.awaiting}</div>`;
   const byW={};list.forEach(e=>{const key=e.ward||e.placeName;(byW[key]=byW[key]||[]).push(e)});
   h+=`<table class="rp-tbl"><tr><th>വാർഡ് (Ward)</th><th>ജോലി (Entries)</th><th>സ്കോർ (Score)</th></tr>${Object.entries(byW).map(([k2,v])=>`<tr><td>${esc(k2)}</td><td>${v.length}</td><td>${stats(v).avg??'–'}</td></tr>`).join('')}</table>`;
-  h+=typeReportHTML(list,fbList);if(can.staff())h+=fbReportHTML(fbList);
+  h+=typeReportHTML(list,fbList);if(can.staff())h+=fbReportHTML(fbList)+sqMonthHTML(sqList);
   const withPh=$('#rPhotos').checked;
   for(const e of list){const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);if(tok!==reportToken)return;
     h+=entryHTML(e,ps?ps.docs.map(d=>d.data()).sort((x,z)=>x.ts-z.ts):[],rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}
@@ -420,6 +421,106 @@ function renderFeedback(){if(!can.staff())return;const sel=$('#fbPlace'),cur=sel
   if(can.moderate())list.filter(f=>f.hasPhone).forEach(async f=>{const set=v=>$$('.ph-'+f.id).forEach(e=>e.innerHTML=v);
     if(!phoneCache.has(f.id))phoneCache.set(f.id,getDoc(doc(db,'feedback',f.id,'private','contact')).then(s=>s.exists()?s.data().phone:'').catch(()=>''));
     const ph=await phoneCache.get(f.id);set(ph?`<a href="tel:${esc(ph)}">${esc(ph)}</a>`:'-')})}
+/* ---------- squad inspection feedback (one-time personal links) ---------- */
+let squadFb=[],squadLinks=[],sqLinkFilter='open',fbMode='res';const sqPhoneCache=new Map();
+const SQ_OVR={good:['✅','തൃപ്തികരം','Satisfactory'],partial:['⚠️','ഭാഗികമായി തൃപ്തികരം','Partly satisfactory'],poor:['❌','തൃപ്തികരമല്ല','Not satisfactory']};
+const sqOvrBadge=o=>{const v=SQ_OVR[o];return v?`<span class="ovb ${o}">${v[0]} ${v[1]} <span class="en">(${v[2]})</span></span>`:''};
+const sqToken=()=>{const b=crypto.getRandomValues(new Uint8Array(24));return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const sqUrl=t=>{const u=new URL('squad.html',location.href);u.search='';u.hash='';u.searchParams.set('t',t);if(EMU)u.searchParams.set('emulator','1');return u.toString()};
+const sqWhere=l=>esc(l.placeName||l.route||'')+(l.placeName&&l.route?` <span class="en">· ${esc(l.route)}</span>`:'');
+const sqState=l=>l.status==='used'?'used':l.status==='revoked'?'revoked':(l.expiresAt&&l.expiresAt.seconds*1000<Date.now())?'expired':'open';
+const SQ_ST={open:['pend','⏳ ബാക്കി (Pending)'],used:['ok','✅ ലഭിച്ചു (Received)'],expired:['','⌛ കാലഹരണം (Expired)'],revoked:['','🚫 റദ്ദാക്കി (Revoked)']};
+function sqMsg(l){const nm=l.officialName?` ${l.officialName}`:'';const where=l.placeName||l.route||'';
+  return `നമസ്കാരം${nm},\nഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം: ${where}${l.inspDate?' ('+fmtDate(l.inspDate)+')':''} ശുചീകരണ പരിശോധനയ്ക്ക് നന്ദി. നിങ്ങളുടെ പരിശോധനാ ഫീഡ്‌ബാക്ക് താഴെ ലിങ്കിൽ അറിയിക്കാമോ? (ലോഗിൻ വേണ്ട, ഒരു തവണ മാത്രം)\nThank you for the inspection. Please share your feedback (no login, one-time link):\n${sqUrl(l.id)}\n— ${meDoc?.name||''}`}
+async function sqShare(l){const t=sqMsg(l);if(navigator.share){try{await navigator.share({title:'സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് – ഭദ്രം ഈ ഭൂമി',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)}
+const sqWa=l=>window.open('https://wa.me/?text='+encodeURIComponent(sqMsg(l)),'_blank','noopener');
+function sqQR(url){try{const q=qrcode(0,'M');q.addData(url);q.make();return q.createSvgTag({cellSize:5,margin:2,scalable:true})}catch(e){return ''}}
+function subscribeSquad(){
+  unsubs.push(onSnapshot(query(collection(db,'squadFeedback'),orderBy('createdAt','desc'),limit(500)),s=>{squadFb=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})}));renderSquad();if($('#v-dash').classList.contains('active'))renderDash()},e=>console.error('squadFb',e)));
+  const q=can.admin()?query(collection(db,'squadLinks'),orderBy('createdAt','desc'),limit(500)):query(collection(db,'squadLinks'),where('createdBy','==',me.uid));
+  unsubs.push(onSnapshot(q,s=>{squadLinks=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));renderSquadLinks()},e=>console.error('squadLinks',e)))}
+function setFbMode(m){fbMode=m;$$('#fbMode button').forEach(x=>x.classList.toggle('on',x.dataset.m===m));$('#fbRes').style.display=m==='res'?'':'none';$('#fbSquad').style.display=m==='squad'?'':'none';
+  $('#fbEyebrow').textContent=m==='res'?'സ്ഥലവാസികൾ · Residents':'സ്ക്വാഡ് പരിശോധന · Squad inspection';
+  $('#fbTitle').innerHTML=m==='res'?'സ്ഥലവാസികളുടെ അഭിപ്രായം <span class="en">(Resident feedback)</span>':'സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് <span class="en">(Squad inspection feedback)</span>';if(m==='squad'){renderSquad();renderSquadLinks()}}
+$$('#fbMode button').forEach(b=>b.onclick=()=>setFbMode(b.dataset.m));
+$$('#sqLinkF button').forEach(b=>b.onclick=()=>{sqLinkFilter=b.dataset.f;$$('#sqLinkF button').forEach(x=>x.classList.toggle('on',x===b));renderSquadLinks()});
+['#sqfPlace','#sqfShow'].forEach(s=>$(s).addEventListener('change',renderSquad));
+function fillSquadPlaces(){const o=places.map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}</option>`).join('');
+  const s1=$('#sqPlace'),c1=s1.value;s1.innerHTML='<option value="">— സ്ഥലം തിരഞ്ഞെടുക്കുക / റൂട്ട് മാത്രം (Pick place / route only) —</option>'+o;s1.value=c1;
+  const s2=$('#sqfPlace'),c2=s2.value;s2.innerHTML='<option value="">എല്ലാ സ്ഥലങ്ങളും (All places)</option>'+o;s2.value=c2;$('#sqExpWrap').style.display=can.admin()?'':'none'}
+function sqOutHTML(l){const url=sqUrl(l.id);return `<div class="sq-ok">${ico('check','sm')} ലിങ്ക് തയ്യാർ <span class="en">(Link ready)</span> – ${sqWhere(l)}</div>
+  <div class="sq-url"><input type="text" readonly value="${esc(url)}" aria-label="link"></div>
+  <div class="row actions3"><button class="btn sm" data-sqa="share" data-id="${l.id}">${ico('share','sm')}പങ്കിടുക <span class="en">(Share)</span></button><button class="btn sm wa" data-sqa="wa" data-id="${l.id}">${ico('chat','sm')}WhatsApp</button><button class="btn out sm" data-sqa="copy" data-id="${l.id}">${ico('copy','sm')}കോപ്പി <span class="en">(Copy)</span></button></div>
+  <details class="sq-qr"><summary>${ico('qr','sm')} QR കോഡ് കാണിക്കുക <span class="en">(Show QR)</span></summary><div class="qrbox">${sqQR(url)}</div></details>
+  <p class="hint" style="margin:8px 0 0">${l.expiresAt?'⌛ സാധുത (Valid till) '+new Date(l.expiresAt.seconds*1000).toLocaleDateString('en-IN'):'♾️ കാലാവധി ഇല്ല (No expiry)'} · ഒരു തവണ മാത്രം (Single use) · അയച്ച ശേഷം ഇതേ ലിങ്കിൽ ഫീഡ്‌ബാക്ക് വായിക്കാൻ മാത്രം കാണാം (After submission the link shows the feedback read-only)</p>`}
+function bindSqActions(root){root.querySelectorAll('[data-sqa]').forEach(b=>b.onclick=async()=>{const l=squadLinks.find(x=>x.id===b.dataset.id)||lastLink;if(!l)return;const a=b.dataset.sqa;
+  if(a==='share')sqShare(l);else if(a==='wa')sqWa(l);else if(a==='copy')copyText(sqUrl(l.id));else if(a==='open')window.open(sqUrl(l.id),'_blank','noopener');
+  else if(a==='qr'){const box=b.closest('.sql').querySelector('.qrbox');box.innerHTML=box.innerHTML?'':sqQR(sqUrl(l.id))}
+  else if(a==='revoke'){if(!await ask('ഈ ലിങ്ക് റദ്ദാക്കണോ? ഇനി ഇത് ഉപയോഗിക്കാനാവില്ല. (Revoke this link?)'))return;
+    updateDoc(doc(db,'squadLinks',l.id),{status:'revoked',revokedAt:serverTimestamp(),revokedBy:me.uid}).then(()=>toast('🚫 റദ്ദാക്കി (Revoked)')).catch(e=>toast('⚠️ '+e.code))}
+  else if(a==='view'){setFbMode('squad');const el=$(`#sqList [data-id="${l.id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1600)}}})}
+let lastLink=null;
+$('#sqCreate').onclick=async()=>{const pid=$('#sqPlace').value,route=$('#sqRoute').value.trim().slice(0,150);
+  if(!pid&&!route){toast('📍 സ്ഥലം അല്ലെങ്കിൽ റൂട്ട് നൽകുക (Pick a place or enter a route)');return}
+  const p=places.find(x=>x.id===pid);const id=sqToken();
+  const d={placeId:pid||'',placeName:p?p.name:'',createdBy:me.uid,createdByName:(meDoc?.name||'').slice(0,80),createdAt:serverTimestamp(),status:'open'};
+  if(p?.area)d.area=p.area;if(p?.ward)d.ward=p.ward;if(route)d.route=route;const dt=$('#sqDate').value;if(dt)d.inspDate=dt;const nm=$('#sqName').value.trim().slice(0,80);if(nm)d.officialName=nm;
+  const ex=can.admin()?+$('#sqExp').value:0;if(ex)d.expiresAt=F.Timestamp.fromMillis(Date.now()+ex*864e5);
+  const btn=$('#sqCreate');btn.disabled=true;
+  try{await setDoc(doc(db,'squadLinks',id),d);lastLink={id,...d,createdAt:{seconds:Date.now()/1000},expiresAt:d.expiresAt?{seconds:d.expiresAt.seconds}:null};
+    $('#sqOut').innerHTML=sqOutHTML(lastLink);$('#sqOut').style.display='block';bindSqActions($('#sqOut'));toast('🔗 ലിങ്ക് തയ്യാർ (Link created)');
+    $('#sqRoute').value='';$('#sqName').value='';$('#sqOut').scrollIntoView({behavior:'smooth',block:'nearest'})}
+  catch(e){console.error(e);toast('⚠️ '+(e.code||e.message))}finally{btn.disabled=false}};
+function renderSquadLinks(){if(!can.staff())return;const now=Date.now();
+  const L=squadLinks.filter(l=>{const st=sqState(l);return sqLinkFilter==='all'||(sqLinkFilter==='closed'?(st==='expired'||st==='revoked'):st===sqLinkFilter)});
+  const cnt=k=>squadLinks.filter(l=>k==='closed'?['expired','revoked'].includes(sqState(l)):k==='all'||sqState(l)===k).length;
+  $$('#sqLinkF button').forEach(b=>{const n=cnt(b.dataset.f);let c=b.querySelector('.cnt');if(!c){c=document.createElement('b');c.className='cnt';b.appendChild(c)}c.textContent=n});
+  if(!L.length){$('#sqLinks').innerHTML=emptyHTML('link','ലിങ്കുകൾ ഇല്ല','No links here');return}
+  $('#sqLinks').innerHTML=L.map(l=>{const st=sqState(l),[cls,lab]=SQ_ST[st];const d=l.createdAt?new Date(l.createdAt.seconds*1000):null;const mine=l.createdBy===me.uid;
+    return `<div class="sql" data-id="${l.id}"><div class="sql-h"><div><b>📍 ${sqWhere(l)}</b><div class="hint">${l.officialName?'👤 '+esc(l.officialName)+' · ':''}${l.inspDate?'📅 '+fmtDate(l.inspDate)+' · ':''}${d?'🔗 '+d.toLocaleDateString('en-IN'):''}${!mine&&l.createdByName?' · '+esc(l.createdByName):''}${l.expiresAt&&st==='open'?' · ⌛ '+new Date(l.expiresAt.seconds*1000).toLocaleDateString('en-IN'):''}</div></div><span class="badge ${cls}">${lab}</span></div>
+    <div class="sql-a">${st==='open'?`<button class="btn sm" data-sqa="share" data-id="${l.id}">${ico('share','sm')}<span>പങ്കിടുക</span></button><button class="btn sm wa" data-sqa="wa" data-id="${l.id}">${ico('chat','sm')}<span>WhatsApp</span></button><button class="btn out sm iconbtn" data-sqa="copy" data-id="${l.id}" aria-label="copy link">${ico('copy','sm')}</button><button class="btn out sm iconbtn" data-sqa="qr" data-id="${l.id}" aria-label="QR">${ico('qr','sm')}</button>${mine||can.admin()?`<button class="btn danger sm iconbtn" data-sqa="revoke" data-id="${l.id}" aria-label="revoke">${ico('x','sm')}</button>`:''}`
+      :st==='used'?`<button class="btn sec sm" data-sqa="view" data-id="${l.id}">${ico('eye','sm')}<span>ഫീഡ്‌ബാക്ക് കാണുക (View)</span></button><button class="btn out sm" data-sqa="open" data-id="${l.id}">${ico('ext','sm')}<span>ലിങ്ക് (Link view)</span></button>`:''}</div><div class="qrbox"></div></div>`}).join('');
+  bindSqActions($('#sqLinks'))}
+function renderSquad(){if(!can.staff())return;fillSquadPlaces();const pl=$('#sqfPlace').value,show=$('#sqfShow').value;
+  const list=squadFb.filter(f=>(!pl||f.placeId===pl)&&(show==='all'||(f.status||'visible')===show));
+  const vis=squadFb.filter(f=>f.status!=='hidden'&&(!pl||f.placeId===pl));const c=k=>vis.filter(f=>f.overall===k).length;
+  $('#sqSum').innerHTML=vis.length?`${starsHTML(vis.reduce((s,f)=>s+f.rating,0)/vis.length)} <b>${(vis.reduce((s,f)=>s+f.rating,0)/vis.length).toFixed(1)}/5</b> · ${vis.length} പരിശോധന (inspections)<div class="sq-dist"><span class="ovb good">✅ ${c('good')}</span><span class="ovb partial">⚠️ ${c('partial')}</span><span class="ovb poor">❌ ${c('poor')}</span></div>`:'<span class="hint">ഇതുവരെ ഫീഡ്‌ബാക്ക് ഇല്ല (No squad feedback yet)</span>';
+  if(!list.length){$('#sqList').innerHTML=emptyHTML('landmark','ഒന്നുമില്ല','No inspection feedback yet');return}
+  $('#sqList').innerHTML=list.map(f=>{const d=fbDate(f);return `<div class="card fbc sqc ${f.status==='hidden'?'hidden':''}" data-id="${f.id}">
+    <div class="sqc-h"><div><b>📍 ${sqWhere(f)}</b> <span class="en">${esc(f.ward||'')}</span></div><div class="hint">${d?d.toLocaleString('en-IN'):''}</div></div>
+    <div class="sqc-o"><span class="sqav">${esc((f.officialName||'?').trim().charAt(0))}</span><div><b>${esc(f.officialName)}</b><div class="hint">${esc(f.designation)} · ${esc(f.institution)}</div></div></div>
+    <div class="sqc-r">${sqOvrBadge(f.overall)} ${starsHTML(f.rating)} <b>${f.rating}/5</b> <span class="hint">📅 ${fmtDate(f.inspDate)}</span></div>
+    ${f.concerns?`<div class="remark"><b>🔎 കൂടുതൽ ശ്രദ്ധിക്കേണ്ട കാര്യങ്ങൾ (Needs attention):</b> ${esc(f.concerns)}</div>`:''}
+    ${f.suggestions?`<div class="remark sug">💡 <b>നിർദ്ദേശങ്ങൾ (Suggestions):</b> ${esc(f.suggestions)}</div>`:''}
+    ${f.photo?`<img class="fbph" src="${f.photo}" alt="" loading="lazy">`:''}
+    <div class="hint" style="margin-top:6px">🔗 ${esc(f.linkByName||'')}${f.hasPhone?(can.moderate()?` · 📞 <span class="sph-${f.id}">…</span>`:' · 📞 (ഉദ്യോഗസ്ഥർക്ക് മാത്രം / officers only)'):''}${f.status==='hidden'?' · 🙈 മറച്ചു (hidden)':''}</div>
+    ${can.moderate()?`<div style="margin-top:8px"><button class="btn ${f.status==='hidden'?'sec':'danger'} sm" data-sqtoggle="${f.id}">${f.status==='hidden'?'👁️ വീണ്ടും കാണിക്കുക (Unhide)':'🙈 മറയ്ക്കുക (Hide)'}</button></div>`:''}</div>`}).join('');
+  $$('#sqList .fbph').forEach(im=>im.onclick=()=>openViewer([{src:im.src,cap:'🏛️ സ്ക്വാഡ് പരിശോധന ഫോട്ടോ (Inspection photo)'}],0));
+  $$('[data-sqtoggle]').forEach(b=>b.onclick=async()=>{const f=squadFb.find(x=>x.id===b.dataset.sqtoggle);const to=f.status==='hidden'?'visible':'hidden';
+    if(to==='hidden'&&!await ask('ഈ ഫീഡ്‌ബാക്ക് മറയ്ക്കണോ? (Hide this feedback?)'))return;
+    updateDoc(doc(db,'squadFeedback',f.id),{status:to,moderatedBy:me.uid,moderatedAt:serverTimestamp()}).then(()=>toast(to==='hidden'?'🙈 മറച്ചു (Hidden)':'👁️ കാണിക്കുന്നു (Visible)')).catch(e=>toast('⚠️ '+e.code))});
+  if(can.moderate())list.filter(f=>f.hasPhone).forEach(async f=>{const set=v=>$$('.sph-'+f.id).forEach(e=>e.innerHTML=v);
+    if(!sqPhoneCache.has(f.id))sqPhoneCache.set(f.id,getDoc(doc(db,'squadFeedback',f.id,'private','contact')).then(s=>s.exists()?s.data().phone:'').catch(()=>''));
+    const ph=await sqPhoneCache.get(f.id);set(ph?`<a href="tel:${esc(ph)}">${esc(ph)}</a>`:'-')})}
+function sqDashHTML(){if(!can.staff())return '';const f=$('#dFrom').value,t=$('#dTo').value,a=$('#dArea').value,w=$('#dWard').value;
+  const list=squadFb.filter(x=>x.status!=='hidden'&&(!a||x.area===a)&&(!w||x.ward===w)).filter(x=>{const s=x.inspDate||(fbDate(x)?ymd(fbDate(x)):'');return !s||(s>=f&&s<=t)});
+  const pend=squadLinks.filter(l=>sqState(l)==='open').length;
+  const head=`<div class="rp-sub">${ico('landmark','sm')}സ്ക്വാഡ് പരിശോധന <span class="en">(Squad inspections)</span>`;
+  if(!list.length)return head+`</div><div class="hint">ഈ കാലയളവിൽ ഇല്ല (none in this period)${pend?` · ⏳ ${pend} ലിങ്ക് ബാക്കി (links pending)`:''}</div>`;
+  const avg=list.reduce((s,x)=>s+x.rating,0)/list.length;const c=k=>list.filter(x=>x.overall===k).length;
+  return head+` ${starsHTML(avg)} <b>${avg.toFixed(1)}/5</b> <span class="en">(${list.length})</span></div><div class="sq-dist"><span class="ovb good">✅ ${c('good')}</span><span class="ovb partial">⚠️ ${c('partial')}</span><span class="ovb poor">❌ ${c('poor')}</span>${pend?`<span class="hint">⏳ ${pend} ലിങ്ക് ബാക്കി (pending)</span>`:''}</div>`}
+async function rangeSquad(from,to,a,w,ty,pl){try{const s=await getDocs(query(collection(db,'squadFeedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));
+  return s.docs.map(d=>({id:d.id,...d.data()})).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||(f.placeId&&placeTypeOf(f)===ty))&&(!pl||f.placeId===pl))}catch(e){console.error(e);return []}}
+const sqHead=`<div class="rp-sub" style="font-size:15px">🏛️ സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് (Squad inspection feedback)</div>`;
+function sqDayHTML(list){if(!list.length)return sqHead+'<p class="hint">ഈ ദിവസം സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് ഇല്ല (No squad inspection feedback this day)</p>';
+  return sqHead+list.map(f=>`<div class="dr-fb dr-sq"><div><b>📍 ${sqWhere(f)}</b>${f.ward?' · '+esc(f.ward):''} · ${sqOvrBadge(f.overall)} ${starsHTML(f.rating)} <b>${f.rating}/5</b></div>
+    <div>👤 <b>${esc(f.officialName)}</b>, ${esc(f.designation)} – ${esc(f.institution)} <span class="hint">· 📅 പരിശോധന (Inspected) ${fmtDate(f.inspDate)}</span></div>
+    ${f.concerns?`<div>🔎 <b>ശ്രദ്ധിക്കേണ്ടവ (Needs attention):</b> ${esc(f.concerns)}</div>`:''}${f.suggestions?`<div>💡 <b>നിർദ്ദേശങ്ങൾ (Suggestions):</b> ${esc(f.suggestions)}</div>`:''}${f.photo?`<img class="fbph" src="${f.photo}" alt="">`:''}</div>`).join('')}
+function sqMonthHTML(list){if(!list.length)return sqHead+'<p class="hint">ഈ മാസം സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് ഇല്ല (No squad inspection feedback this month)</p>';
+  const avg=list.reduce((s,f)=>s+f.rating,0)/list.length;const c=k=>list.filter(f=>f.overall===k).length;
+  return sqHead+`<table class="rp-tbl"><tr><th>ആകെ (Total)</th><th>✅ തൃപ്തികരം</th><th>⚠️ ഭാഗികം</th><th>❌ അല്ല (Not)</th><th>★ ശരാശരി</th></tr><tr><td>${list.length}</td><td>${c('good')}</td><td>${c('partial')}</td><td>${c('poor')}</td><td>${avg.toFixed(1)}</td></tr></table>
+  <table class="rp-tbl sq-tbl"><tr><th>തീയതി (Date)</th><th>സ്ഥലം (Place)</th><th>ഉദ്യോഗസ്ഥൻ (Official)</th><th>നില (Status)</th></tr>${list.map(f=>`<tr><td>${esc((f.inspDate||'').split('-').reverse().join('/'))}</td><td>${sqWhere(f)}</td><td>${esc(f.officialName)}<br><span class="en">${esc(f.designation)} – ${esc(f.institution)}</span></td><td>${SQ_OVR[f.overall]?SQ_OVR[f.overall][0]+' '+SQ_OVR[f.overall][1]:''}<br>★ ${f.rating}/5</td></tr>`).join('')}</table>`+
+  (list.some(f=>f.concerns||f.suggestions)?`<div class="rp-sub">🔎 ശ്രദ്ധിക്കേണ്ടവ / 💡 നിർദ്ദേശങ്ങൾ (Attention points / suggestions)</div><ul style="font-size:13px;margin-top:2px">${list.filter(f=>f.concerns||f.suggestions).map(f=>`<li><b>${sqWhere(f)}</b> (${esc(f.officialName)}, ${fmtDate(f.inspDate)}): ${f.concerns?'🔎 '+esc(f.concerns):''}${f.concerns&&f.suggestions?' · ':''}${f.suggestions?'💡 '+esc(f.suggestions):''}</li>`).join('')}</ul>`:'')}
 async function monthFeedback(m,last,a,w,ty){const from=new Date(m+'-01T00:00:00'),to=new Date(last+'T23:59:59.999');
   try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));return s.docs.map(d=>d.data()).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||placeTypeOf(f)===ty))}catch(e){console.error(e);return []}}
 function fbReportHTML(list){
