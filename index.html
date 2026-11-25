@@ -101,6 +101,12 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
 .rp-ph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}.rp-ph img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#f1f5f4;border:1px solid #e2e8e6;border-radius:6px;cursor:zoom-in}
 #detOut .rp-ph{grid-template-columns:1fr;gap:10px}#detOut .rp-ph img{aspect-ratio:auto;max-height:75vh;background:#1f2937;border:none}
 @media print{.rp-ph{grid-template-columns:repeat(2,1fr)}.rp-ph img{aspect-ratio:auto;max-height:90mm;background:none}}
+.seg{display:flex;gap:0;margin:4px 0 10px;border:1.5px solid var(--g);border-radius:12px;overflow:hidden}.seg button{flex:1;min-height:46px;border:none;background:#fff;color:var(--g);font-size:15px;font-weight:700}.seg button.on{background:var(--g);color:#fff}.seg button.on .en{color:#e6fffa}
+.dr-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}.dr-kpi div{background:#fff;border:1px solid #cfe9e4;border-radius:8px;padding:6px;text-align:center;font-size:12px}.dr-kpi b{display:block;font-size:20px;color:var(--g)}
+.dr-e{border:1px solid #cfe9e4;border-radius:10px;padding:10px;margin-bottom:10px;break-inside:avoid;page-break-inside:avoid}.dr-e .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:700;color:var(--g)}
+.dr-ph{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:6px 0}.dr-ph figure{margin:0}.dr-ph img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#f1f5f4;border:1px solid #e2e8e6;border-radius:6px;cursor:zoom-in;display:block}.dr-ph figcaption{font-size:11px;color:var(--mut);text-align:center}
+.pend{color:#b45309}.dr-fb{border-left:4px solid #f59e0b;padding:6px 8px;margin:6px 0;background:#fffbeb;border-radius:6px;font-size:13px;break-inside:avoid}.dr-fb img{max-width:48%;max-height:60mm;object-fit:contain;display:block;margin-top:4px;border-radius:6px}
+@media print{.dr-ph img{aspect-ratio:auto;max-height:58mm;background:none}.rp-sub{break-after:avoid;page-break-after:avoid}.dr-kpi div{border-color:#999}@page{size:A4;margin:10mm}}
 .rp-sub{font-weight:700;color:var(--g);margin:8px 0 2px;font-size:14px}
 .rp-sum{background:var(--gl);border-radius:10px;padding:10px;font-size:14px;margin-bottom:12px}
 .rp-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}.rp-tbl th,.rp-tbl td{border:1px solid #cfe9e4;padding:4px 6px;text-align:left}.rp-tbl th{background:var(--gl)}
@@ -203,10 +209,13 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
   <!-- REPORT -->
   <section id="v-report" class="view">
     <div class="card noprint">
-      <h2>📄 മാസ റിപ്പോർട്ട് <span class="en">(Monthly report)</span></h2>
-      <div class="row wrap"><input type="month" id="rMonth"><select id="rArea"></select><select id="rWard"></select><select id="rWorker"></select><select id="rType"></select></div>
+      <h2>📄 റിപ്പോർട്ട് <span class="en">(Report)</span></h2>
+      <div class="seg" id="rMode"><button data-m="day" class="on">📅 ദിവസ <span class="en">(Daily)</span></button><button data-m="month">🗓️ മാസ <span class="en">(Monthly)</span></button></div>
+      <div class="row" id="rDayRow" style="align-items:center;margin-bottom:8px"><button class="btn sec sm" id="rPrev" style="flex:0 0 52px" aria-label="previous day">◀</button><input type="date" id="rDate" style="flex:1;min-width:150px"><button class="btn sec sm" id="rNext" style="flex:0 0 52px" aria-label="next day">▶</button><button class="btn sec sm" id="rToday" style="flex:0 0 auto">ഇന്ന്</button></div>
+      <div class="row wrap"><input type="month" id="rMonth" style="display:none"><select id="rArea"></select><select id="rWard"></select><select id="rPlace"></select><select id="rWorker"></select><select id="rType"></select></div>
       <label class="chip" style="margin-top:8px"><input type="checkbox" id="rPhotos" checked> ഫോട്ടോകൾ ഉൾപ്പെടുത്തുക (Include photos)</label>
       <div class="row" style="margin-top:10px"><button class="btn" id="rMake">🔄 തയ്യാറാക്കുക (Generate)</button><button class="btn sec" id="rPrint">🖨️ PDF / പ്രിൻ്റ്</button></div>
+      <div class="row" style="margin-top:8px"><button class="btn sec" id="rShare">📤 പങ്കിടുക (Share)</button><button class="btn sec" id="rWa" style="background:#25d366;color:#fff;border-color:#25d366">🟢 WhatsApp</button><button class="btn sec" id="rCopy">📋 കോപ്പി (Copy)</button></div>
       <p class="hint">PDF: 🖨️ അമർത്തി "Save as PDF" തിരഞ്ഞെടുക്കുക, എന്നിട്ട് WhatsApp-ൽ അയക്കാം.</p>
     </div>
     <div id="reportOut"></div>
