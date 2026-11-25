@@ -66,11 +66,11 @@ function startApp(){unsubs.splice(1).forEach(u=>u());entryUnsub&&entryUnsub();en
   $('#placesCard').style.display=can.sup()?'block':'none';$('#usersCard').style.display=can.admin()?'block':'none';
   $('#sName').value=meDoc.name||'';$('#sPhone').value=meDoc.phone||'';$('#meInfo').textContent=`${me.email} · ${ROLES[r]}`;
   $('#phMode').textContent=OPT.storageEnabled?'☁️ ഫോട്ടോകൾ Firebase Storage-ൽ സൂക്ഷിക്കുന്നു (Photos stored in Cloud Storage)':'💾 ഫോട്ടോകൾ ചുരുക്കി (~200KB) ഡാറ്റാബേസിൽ സൂക്ഷിക്കുന്നു (Free-plan mode: compressed photos in Firestore)';
-  $('#aboutTxt').innerHTML=`പതിപ്പ് (version) team-1 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
+  $('#aboutTxt').innerHTML=`നിറവ് – ദൈനംദിന ശുചീകരണം (Niravu – Daily Cleaning) · പതിപ്പ് (version) team-2 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
   unsubs.push(onSnapshot(collection(db,'places'),s=>{places=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.area+a.ward+a.name).localeCompare(b.area+b.ward+b.name));renderPlaces()},e=>console.error(e)));
   unsubs.push(onSnapshot(collection(db,'users'),s=>{users=s.docs.map(d=>({uid:d.id,...d.data()}));renderUsers();fillFilters()},e=>console.error(e)));
   unsubs.push(onSnapshot(query(collection(db,'users',me.uid,'notifications'),orderBy('createdAt','desc'),limit(100)),s=>{
-    if(notifReady)s.docChanges().forEach(c=>{if(c.type==='added'&&!c.doc.metadata.hasPendingWrites){const n=c.doc.data();toast('🔔 '+n.text,4500);try{if(Notification.permission==='granted')new Notification('ശുചീകരണ ഡയറി',{body:n.text,icon:'icon-192.png'})}catch(e){}}});
+    if(notifReady)s.docChanges().forEach(c=>{if(c.type==='added'&&!c.doc.metadata.hasPendingWrites){const n=c.doc.data();toast('🔔 '+n.text,4500);try{if(Notification.permission==='granted')new Notification('നിറവ് – ദൈനംദിന ശുചീകരണം',{body:n.text,icon:'icon-192.png'})}catch(e){}}});
     notifReady=true;notifs=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})}));renderNotifs()},e=>console.error(e)));
   if(!$('#dFrom').value){const d=new Date();$('#dFrom').value=ymd(new Date(d.getFullYear(),d.getMonth(),1));$('#dTo').value=today();$('#rMonth').value=today().slice(0,7)}
   subscribeEntries();resetForm();
@@ -235,7 +235,7 @@ async function makeReport(){const tok=++reportToken;const m=$('#rMonth').value||
   const a=$('#rArea').value,w=$('#rWard').value,k=$('#rWorker').value;
   const list=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).filter(e=>(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)).sort((x,z)=>(x.date+(x.time||'')).localeCompare(z.date+(z.time||'')));
   const st=stats(list);const wk=k?users.find(u=>u.uid===k)?.name:'';
-  let h=`<div class="rp-h"><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2><div>${[a,w,wk].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)'}</div></div>`;
+  let h=`<div class="rp-h"><div style="font-size:22px;font-weight:800;color:var(--g)">നിറവ് – ദൈനംദിന ശുചീകരണം</div><div class="en">Niravu – Daily Cleaning</div><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2><div>${[a,w,wk].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)'}</div></div>`;
   if(!list.length){$('#reportOut').innerHTML=h+'<div class="empty"><div class="big">📭</div>എൻട്രികൾ ഇല്ല (No entries)</div>';return}
   h+=`<div class="rp-sum"><b>ആകെ (Summary):</b> ${list.length} ജോലി (entries) · ${st.days} ദിവസം (days) · ${st.places} സ്ഥലം (places) · ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos}${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}<br>
     <b>ശുചിത്വ സ്കോർ (Cleanliness score): <span style="color:${scoreColor(st.avg)}">${st.avg??'–'}/100</span></b> · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}% · അഭിപ്രായം ബാക്കി (awaiting remark) ${st.awaiting}</div>`;
@@ -244,7 +244,7 @@ async function makeReport(){const tok=++reportToken;const m=$('#rMonth').value||
   const withPh=$('#rPhotos').checked;
   for(const e of list){const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);if(tok!==reportToken)return;
     h+=entryHTML(e,ps?ps.docs.map(d=>d.data()).sort((x,z)=>x.ts-z.ts):[],rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}
-  h+=`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')}</p>`;$('#reportOut').innerHTML=h}
+  h+=`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')} · നിറവ് (Niravu)</p>`;$('#reportOut').innerHTML=h}
 $('#rPrint').onclick=async()=>{if(!$('#reportOut .rp-h'))await makeReport();await Promise.all([...$$('#reportOut img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));print()};
 
 /* ---------- tabs & SW ---------- */
