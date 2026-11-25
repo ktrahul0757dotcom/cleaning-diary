@@ -27,9 +27,12 @@ $('#suggestion').oninput=()=>$('#sc').textContent=$('#suggestion').value.length;
 show('v-form');
 
 function loadImage(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('bad image'));i.src=src})}
-async function compress(file){const url=URL.createObjectURL(file);try{const img=await loadImage(url);
-  for(const [m,q] of [[1280,0.7],[1280,0.6],[1024,0.6],[1024,0.5],[800,0.5],[640,0.5],[480,0.45]]){const s=Math.min(1,m/Math.max(img.naturalWidth,img.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const d=c.toDataURL('image/jpeg',q);if(d.length<190000)return d}
-  throw new Error('too big')}finally{URL.revokeObjectURL(url)}}
+async function decodeImage(file){if(window.createImageBitmap){try{return await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){}}const url=URL.createObjectURL(file);try{return await loadImage(url)}finally{setTimeout(()=>URL.revokeObjectURL(url),5000)}}
+async function compress(file){const img=await decodeImage(file);const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;const cache={};
+  for(const [m,q] of [[1600,0.78],[1600,0.68],[1440,0.68],[1280,0.72],[1280,0.62],[1280,0.52],[1024,0.6],[1024,0.5],[900,0.5],[800,0.5],[640,0.45],[480,0.45]]){
+    let c=cache[m];if(!c){const s=Math.min(1,m/Math.max(w,h));c=cache[m]=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(img,0,0,c.width,c.height)}
+    const d=c.toDataURL('image/jpeg',q);if(d.length<190000)return d}
+  throw new Error('too big')}
 document.querySelectorAll('.phin').forEach(inp=>inp.onchange=async()=>{const f=inp.files[0];inp.value='';if(!f)return;try{photo=await compress(f);$('#phImg').src=photo;$('#ph').style.display='block'}catch(e){$('#err').textContent='⚠️ ഫോട്ടോ ചേർക്കാനായില്ല (Could not add photo)'}});
 $('#phDel').onclick=()=>{photo=null;$('#ph').style.display='none'};
 

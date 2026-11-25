@@ -42,7 +42,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g);box-s
 .rating input{display:none}.rating label.on{background:var(--gl);border-color:var(--g);font-weight:700}
 .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
 .ph{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#e2f3f0}
-.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph img{width:100%;height:100%;object-fit:contain;display:block;background:#1f2937;cursor:zoom-in}
 .ph button{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(220,38,38,.9);color:#fff;font-size:18px}
 .phbtns{display:flex;gap:8px;margin-top:6px}.phbtns .btn{flex:1}
 .sig-wrap{border:1.5px dashed var(--g);border-radius:10px;background:#fff;position:relative}
@@ -54,7 +54,7 @@ nav.tabs button{flex:1;border:none;background:none;font:inherit;font-size:12px;p
 nav.tabs button .i{font-size:23px}nav.tabs button.active{color:var(--g);font-weight:700;background:var(--gl)}
 nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--red);color:#fff;border-radius:10px;font-size:11px;padding:0 6px;min-width:18px;display:none}
 .entry{display:flex;gap:10px;cursor:pointer}
-.entry .thumb{width:76px;height:76px;border-radius:10px;object-fit:cover;background:#e2f3f0;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px}
+.entry .thumb{width:76px;height:76px;border-radius:10px;object-fit:contain;background:#1f2937;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px}
 .entry .info{flex:1;min-width:0}.entry .t{font-weight:700}
 .entry .s{font-size:14px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:20px;background:var(--gl);color:var(--g);margin:2px 4px 0 0}
@@ -77,10 +77,16 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
 .ulist .u{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eef7f5}
 .ulist img{width:38px;height:38px;border-radius:50%}.ulist .nm{flex:1;min-width:0;font-size:15px}.ulist select{width:150px;min-height:42px;padding:6px}
 .center{text-align:center}
+#viewer{position:fixed;inset:0;background:#000;z-index:80;display:none;flex-direction:column}#viewer.show{display:flex}
+#vwScroll{flex:1;overflow:auto;touch-action:pan-x pan-y;display:flex;align-items:center;justify-content:center}
+#vwScroll.zoomed{display:block}#vwImg{max-width:100%;max-height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+#vwScroll.zoomed #vwImg{max-width:none;max-height:none}
+.vwbar{display:flex;gap:6px;align-items:center;padding:8px;background:rgba(0,0,0,.85);color:#fff;font-size:14px}.vwbar button{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:10px;min-width:46px;min-height:44px;font-size:20px}
+.vwbar .cap{flex:1;text-align:center}
 .place-list{display:flex;flex-wrap:wrap;gap:6px}.place-list span{background:var(--gl);color:var(--g);border-radius:20px;padding:6px 10px;font-size:14px;display:inline-flex;gap:6px;align-items:center}.place-list button{border:none;background:none;color:var(--red);font-size:16px;padding:0 2px}
 .tbadge{display:inline-block;font-size:12px;padding:1px 8px;border-radius:20px;background:#e0f2fe;color:#075985;margin:2px 4px 0 0;white-space:nowrap}
 .stars{color:#f59e0b;letter-spacing:1px;font-size:18px}.stars .off{color:#d1d5db}
-.fbc.hidden{opacity:.55;border:2px dashed #fca5a5}.fbc img.fbph{width:100%;max-height:240px;object-fit:cover;border-radius:10px;margin-top:6px}
+.fbc.hidden{opacity:.55;border:2px dashed #fca5a5}.fbc img.fbph{width:100%;max-height:340px;object-fit:contain;background:#1f2937;border-radius:10px;margin-top:6px;cursor:zoom-in}
 .qrrow{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #eef7f5}.qrrow .nm{flex:1;min-width:0;font-size:15px}
 #qrModal .box{max-width:460px;text-align:center}#qrCanvas{width:100%;max-width:300px;border:1px solid #e2f3f0;border-radius:8px}
 .linkbox{font-size:12px;word-break:break-all;background:#f1f5f4;border-radius:8px;padding:6px;margin:8px 0;user-select:all}
@@ -92,7 +98,9 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
 .rp-h{text-align:center;border-bottom:3px solid var(--g);padding-bottom:8px;margin-bottom:10px}.rp-h h2{margin:0;color:var(--g);font-size:20px}
 .rp-e{border:1px solid #cfe9e4;border-radius:10px;padding:10px;margin-bottom:12px;break-inside:avoid;page-break-inside:avoid}
 .rp-e table{width:100%;border-collapse:collapse;font-size:14px}.rp-e td{padding:3px 4px;vertical-align:top;border-bottom:1px solid #eef7f5}.rp-e td:first-child{width:36%;color:var(--mut)}
-.rp-ph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}.rp-ph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px}
+.rp-ph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}.rp-ph img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#f1f5f4;border:1px solid #e2e8e6;border-radius:6px;cursor:zoom-in}
+#detOut .rp-ph{grid-template-columns:1fr;gap:10px}#detOut .rp-ph img{aspect-ratio:auto;max-height:75vh;background:#1f2937;border:none}
+@media print{.rp-ph{grid-template-columns:repeat(2,1fr)}.rp-ph img{aspect-ratio:auto;max-height:90mm;background:none}}
 .rp-sub{font-weight:700;color:var(--g);margin:8px 0 2px;font-size:14px}
 .rp-sum{background:var(--gl);border-radius:10px;padding:10px;font-size:14px;margin-bottom:12px}
 .rp-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}.rp-tbl th,.rp-tbl td{border:1px solid #cfe9e4;padding:4px 6px;text-align:left}.rp-tbl th{background:var(--gl)}
@@ -243,6 +251,9 @@ nav.tabs .bdg{position:absolute;top:4px;right:calc(50% - 26px);background:var(--
   <button data-v="v-notif"><span class="i">🔔</span>അറിയിപ്പ്<span class="en">Alerts</span><span class="bdg" id="nBadge"></span></button>
   <button data-v="v-set"><span class="i">⚙️</span>ക്രമീകരണം<span class="en">Settings</span></button>
 </nav>
+<div id="viewer"><div class="vwbar"><button id="vwClose" aria-label="close">✕</button><div class="cap" id="vwCap"></div><button id="vwOut">−</button><button id="vwIn">＋</button></div>
+<div id="vwScroll"><img id="vwImg" alt=""></div>
+<div class="vwbar"><button id="vwPrev">◀</button><div class="cap hint" style="color:#ddd">രണ്ട് വിരൽ കൊണ്ട് സൂം ചെയ്യാം / ഇരട്ട ടാപ്പ് (Pinch or double-tap to zoom)</div><button id="vwNext">▶</button></div></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="modal"><div class="box"><p id="mMsg"></p><div class="row"><button class="btn out" id="mNo">റദ്ദാക്കുക</button><button class="btn" id="mYes">ശരി</button></div></div></div>
 <div class="modal" id="qrModal"><div class="box"><canvas id="qrCanvas"></canvas><div class="linkbox" id="qrLink"></div>

@@ -170,13 +170,21 @@ $('#sSave').onclick=()=>{updateDoc(doc(db,'users',me.uid),{name:$('#sName').valu
 
 /* ---------- photos ---------- */
 function loadImage(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('bad image'));i.src=src})}
-async function toCanvasBlob(img,max,q){const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return{c,blob:await new Promise(r=>c.toBlob(r,'image/jpeg',q))}}
-async function compressPhoto(file){const url=URL.createObjectURL(file);try{const img=await loadImage(url);
-  const full=await toCanvasBlob(img,1280,0.8);let inline=null;
-  for(const [m,q] of [[1280,0.7],[1280,0.6],[1024,0.6],[1024,0.5],[800,0.5],[640,0.5]]){const d=(m===1280&&q===0.7?full.c:(await toCanvasBlob(img,m,q)).c).toDataURL('image/jpeg',q);if(d.length<190000){inline=d;break}}
-  if(!inline)inline=(await toCanvasBlob(img,480,0.45)).c.toDataURL('image/jpeg',0.45);
-  const thumb=(await toCanvasBlob(img,240,0.6)).c.toDataURL('image/jpeg',0.6);
-  return{blob:full.blob,inline,thumb}}finally{URL.revokeObjectURL(url)}}
+// Decode honoring EXIF orientation; always scale proportionally (never crop).
+async function decodeImage(file){if(window.createImageBitmap){try{return await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){}}
+  const url=URL.createObjectURL(file);try{return await loadImage(url)}finally{setTimeout(()=>URL.revokeObjectURL(url),5000)}}
+const dims=img=>[img.naturalWidth||img.width,img.naturalHeight||img.height];
+function scaleCanvas(img,max){const [w,h]=dims(img);const s=Math.min(1,max/Math.max(w,h));const c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+  const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(img,0,0,c.width,c.height);return c}
+async function toCanvasBlob(img,max,q){const c=scaleCanvas(img,max);return{c,blob:await new Promise(r=>c.toBlob(r,'image/jpeg',q))}}
+const INLINE_LIMIT=190000; // dataURL chars (~140 KB JPEG)
+const STEPS=[[1600,0.78],[1600,0.68],[1440,0.68],[1280,0.72],[1280,0.62],[1280,0.52],[1024,0.6],[1024,0.5],[900,0.5],[800,0.5],[640,0.45],[480,0.45]];
+async function compressPhoto(file){const img=await decodeImage(file);
+  const full=await toCanvasBlob(img,1600,0.82);let inline=null,cache={};
+  for(const [m,q] of STEPS){const c=cache[m]||(cache[m]=scaleCanvas(img,m));const d=c.toDataURL('image/jpeg',q);if(d.length<INLINE_LIMIT){inline=d;break}}
+  const thumb=scaleCanvas(img,240).toDataURL('image/jpeg',0.65);if(img.close)img.close();
+  return{blob:full.blob,inline,thumb}}
+window.__compressPhoto=compressPhoto;
 $$('input[type=file][data-kind]').forEach(inp=>inp.onchange=async()=>{const fs=[...inp.files];inp.value='';if(!fs.length)return;toast('⏳ ഫോട്ടോ ചേർക്കുന്നു...');
   for(const f of fs){try{const p=await compressPhoto(f);curPhotos.push({id:doc(collection(db,'x')).id,kind:inp.dataset.kind,isNew:true,ts:Date.now(),...p,src:p.inline})}catch(e){toast('⚠️ ഫോട്ടോ ചേർക്കാനായില്ല')}}
   renderFormPhotos();toast('✅ ഫോട്ടോ ചേർത്തു')});
@@ -230,7 +238,7 @@ function openDetail(id){detailId=id;detailUnsubs.forEach(u=>u());detPhotos=[];de
   $('#remarkForm').style.display=can.remark()?'block':'none';resetRemark();show('v-detail');setTimeout(()=>sig.size(),50)}
 function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🧹 ജോലി (Work)',worksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
   const gpsRow=e.gps?`<tr><td>🛰️ GPS</td><td><a href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank" rel="noopener">${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}</a></td></tr>`:'';
-  const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy">`).join('')}</div>`:''};
+  const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy" data-cap="${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}">`).join('')}</div>`:''};
   return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.placeName)} ${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:''}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${esc(x[1])}</td></tr>`).join('')}${gpsRow}</table>
     ${withPhotos?grid('before')+grid('after'):''}${remarks?remarksHTML(remarks):''}</div>`}
 function remarksHTML(rs){if(!rs.length)return '';return `<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div>`+rs.map(r=>{const t=RATE[r.rating];return `<div class="remark"><b>${esc(r.officerName)}</b>${r.desig?', '+esc(r.desig):''} ${t?`<span class="badge ${t[2]}">${t[0]} (${t[1]})</span>`:''}<div>${esc(r.text)}</div>${r.signature?`<img src="${r.signature}" alt="signature">`:''}<div class="hint">${r.createdAt?new Date(r.createdAt.seconds*1000).toLocaleString('en-IN'):''}</div></div>`}).join('')}
@@ -377,6 +385,41 @@ $('#qrCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('#qrLin
 function printPoster(size){const w=window.open('','_blank');if(!w)return toast('⚠️ Pop-up blocked');
   w.document.write(`<html><head><title>QR poster – ${esc(qrPlace.name)}</title><style>@page{size:${size};margin:6mm}html,body{margin:0;height:100%}body{display:flex;align-items:center;justify-content:center}img{max-width:100%;max-height:100vh}</style></head><body><img src="${$('#qrCanvas').toDataURL('image/png')}" onload="setTimeout(()=>print(),300)"></body></html>`);w.document.close()}
 $('#qrPrint').onclick=()=>printPoster('A4');$('#qrPrintA5').onclick=()=>printPoster('A5');
+
+/* ---------- full-screen photo viewer (zoom to read GPS stamps) ---------- */
+let vw={list:[],i:0,z:1};
+function openViewer(list,i=0){vw={list,i,z:1};$('#viewer').classList.add('show');showVw()}
+function showVw(){const it=vw.list[vw.i];if(!it)return;vw.z=1;const im=$('#vwImg');im.src=it.src;applyZoom();$('#vwCap').textContent=(it.cap||'')+(vw.list.length>1?`  ${vw.i+1}/${vw.list.length}`:'');
+  $('#vwPrev').style.visibility=$('#vwNext').style.visibility=vw.list.length>1?'visible':'hidden'}
+function applyZoom(cx,cy){const sc=$('#vwScroll'),im=$('#vwImg');const box=sc.getBoundingClientRect();
+  if(vw.z<=1.01){vw.z=1;sc.classList.remove('zoomed');im.style.width='';im.style.height='';return}
+  const [nw,nh]=[im.naturalWidth||1,im.naturalHeight||1];const fit=Math.min(box.width/nw,box.height/nh);
+  const fx=cx==null?0.5:(sc.scrollLeft+cx)/Math.max(sc.scrollWidth,1),fy=cy==null?0.5:(sc.scrollTop+cy)/Math.max(sc.scrollHeight,1);
+  sc.classList.add('zoomed');im.style.width=Math.round(nw*fit*vw.z)+'px';im.style.height=Math.round(nh*fit*vw.z)+'px';
+  sc.scrollLeft=fx*sc.scrollWidth-(cx??box.width/2);sc.scrollTop=fy*sc.scrollHeight-(cy??box.height/2)}
+const zoomBy=(f,cx,cy)=>{vw.z=Math.max(1,Math.min(8,vw.z*f));applyZoom(cx,cy)};
+$('#vwIn').onclick=()=>zoomBy(1.6);$('#vwOut').onclick=()=>zoomBy(1/1.6);
+$('#vwClose').onclick=()=>{$('#viewer').classList.remove('show');$('#vwImg').src=''};
+$('#vwPrev').onclick=()=>{vw.i=(vw.i-1+vw.list.length)%vw.list.length;showVw()};$('#vwNext').onclick=()=>{vw.i=(vw.i+1)%vw.list.length;showVw()};
+addEventListener('keydown',e=>{if(!$('#viewer').classList.contains('show'))return;if(e.key==='Escape')$('#vwClose').click();if(e.key==='ArrowLeft')$('#vwPrev').click();if(e.key==='ArrowRight')$('#vwNext').click();if(e.key==='+')zoomBy(1.6);if(e.key==='-')zoomBy(1/1.6)});
+(()=>{const sc=$('#vwScroll');const pts=new Map();let startD=0,startZ=1,lastTap=0;
+  sc.addEventListener('pointerdown',e=>{pts.set(e.pointerId,e);if(pts.size===2){const [a,b]=[...pts.values()];startD=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);startZ=vw.z}
+    if(e.pointerType!=='mouse'&&pts.size===1){const t=Date.now();if(t-lastTap<300){const r=sc.getBoundingClientRect();vw.z=vw.z>1?1:3;applyZoom(e.clientX-r.left,e.clientY-r.top)}lastTap=t}});
+  sc.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,e);if(pts.size===2&&startD){e.preventDefault();const [a,b]=[...pts.values()];const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);const r=sc.getBoundingClientRect();
+    vw.z=Math.max(1,Math.min(8,startZ*d/startD));applyZoom((a.clientX+b.clientX)/2-r.left,(a.clientY+b.clientY)/2-r.top)}});
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>sc.addEventListener(t,e=>{pts.delete(e.pointerId);if(pts.size<2)startD=0}));
+  sc.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
+  sc.addEventListener('dblclick',e=>{const r=sc.getBoundingClientRect();vw.z=vw.z>1?1:3;applyZoom(e.clientX-r.left,e.clientY-r.top)});
+  sc.addEventListener('wheel',e=>{if(!e.ctrlKey&&vw.z===1&&Math.abs(e.deltaY)<1)return;e.preventDefault();const r=sc.getBoundingClientRect();zoomBy(e.deltaY<0?1.25:0.8,e.clientX-r.left,e.clientY-r.top)},{passive:false})})();
+// open viewer from any photo
+document.addEventListener('click',async e=>{const im=e.target.closest('img');if(!im||im.id==='vwImg')return;
+  const grid=im.closest('.rp-ph,.photos');
+  if(grid){e.preventDefault();e.stopPropagation();const imgs=[...grid.closest('.rp-e,.card,#v-new')?.querySelectorAll('.rp-ph img,.photos img')||grid.querySelectorAll('img')];
+    const list=imgs.map(x=>({src:x.src,cap:x.closest('.photos')?.id==='phBefore'?'📷 മുമ്പ് (Before)':x.closest('.photos')?.id==='phAfter'?'✨ ശേഷം (After)':(x.dataset.cap||'')}));openViewer(list,imgs.indexOf(im));return}
+  if(im.classList.contains('fbph')){e.stopPropagation();openViewer([{src:im.src,cap:'🗣️ നിവാസിയുടെ ഫോട്ടോ (Resident photo)'}]);return}
+  if(im.classList.contains('thumb')){const card=im.closest('.entry');if(!card)return;e.stopPropagation();toast('⏳');
+    try{const s=await getDocs(collection(db,'entries',card.dataset.id,'photos'));const ps=s.docs.map(d=>d.data()).sort((a,b)=>(a.kind===b.kind?0:a.kind==='before'?-1:1)||a.ts-b.ts);
+      if(ps.length)openViewer(ps.map(p=>({src:p.url||p.data,cap:p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'})),0);else openDetail(card.dataset.id)}catch(err){openDetail(card.dataset.id)}}},true);
 
 /* ---------- tabs & SW ---------- */
 $$('nav.tabs button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='v-new'&&!editing)resetForm();show(b.dataset.v)});
