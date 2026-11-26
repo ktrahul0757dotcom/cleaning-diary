@@ -310,7 +310,8 @@ let reportToken=0,rMode='day',shareText='';
 $$('#rMode button').forEach(b=>b.onclick=()=>{rMode=b.dataset.m;$$('#rMode button').forEach(x=>x.classList.toggle('on',x===b));$('#rDayRow').style.display=rMode==='day'?'flex':'none';$('#rMonth').style.display=rMode==='month'?'':'none';makeReport()});
 const shiftDay=n=>{const d=new Date(($('#rDate').value||today())+'T12:00:00');d.setDate(d.getDate()+n);$('#rDate').value=ymd(d);makeReport()};
 $('#rPrev').onclick=()=>shiftDay(-1);$('#rNext').onclick=()=>shiftDay(1);$('#rToday').onclick=()=>{$('#rDate').value=today();makeReport()};
-function makeReport(){return rMode==='day'?makeDaily():makeMonthly()}
+let lastReportKey='';
+function makeReport(){lastReportKey=reportKey();resetPdfBtn();return rMode==='day'?makeDaily():makeMonthly()}
 const placeKey=e=>e.placeId||e.placeName;
 async function rangeFeedback(from,to,a,w,ty,pl){try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));
   return s.docs.map(d=>({id:d.id,...d.data()})).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||placeTypeOf(f)===ty)&&(!pl||f.placeId===pl))}catch(e){console.error(e);return []}}
@@ -324,7 +325,7 @@ function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class=
   <table class="rp-tbl" style="margin:6px 0"><tr><td style="width:34%">👷 തൊഴിലാളി (Worker)</td><td>${esc(e.workerName||'')}${e.workers?` · 👥 ${e.workers}`:''}</td></tr>
   <tr><td>🧹 ജോലി (Work done)</td><td>${esc(worksText(e))}${e.waste!=null?` · 🗑️ ${e.waste} ${esc(e.wasteUnit||'')}`:''}</td></tr>
   <tr><td>📋 നില (Status)</td><td>${proof}${e.remarkCount?` · 💬 ${e.remarkCount}`:''}</td></tr>${e.notes?`<tr><td>📝 കുറിപ്പ് (Notes)</td><td>${esc(e.notes)}</td></tr>`:''}</table>
-  ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c}</figcaption></figure>`}).join('')}</div>`:''}
+  ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
   ${remarksHTML(rs)}</div>`}
 function dayFbHTML(list){if(!list.length)return '<p class="hint">ഈ ദിവസം സ്ഥലവാസികളുടെ അഭിപ്രായം ഇല്ല (No resident feedback this day)</p>';
   return list.map(f=>`<div class="dr-fb">${starsHTML(f.rating)} <b>${f.rating}/5</b> · <b>${esc(f.placeName||'')}</b>${f.ward?' · '+esc(f.ward):''} <span class="hint">${fbDate(f)?fbDate(f).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):''}${f.name?' · '+esc(f.name):''}</span>
@@ -385,6 +386,71 @@ $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){t
 $('#rWa').onclick=async()=>{const t=await ensureShare();window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener')};
 $('#rCopy').onclick=async()=>copyText(await ensureShare());
 $('#rPrint').onclick=async()=>{if(!$('#reportOut .rp-h'))await makeReport();await Promise.all([...$$('#reportOut img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));print()};
+/* ---------- on-device PDF (html2canvas + jsPDF, vendored for offline) ---------- */
+let pdfReady=null,pdfBusy=false;
+const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[data-src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.dataset.src=src;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s)});
+const reportKey=()=>[rMode,rMode==='day'?$('#rDate').value:$('#rMonth').value,$('#rArea').value,$('#rWard').value,$('#rPlace').value,$('#rWorker').value,$('#rType').value,$('#rPhotos').checked].join('|');
+const PDF_LABEL='<svg class="ic"><use href="#i-share"/></svg><span>PDF ഷെയർ / WhatsApp <small class="en">(Share PDF)</small></span>';
+function resetPdfBtn(){pdfReady=null;const b=$('#rPdf');if(b&&!pdfBusy){b.classList.remove('ready');b.innerHTML=PDF_LABEL}}
+function pdfProg(on,msg,frac){$('#rPdfProg').hidden=!on;if(msg!=null)$('#rPdfMsg').textContent=msg;if(frac!=null)$('#rPdfProg .bar i').style.width=Math.round(frac*100)+'%'}
+const CSS_COLOR_PROPS=['color','background-color','background-image','border-top-color','border-right-color','border-bottom-color','border-left-color','outline-color','text-decoration-color','box-shadow','fill','stroke','caret-color','column-rule-color'];
+const toRGBA=v=>v.replace(/color\(srgb\s+([\d.e+-]+)\s+([\d.e+-]+)\s+([\d.e+-]+)(?:\s*\/\s*([\d.e+-]+))?\)/g,(m,r,g,b,a)=>`rgba(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)},${a==null?1:+a})`).replace(/(?:oklab|oklch|lab|lch|color)\([^()]*\)/g,'rgba(0,0,0,0)');
+function fixCloneColors(doc){const win=doc.defaultView;for(const el of doc.querySelectorAll('.pdfpage, .pdfpage *')){const cs=win.getComputedStyle(el);
+  for(const pr of CSS_COLOR_PROPS){const v=cs.getPropertyValue(pr);if(v&&/(color|oklab|oklch|lab|lch)\(/.test(v))el.style.setProperty(pr,toRGBA(v),'important')}}}
+async function buildReportPdf(){
+  await Promise.all([loadScript('vendor/html2canvas.min.js'),loadScript('vendor/jspdf.umd.min.js')]);
+  if(!$('#reportOut .rp-h')||reportKey()!==lastReportKey)await makeReport();
+  try{await document.fonts.ready}catch(e){}
+  const W=794,PAGE_H=Math.floor(277*W/190),MM=190/W;
+  const sheet=document.createElement('div');sheet.className='pdfpage';sheet.innerHTML=$('#reportOut').innerHTML;document.body.appendChild(sheet);
+  await Promise.all([...sheet.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):0));
+  // split blocks taller than a page: group their children into page-sized chunks, each wrapped in a shallow copy of the parent
+  const LIM=PAGE_H*0.92;
+  const isHead=el=>el.classList.contains('rp-sub')||/^H[1-4]$/.test(el.tagName)||(el.children.length>0&&el.children.length<=2&&[...el.children].every(c=>c.classList.contains('rp-sub')||/^H[1-4]$/.test(c.tagName)));
+  const outerH=el=>{const cs=getComputedStyle(el);return el.getBoundingClientRect().height+(parseFloat(cs.marginTop)||0)+(parseFloat(cs.marginBottom)||0)};
+  const split=el=>{if(el.offsetHeight<=LIM||!el.children.length||/^(TABLE|IMG|FIGURE|UL)$/.test(el.tagName))return [el];
+    const kids=[...el.children].map(k=>({k,h:outerH(k)}));const shellPad=el.offsetHeight-kids.reduce((n,x)=>n+x.h,0);
+    const chunks=[];let cur=[],acc=Math.max(0,shellPad);
+    for(const x of kids){if(x.h>LIM){if(cur.length){chunks.push(cur);cur=[];acc=Math.max(0,shellPad)}split(x.k).forEach(piece=>chunks.push([piece]));continue}
+      if(acc+x.h>LIM&&cur.length){const carry=[];while(cur.length&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());if(cur.length)chunks.push(cur);cur=carry;acc=Math.max(0,shellPad)+carry.reduce((n,c)=>n+outerH(c),0)}cur.push(x.k);acc+=x.h}
+    if(cur.length)chunks.push(cur);
+    return chunks.map(ch=>{const w=el.cloneNode(false);ch.forEach(n=>w.appendChild(n));return w})};
+  for(const el of [...sheet.children]){const parts=split(el);if(parts.length>1||parts[0]!==el){const f=document.createDocumentFragment();parts.forEach(x=>f.appendChild(x));el.replaceWith(f)}}
+  const items=[...sheet.children];const pages=[];let cur=[],start=0;
+  for(const it of items){const top=it.offsetTop,bot=top+it.offsetHeight;if(!cur.length){cur=[it];start=top;continue}
+    if(bot-start>PAGE_H){const carry=[];while(cur.length>1&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());pages.push(cur);cur=[...carry,it];start=(carry[0]||it).offsetTop}else cur.push(it)}
+  if(cur.length)pages.push(cur);
+  const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
+  const title=rMode==='day'?`Daily report ${($('#rDate').value||'').split('-').reverse().join('/')}`:`Monthly report ${$('#rMonth').value}`;
+  for(let i=0;i<pages.length;i++){pdfProg(true,`PDF തയ്യാറാക്കുന്നു… ${i+1}/${pages.length} പേജ് (Creating PDF)`,(i+.3)/pages.length);
+    const pg=document.createElement('div');pg.className='pdfpage';pages[i].forEach(n=>pg.appendChild(n));document.body.appendChild(pg);
+    const firstM=parseFloat(getComputedStyle(pg.firstElementChild).marginTop)||0;pg.firstElementChild.style.marginTop='0';
+    const cv=await window.html2canvas(pg,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1024,onclone:fixCloneColors});
+    pg.remove();if(i)pdf.addPage();
+    let hmm=cv.height/2*MM;
+    if(hmm<=277.5){pdf.addImage(cv.toDataURL('image/jpeg',0.86),'JPEG',10,10,190,hmm,undefined,'FAST')}
+    else{// very tall single block: slice across pages
+      const sliceH=Math.floor(277/MM*2);let y=0,first=true;
+      while(y<cv.height){const h=Math.min(sliceH,cv.height-y);const c=document.createElement('canvas');c.width=cv.width;c.height=h;c.getContext('2d').drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+        if(!first)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.86),'JPEG',10,10,190,h/2*MM,undefined,'FAST');y+=h;first=false}}
+    await new Promise(r=>setTimeout(r,0))}
+  sheet.remove();
+  const n=pdf.getNumberOfPages();for(let i=1;i<=n;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(110);pdf.text(`Bhadram Ee Bhoomi - Daily Cleaning  |  ${title}  |  ${i}/${n}`,105,292,{align:'center'})}
+  pdfProg(true,'✅ PDF തയ്യാർ (Ready)',1);
+  const name=`Bhadram-Ee-Bhoomi-${rMode==='day'?'Daily-Report-'+$('#rDate').value:'Monthly-Report-'+$('#rMonth').value}.pdf`;
+  const blob=pdf.output('blob');return {file:new File([blob],name,{type:'application/pdf'}),blob,name,title,key:reportKey(),pages:n}}
+function downloadPdf(r){const u=URL.createObjectURL(r.blob);const a=document.createElement('a');a.href=u;a.download=r.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);toast('⬇️ PDF ഡൗൺലോഡ് ചെയ്തു (Downloaded) – '+r.name,4000)}
+async function sharePdf(r){
+  if(navigator.canShare&&navigator.share&&navigator.canShare({files:[r.file]})){
+    try{await navigator.share({files:[r.file],title:'ഭദ്രം ഈ ഭൂമി – '+(rMode==='day'?'ദിവസ റിപ്പോർട്ട്':'മാസ റിപ്പോർട്ട്'),text:'ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം: '+r.title});return 'shared'}
+    catch(e){if(e.name==='AbortError')return 'aborted';if(e.name==='NotAllowedError'){const b=$('#rPdf');b.classList.add('ready');b.innerHTML='<svg class="ic"><use href="#i-share"/></svg><span>PDF തയ്യാർ – ഷെയർ ചെയ്യാൻ തൊടുക <small class="en">(Ready – tap to share)</small></span>';toast('📄 PDF തയ്യാർ – വീണ്ടും തൊടുക (Tap again to share)',3500);return 'needtap'}console.error(e)}}
+  downloadPdf(r);return 'downloaded'}
+$('#rPdf').onclick=async()=>{if(pdfBusy)return;
+  if(pdfReady&&pdfReady.key===reportKey()){await sharePdf(pdfReady);return}
+  pdfBusy=true;const b=$('#rPdf');b.disabled=true;pdfProg(true,'PDF തയ്യാറാക്കുന്നു… (Creating PDF)',0.05);
+  try{pdfReady=await buildReportPdf();window.__lastPdf=pdfReady;b.disabled=false;pdfBusy=false;await sharePdf(pdfReady)}
+  catch(e){console.error(e);$$('.pdfpage').forEach(x=>x.remove());toast('⚠️ PDF ഉണ്ടാക്കാനായില്ല (PDF failed): '+(e.message||e),5000);pdfProg(false)}
+  finally{pdfBusy=false;b.disabled=false;setTimeout(()=>{if(!pdfBusy)pdfProg(false)},4000)}};
 
 /* ---------- resident feedback ---------- */
 let feedback=[],fbUnsub=null;const phoneCache=new Map();

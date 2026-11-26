@@ -248,11 +248,18 @@
     <div class="card noprint">
       <div class="seg" id="rMode" role="tablist"><button data-m="day" class="on"><svg class="ic sm"><use href="#i-cal"/></svg>ദിവസ <span class="en">(Daily)</span></button><button data-m="month"><svg class="ic sm"><use href="#i-chart"/></svg>മാസ <span class="en">(Monthly)</span></button></div>
       <div class="row daynav" id="rDayRow"><button class="btn out sm iconbtn" id="rPrev" aria-label="previous day"><svg class="ic"><use href="#i-left"/></svg></button><input type="date" id="rDate"><button class="btn out sm iconbtn" id="rNext" aria-label="next day"><svg class="ic"><use href="#i-right"/></svg></button><button class="btn sec sm" id="rToday" style="flex:0 0 auto">ഇന്ന്</button></div>
-      <div class="row wrap"><input type="month" id="rMonth" style="display:none"><select id="rArea"></select><select id="rWard"></select><select id="rPlace"></select><select id="rWorker"></select><select id="rType"></select></div>
+      <input type="month" id="rMonth" style="display:none;margin-bottom:10px">
+      <div class="ractions">
+        <button class="btn big" id="rPdf"><svg class="ic"><use href="#i-share"/></svg><span>PDF ഷെയർ / WhatsApp <small class="en">(Share PDF)</small></span></button>
+        <div class="row"><button class="btn sec" id="rPrint"><svg class="ic"><use href="#i-print"/></svg>PDF / പ്രിൻ്റ്</button><button class="btn out" id="rMake"><svg class="ic"><use href="#i-refresh"/></svg>തയ്യാറാക്കുക <span class="en">(Generate)</span></button></div>
+        <div class="row actions3"><button class="btn out sm" id="rShare"><svg class="ic sm"><use href="#i-share"/></svg>ടെക്സ്റ്റ് <span class="en">(Text)</span></button><button class="btn sm wa" id="rWa"><svg class="ic sm"><use href="#i-chat"/></svg>WhatsApp</button><button class="btn out sm" id="rCopy"><svg class="ic sm"><use href="#i-copy"/></svg>കോപ്പി <span class="en">(Copy)</span></button></div>
+        <div class="pdfprog" id="rPdfProg" hidden><div class="bar"><i></i></div><span id="rPdfMsg"></span></div>
+      </div>
+      <details class="more" id="rFilters"><summary><svg class="ic sm"><use href="#i-filter"/></svg> ഫിൽറ്ററുകൾ <span class="en">(Area · Ward · Place · Worker · Type · Photos)</span></summary>
+      <div class="row wrap"><select id="rArea"></select><select id="rWard"></select><select id="rPlace"></select><select id="rWorker"></select><select id="rType"></select></div>
       <label class="switch" style="margin-top:12px"><input type="checkbox" id="rPhotos" checked><span class="tr"></span>ഫോട്ടോകൾ ഉൾപ്പെടുത്തുക <span class="en">(Include photos)</span></label>
-      <div class="row" style="margin-top:14px"><button class="btn" id="rMake"><svg class="ic"><use href="#i-refresh"/></svg>തയ്യാറാക്കുക <span class="en">(Generate)</span></button><button class="btn sec" id="rPrint"><svg class="ic"><use href="#i-print"/></svg>PDF / പ്രിൻ്റ്</button></div>
-      <div class="row actions3" style="margin-top:10px"><button class="btn out sm" id="rShare"><svg class="ic sm"><use href="#i-share"/></svg>പങ്കിടുക <span class="en">(Share)</span></button><button class="btn sm wa" id="rWa"><svg class="ic sm"><use href="#i-chat"/></svg>WhatsApp</button><button class="btn out sm" id="rCopy"><svg class="ic sm"><use href="#i-copy"/></svg>കോപ്പി <span class="en">(Copy)</span></button></div>
-      <p class="hint" style="margin-bottom:0">PDF: പ്രിൻ്റ് അമർത്തി "Save as PDF" തിരഞ്ഞെടുക്കുക, എന്നിട്ട് WhatsApp-ൽ അയക്കാം.</p>
+      </details>
+      <p class="hint" style="margin-bottom:0">📄 <b>PDF ഷെയർ</b>: ഫോണിൽ തന്നെ PDF ഉണ്ടാക്കി WhatsApp-ലേക്ക് അയക്കാം. <span class="en">(Creates a PDF on this phone and opens the share sheet; otherwise downloads it.)</span></p>
     </div>
     <div id="reportOut"></div>
   </section>

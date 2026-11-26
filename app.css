@@ -172,10 +172,10 @@ div.thumb{background:var(--brand-50)!important}
 .vwbar button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:14px;min-width:48px;min-height:48px;display:grid;place-items:center;cursor:pointer}
 .vwbar .cap{flex:1;text-align:center}.vwbar .hint{color:rgba(255,255,255,.75)}.vwbar .en{color:rgba(255,255,255,.6)}
 /* report paper (always light, like a document) */
-#reportOut{--brand:#0b5d4b;--brand-600:#0e7a62;--brand-500:#12917a;--brand-50:#e7f4ef;--brand-100:#cfe9df;--surface:#fff;--surface-2:#f4f6f3;--surface-3:#e8ece7;--line:#e1e7e2;--line-2:#cfd8d2;--text:#0f1f1a;--text-2:#3f524b;--muted:#5d6e67;--good:#15803d;--good-50:#e8f6ec;--warn:#b45309;--warn-50:#fdf3e4;--bad:#b91c1c;--bad-50:#fdecec;--info:#1d5f99;--info-50:#e8f1fa;color-scheme:light;
+#reportOut,.pdfpage{--brand:#0b5d4b;--brand-600:#0e7a62;--brand-500:#12917a;--brand-50:#e7f4ef;--brand-100:#cfe9df;--surface:#fff;--surface-2:#f4f6f3;--surface-3:#e8ece7;--line:#e1e7e2;--line-2:#cfd8d2;--text:#0f1f1a;--text-2:#3f524b;--muted:#5d6e67;--good:#15803d;--good-50:#e8f6ec;--warn:#b45309;--warn-50:#fdf3e4;--bad:#b91c1c;--bad-50:#fdecec;--info:#1d5f99;--info-50:#e8f1fa;color-scheme:light;
   background:#fff;color:var(--text);border-radius:var(--r);padding:22px;margin-top:14px;border:1px solid var(--line);box-shadow:var(--sh-2)}
 #reportOut:empty{display:none}
-#reportOut .empty .art{max-width:140px}
+#reportOut .empty .art,.pdfpage .empty .art{max-width:140px}
 .rp-h{text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--line);position:relative}
 .rp-h::after{content:"";position:absolute;left:50%;bottom:-2px;width:64px;height:3px;border-radius:3px;background:var(--brand);transform:translateX(-50%)}
 .rp-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px}
@@ -224,7 +224,7 @@ div.thumb{background:var(--brand-50)!important}
 .sqc{border-left:4px solid var(--earth)}
 .flash{animation:flash 1.6s var(--ease)}@keyframes flash{0%,60%{box-shadow:0 0 0 4px color-mix(in srgb,var(--sun) 60%,transparent)}100%{box-shadow:var(--sh-1)}}
 .sq-line{margin:8px 0 4px;font-weight:600}
-#reportOut .sq-tbl{table-layout:fixed;font-size:12.5px}#reportOut .sq-tbl th,#reportOut .sq-tbl td{overflow-wrap:break-word;padding:6px 6px;vertical-align:top}.ovb.tot{background:var(--surface-2);color:var(--text)}.sq-sumrow{margin:4px 0 10px}
+#reportOut .sq-tbl,.pdfpage .sq-tbl{table-layout:fixed;font-size:12.5px}#reportOut .sq-tbl th,#reportOut .sq-tbl td,.pdfpage .sq-tbl th,.pdfpage .sq-tbl td{overflow-wrap:break-word;padding:6px 6px;vertical-align:top}.ovb.tot{background:var(--surface-2);color:var(--text)}.sq-sumrow{margin:4px 0 10px}
 .dr-sq{border-color:#e6d3c0;border-left-color:var(--earth);background:#fbf5ef}
 @media (prefers-reduced-motion:reduce){.sq-out,.flash{animation:none}}
 @media (min-width:760px){
@@ -273,3 +273,33 @@ div.thumb{background:var(--brand-50)!important}
 #fbMode .sqs{font-size:13.5px}
 .sq-line .en{font-weight:500}
 @media (max-width:370px){.brandtxt small{font-size:11px;gap:4px;letter-spacing:-.1px}.brandtxt h1{font-size:16px}.appbar .who{font-size:11.5px}}
+
+/* ---------- report actions + on-device PDF ---------- */
+.ractions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:2px 0 4px;min-width:0}.ractions .btn{min-width:0;overflow:hidden}
+.ractions .row{gap:10px}
+.btn.big{width:100%;min-height:60px;font-size:16.5px;border-radius:16px;background:linear-gradient(135deg,#128c4a,#0b5d4b);color:#fff;box-shadow:0 8px 20px -8px rgba(11,93,75,.55)}
+.btn.big span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.2}.btn.big small{font-size:11.5px;font-weight:600;opacity:.9;color:#fff}
+.btn.big.ready{background:linear-gradient(135deg,#1aa45a,#0e7a62);animation:pop .35s var(--ease)}
+.btn.big:disabled{opacity:.75}
+#rPrint{font-weight:800}
+.pdfprog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);font-weight:600}.pdfprog[hidden]{display:none}
+.pdfprog .bar{flex:1;height:6px;border-radius:6px;background:var(--surface-3);overflow:hidden}.pdfprog .bar i{display:block;height:100%;width:0;background:var(--brand);transition:width .3s}
+#v-report .daynav{gap:6px}#v-report .daynav .iconbtn{flex:0 0 42px!important;width:42px;min-width:42px;padding:0}#v-report .daynav input{min-width:0;flex:1 1 auto;padding:10px 8px;font-size:15px}#rToday{flex:0 0 auto;padding:0 12px}
+.pdfpage{position:absolute!important;left:-12000px;top:0;width:794px;margin:0!important;padding:0!important;border:none!important;border-radius:0!important;box-shadow:none!important;background:#fff;font-size:13px;z-index:-1}
+.pdfpage *{animation:none!important;transition:none!important}
+.pdfpage .dr-ph,.pdfpage .rp-ph{grid-template-columns:1fr}
+.pdfpage .dr-ph img,.pdfpage .rp-ph img{aspect-ratio:auto;max-height:880px;background:none;cursor:default}
+.pdfpage .dr-fb img,.pdfpage img.fbph{max-width:100%;max-height:880px}
+.pdfpage .rp-e,.pdfpage .dr-e,.pdfpage .dr-fb{margin-bottom:10px}
+
+/* html2canvas paints inline-block backgrounds over block children: use block + fit-content in PDF sheets */
+.pdfpage .rp-jd{display:block;width:fit-content;max-width:100%;margin:8px auto 4px}
+/* report actions: never clip labels on 340–412px phones */
+.ractions .btn{white-space:normal;text-align:center;line-height:1.25}
+.ractions .row .btn{padding-left:8px;padding-right:8px;gap:6px}
+.ractions .actions3 .btn{padding:6px 4px;gap:4px;font-size:13.5px}.ractions .actions3 .ic{width:16px;height:16px;flex:0 0 16px}
+#v-report .daynav input{padding:10px 4px;font-size:14.5px}#rToday{padding:0 10px}
+@media (max-width:380px){.ractions .row:not(.actions3) .btn{font-size:14.5px;gap:5px}.ractions .actions3 .btn{font-size:12.5px;gap:3px;padding:6px 3px}.ractions .actions3 .ic{width:14px;height:14px;flex-basis:14px}}
+@media (max-width:380px){.ractions .row:not(.actions3) .btn{flex-direction:column;gap:2px;padding-top:6px;padding-bottom:6px}}
+@media (max-width:350px){.ractions .actions3 .ic{display:none}}
+@media (max-width:350px){#v-report .daynav{gap:4px}#v-report .daynav .iconbtn{flex:0 0 36px!important;width:36px;min-width:36px}#v-report .daynav input{font-size:14px;padding:10px 2px}#rToday{padding:0 8px}}
