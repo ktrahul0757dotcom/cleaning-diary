@@ -1,4 +1,4 @@
-const APP_VER='v17';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v18';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -148,8 +148,8 @@ function renderDash(){fillFilters();const list=filtered('d');const st=stats(list
   if(!$('#dStats .dash-more').textContent.trim())$('#dStats .dash-more').remove();
   if(!list.length){$('#dList').innerHTML=emptyHTML('inbox','ഈ കാലയളവിൽ ജോലികൾ ഇല്ല','No entries for this period');return}
   let h='',last='';for(const e of list){if(e.date!==last){h+=`<div class="dayhead">${ico('cal','sm')} ${fmtDate(e.date)}</div>`;last=e.date}const r=RATE[e.lastRating];
-    h+=`<div class="card entry" data-id="${e.id}">${e.thumb?`<img class="thumb" src="${e.thumb}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.placeName)} <span class="en">${esc(e.time||'')}</span></div><div>${e.mass?'<span class="badge mwb">💪 മാസ് വർക്ക്</span> ':''}${typeBadge(placeTypeOf(e),e)}</div><div class="s">👷 ${esc(e.workerName)} · ${esc(e.ward||'')}</div><div class="s">${esc(worksText(e))}</div><div>${e.photoCount?`<span class="badge">📷 ${e.photoCount}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:'<span class="badge">💬 അഭിപ്രായം ബാക്കി</span>'}${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">${e.score}</span>`:''}${e._pending?'<span class="badge r-ok">⏫ സിങ്ക് ബാക്കി</span>':''}</div></div></div>`}
-  $('#dList').innerHTML=h;$$('#dList .entry').forEach(el=>el.onclick=()=>openDetail(el.dataset.id))}
+    h+=`<div class="card entry" data-id="${e.id}">${e.thumb?`<img class="thumb" src="${e.thumb}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.placeName)} <span class="en">${esc(e.time||'')}</span></div><div>${e.mass?'<span class="badge mwb">💪 മാസ് വർക്ക്</span> ':''}${typeBadge(placeTypeOf(e),e)}</div><div class="s">👷 ${esc(e.workerName)} · ${esc(e.ward||'')}</div><div class="s">${esc(worksText(e))}</div><div>${e.photoCount?`<span class="badge">📷 ${e.photoCount}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:'<span class="badge">💬 അഭിപ്രായം ബാക്കി</span>'}${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">${e.score}</span>`:''}${e._pending?'<span class="badge r-ok">⏫ സിങ്ക് ബാക്കി</span>':''}</div></div><button class="epdf" data-epdf="${e.id}" aria-label="PDF അയയ്ക്കുക / WhatsApp" title="PDF അയയ്ക്കുക / WhatsApp">${ico('share')}<span>PDF</span></button></div>`}
+  $('#dList').innerHTML=h;$$('#dList .entry').forEach(el=>el.onclick=()=>openDetail(el.dataset.id));$$('#dList [data-epdf]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();shareEntryPdf(b.dataset.epdf,b)})}
 
 /* ---------- places & users (admin) ---------- */
 let editingPlace=null;
@@ -336,7 +336,7 @@ function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊ�
     ${withPhotos?grid('before')+grid('after'):''}${remarks?remarksHTML(remarks):''}</div>`}
 function remarksHTML(rs){if(!rs.length)return '';return `<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div>`+rs.map(r=>{const t=RATE[r.rating];return `<div class="remark"><b>${esc(r.officerName)}</b>${r.desig?', '+esc(r.desig):''} ${t?`<span class="badge ${t[2]}">${t[0]} (${t[1]})</span>`:''}<div>${esc(r.text)}</div>${r.signature?`<img src="${r.signature}" alt="signature">`:''}<div class="hint">${r.createdAt?new Date(r.createdAt.seconds*1000).toLocaleString('en-IN'):''}</div></div>`}).join('')}
 function renderDetail(){const e=entries.find(x=>x.id===detailId);if(!e){$('#detOut').innerHTML=skelHTML(1);return}
-  $('#detOut').innerHTML=entryHTML(e,detPhotos,null);
+  $('#detOut').innerHTML=entryHTML(e,detPhotos,null);{const b=$('#detPdf');if(!b.classList.contains('ready')){b.innerHTML=EPDF_LABEL;b.onclick=()=>shareEntryPdf(e.id,b)}}
   $('#detRemarks').innerHTML=`<h2>${hic('badge','earth')}അഭിപ്രായങ്ങൾ <span class="en">(Remarks – live)</span></h2>`+(detRemarks.length?remarksHTML(detRemarks).replace(/^<div class="rp-sub">.*?<\/div>/,''):'<p class="hint">ഇതുവരെ അഭിപ്രായം ഇല്ല (No remarks yet)</p>');
   const own=e.workerUid===me.uid;$('#detEdit').style.display=(own&&can.work())||can.sup()?'flex':'none';$('#detDel').style.display=(own&&can.work())||can.sup()?'flex':'none'}
 $('#detEdit').onclick=()=>{const e=entries.find(x=>x.id===detailId);if(e)editEntry(e)};
@@ -473,7 +473,11 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);toast('�
 $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){try{await navigator.share({title:'ഭദ്രം ഈ ഭൂമി – റിപ്പോർട്ട്',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)};
 $('#rWa').onclick=async()=>{const t=await ensureShare();window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener')};
 $('#rCopy').onclick=async()=>copyText(await ensureShare());
-$('#rPrint').onclick=async()=>{if(!$('#reportOut .rp-h'))await makeReport();await Promise.all([...$$('#reportOut img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));print()};
+$('#rPrint').onclick=async()=>{if(!$('#reportOut .rp-h')||reportKey()!==lastReportKey)await makeReport();
+  let ps=$('#printSheet');if(!ps){ps=document.createElement('div');ps.id='printSheet';document.body.appendChild(ps)}
+  const meta=reportMeta();ps.className='fsheet';ps.innerHTML=formalHTML($('#reportOut').innerHTML,meta);
+  await Promise.all([...ps.querySelectorAll('img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
+  document.body.classList.add('pf');const done=()=>{document.body.classList.remove('pf');window.removeEventListener('afterprint',done)};window.addEventListener('afterprint',done);print()};
 /* ---------- on-device PDF (html2canvas + jsPDF, vendored for offline) ---------- */
 let pdfReady=null,pdfBusy=false;
 const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[data-src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.dataset.src=src;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s)});
@@ -488,13 +492,91 @@ function fixCloneColors(doc){const win=doc.defaultView;for(const el of doc.query
 async function buildReportPdf(){
   await Promise.all([loadScript('vendor/html2canvas.min.js'),loadScript('vendor/jspdf.umd.min.js')]);
   if(!$('#reportOut .rp-h')||reportKey()!==lastReportKey)await makeReport();
+  const title=rMode==='day'?`Daily report ${($('#rDate').value||'').split('-').reverse().join('/')}`:`Monthly report ${$('#rMonth').value}`;
+  const pdf=await htmlToPdf($('#reportOut').innerHTML,title,pdfProg,reportMeta());
+  pdfProg(true,'✅ PDF തയ്യാർ (Ready)',1);
+  const name=`Bhadram-Ee-Bhoomi-${rMode==='day'?'Daily-Report-'+$('#rDate').value:'Monthly-Report-'+$('#rMonth').value}.pdf`;
+  const blob=pdf.output('blob');return {file:new File([blob],name,{type:'application/pdf'}),blob,name,title,key:reportKey(),pages:pdf.getNumberOfPages()}}
+/* ---------- single work-entry PDF ---------- */
+const boxItem=(on,label,extra)=>`<div class="pci${on?' on':''}"><span class="pcb${on?' on':''}">${on?'✓':''}</span><span class="pcn">${label}</span>${extra||''}</div>`;
+function entryWorkTypesHTML(e){const works=e.works||[],mw=e.massWorks||[];
+  const reg=WORKS.filter(w=>w[0]!=='other').map(w=>boxItem(works.includes(w[0]),`${esc(w[1])} <span class="en">(${esc(w[2])})</span>`)).join('');
+  const regOther=boxItem(works.includes('other')||!!e.workOther&&!e.mass,`➕ മറ്റുള്ളവ <span class="en">(Other)</span>${!e.mass&&e.workOther?`: <b>${esc(e.workOther)}</b>`:''}`);
+  const mts=massTypes.filter(t=>t.active!==false||mw.includes(t.id));const known=new Set(massTypes.map(t=>t.id));
+  const lost=mw.filter(id=>!known.has(id)).map(id=>({id,ml:(e.massLabels||[])[mw.indexOf(id)]||id,active:false}));
+  const mass=mts.concat(lost).map(t=>boxItem(mw.includes(t.id),`${t.icon?esc(t.icon)+' ':''}${esc(t.ml)}${t.active===false?' <span class="en">(ഒഴിവാക്കി · removed)</span>':''}`)).join('');
+  const massOther=boxItem(!!(e.mass&&e.massOther),`➕ മറ്റുള്ളവ <span class="en">(Other)</span>${e.mass&&e.massOther?`: <b>${esc(e.massOther)}</b>`:''}`);
+  return `<div class="rp-sub" style="font-size:16px">🧹 തൊഴിൽ തരം <span class="en">(Type of work)</span></div>
+  <div class="ewt-h">ദൈനംദിന ജോലികൾ <span class="en">(Regular works)</span></div><div class="pcl ewt">${reg}${regOther}</div>
+  <div class="pcl ewt one">${boxItem(!!e.mass,`💪 <b>മാസ് വർക്ക്</b> <span class="en">(Mass cleaning work)</span>${e.mass&&!e.placeId?` – ✍️ പ്രത്യേക സ്ഥലം <span class="en">(one-off place)</span>: <b>${esc(e.placeName)}</b>${e.ward?' – '+esc(e.ward):''}`:''}`)}</div>
+  <div class="ewt-h">💪 മാസ് വർക്ക് ജോലികൾ <span class="en">(Mass work types)</span></div><div class="pcl ewt">${mass}${massOther}</div>`}
+function entryPdfHTML(e,photos,remarks){
+  const proof=e.hasBefore&&e.hasAfter?'✅ മുമ്പും ശേഷവും ഫോട്ടോ (Before+after)':e.hasBefore||e.hasAfter?'⚠️ ഭാഗിക ഫോട്ടോ (Partial photos)':'❌ ഫോട്ടോ ഇല്ല (No photos)';
+  const t=typeInfo(placeTypeOf(e),e);
+  const rows=[['📅 തീയതി (Date)',esc(fmtDate(e.date))],['🕐 സമയം (Time)',esc(e.time||'')],['📍 സ്ഥലം / വാർഡ് (Place / ward)',esc([e.placeName,e.ward,e.area].filter(Boolean).join(', '))+(e.mass&&!e.placeId?' <span class="en">(one-off)</span>':'')],
+    ['🏷️ സ്ഥല തരം (Place type)',esc(t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))],['👷 തൊഴിലാളി (Worker)',esc(e.workerName||'')],['👥 തൊഴിലാളികളുടെ എണ്ണം (Workers)',e.workers!=null?esc(e.workers):''],
+    ['🗑️ മാലിന്യം (Waste)',e.waste!=null?esc(e.waste+' '+(e.wasteUnit||'')):''],['📋 നില (Status)',proof+(e.score!=null?` · സ്കോർ (Score) <b>${e.score}</b>`:'')],
+    ['🛰️ ലൊക്കേഷൻ (Location)',e.gps?`${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}${e.gps.acc?` (±${Math.round(e.gps.acc)} m)`:''}<br><span class="en">maps.google.com/?q=${e.gps.lat.toFixed(5)},${e.gps.lng.toFixed(5)}</span>`:'<span class="en">– (GPS ഇല്ല / not recorded)</span>'],
+    ['📝 കുറിപ്പ് (Remarks / notes)',esc(e.notes||'')]].filter(x=>x[1]!=='');
+  const ph=photos.slice().sort((x,z)=>(x.kind===z.kind?0:x.kind==='before'?-1:1)||x.ts-z.ts);
+  return REPORT_HEAD(`🧾 ജോലി റിപ്പോർട്ട് (Work entry) – ${fmtDate(e.date)}${e.time?' · '+esc(e.time):''}`)+`</div>
+  ${e.mass?'<div style="margin:6px 0"><span class="badge mwb">💪 മാസ് വർക്ക് (Mass work)</span></div>':''}
+  <table class="rp-tbl" style="margin:8px 0"><tbody>${rows.map(r=>`<tr><td style="width:36%">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>
+  ${entryWorkTypesHTML(e)}
+  ${ph.length?`<div class="rp-sub" style="font-size:15px">📷 ഫോട്ടോകൾ (Photos): ${ph.length}</div><div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt=""><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
+  ${remarks&&remarks.length?remarksHTML(remarks):'<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div><p class="hint">ഇതുവരെ ഇല്ല (None yet)</p>'}`+CREDIT()}
+let entryPdfBusy=false;const EPDF_LABEL='<svg class="ic"><use href="#i-share"/></svg><span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share this entry)</small></span>';
+function detProg(on,msg,frac){const w=$('#detPdfProg');if(!w)return;w.hidden=!on;if(msg!=null)$('#detPdfMsg').textContent=msg;if(frac!=null)w.querySelector('.bar i').style.width=Math.round(frac*100)+'%'}
+async function shareEntryPdf(id,btn){if(entryPdfBusy)return;entryPdfBusy=true;const b=btn||$('#detPdf');if(b)b.disabled=true;detProg(true,'PDF തയ്യാറാക്കുന്നു… (Creating PDF)',0.05);if(b&&b.dataset.epdf)toast('📄 PDF തയ്യാറാക്കുന്നു… (Creating PDF)',3500);
+  try{let e=entries.find(x=>x.id===id);if(!e){const d=await getDoc(doc(db,'entries',id));if(!d.exists())throw new Error('entry not found');e={id,...d.data({serverTimestamps:'estimate'})}}
+    const [ps,rs]=await Promise.all([getDocs(collection(db,'entries',id,'photos')),getDocs(collection(db,'entries',id,'remarks'))]);
+    const photos=ps.docs.map(d=>d.data()),remarks=rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0));
+    const title=`Work entry ${(e.date||'').split('-').reverse().join('/')} ${e.time||''}`;
+    const pdf=await htmlToPdf(entryPdfHTML(e,photos,remarks),title,detProg,{titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' (മാസ് വർക്ക്)':''}`,titleEn:`Work Entry Report – ${(e.date||'').split('-').reverse().join('/')}${e.time?' '+e.time:''}${e.mass?' (Mass cleaning work)':''}`,id:`BEB-WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`});detProg(true,'✅ PDF തയ്യാർ (Ready)',1);
+    const name=`Bhadram-Ee-Bhoomi-Entry-${e.date||''}-${(e.time||'').replace(':','')}-${id.slice(0,5)}.pdf`;const blob=pdf.output('blob');
+    const r={file:new File([blob],name,{type:'application/pdf'}),blob,name,title,pages:pdf.getNumberOfPages()};window.__lastEntryPdf=r;
+    if(b)b.disabled=false;entryPdfBusy=false;const res=await sharePdf(r,b&&b.id==='detPdf'?'#detPdf':'#__none','ജോലി റിപ്പോർട്ട്');
+    if(res==='needtap'&&b&&b.id==='detPdf'){b.onclick=async()=>{await sharePdf(r,'#'+b.id,'ജോലി റിപ്പോർട്ട്');b.classList.remove('ready');b.innerHTML=EPDF_LABEL;b.onclick=()=>shareEntryPdf(id,b)}}}
+  catch(err){console.error(err);$$('.pdfpage').forEach(x=>x.remove());toast('⚠️ PDF ഉണ്ടാക്കാനായില്ല (PDF failed): '+(err.message||err),5000);detProg(false)}
+  finally{entryPdfBusy=false;if(b)b.disabled=false;setTimeout(()=>{if(!entryPdfBusy)detProg(false)},4000)}}
+/* ---------- formal (letterhead) layout shared by all PDFs and the print view ---------- */
+const EMOJI_RE=/(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\uFE0F|\u200D\p{Extended_Pictographic}\uFE0F?|[\u{1F3FB}-\u{1F3FF}])*\uFE0F?[ \u00A0]?/gu;
+const noEmoji=t=>String(t||'').replace(/[\u00A9\u00AE\u2122]/g,m=>m).replace(EMOJI_RE,'').replace(/\uFE0F/g,'').replace(/\s{2,}/g,' ').trim();
+function stripEmojiDom(root){const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const L=[];let n;while((n=tw.nextNode()))L.push(n);
+  for(const t of L){if(t.parentElement?.closest('.pcb'))continue;const v=t.nodeValue.replace(EMOJI_RE,'').replace(/\uFE0F/g,'');if(v!==t.nodeValue)t.nodeValue=v}}
+const fmtGen=d=>`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function formalHTML(html,meta){const d=document.createElement('div');d.innerHTML=html;
+  const h=d.querySelector('.rp-h');const filt=h?.querySelector('.rp-filt')?.textContent||'';if(h)h.remove();
+  d.querySelectorAll('svg.ic,.mark,.hic').forEach(x=>x.remove());
+  d.querySelectorAll('.pcb').forEach(b=>{b.textContent=b.classList.contains('on')?'✓':''});
+  stripEmojiDom(d);const gen=meta.gen||new Date();const jd=jdLines();const role=noEmoji(ROLES[meDoc?.role]||'');
+  const head=`<div class="lh"><div class="lh-top"><div class="lh-mark">${MARK_SVG}</div><div class="lh-name"><b>ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</b><span>Bhadram Ee Bhoomi – Daily Cleaning</span></div>${jd.length?`<div class="lh-office">${jd.map(esc).join('<br>')}</div>`:''}</div>
+    <div class="lh-title"><b>${esc(meta.titleMl)}</b><span>${esc(meta.titleEn)}</span></div>
+    <table class="lh-meta"><tr><td>റിപ്പോർട്ട് നമ്പർ <i>Report No.</i></td><td><b>${esc(meta.id)}</b></td><td>തയ്യാറാക്കിയ സമയം <i>Generated</i></td><td>${fmtGen(gen)}</td></tr>${filt?`<tr><td>ഫിൽറ്റർ <i>Filter</i></td><td colspan="3">${esc(noEmoji(filt))}</td></tr>`:''}</table></div>`;
+  const line='<span class="sg-line"></span>';
+  const sign=`<div class="sigblk"><table><tr><th>തയ്യാറാക്കിയത് <i>Prepared by</i></th><th>പരിശോധിച്ചത് <i>Verified by</i></th></tr>
+    <tr><td>പേര് <i>Name</i>: <b>${esc(meDoc?.name||'')}</b></td><td>പേര് <i>Name</i>: ${line}</td></tr>
+    <tr><td>പദവി <i>Designation</i>: ${esc(role)}</td><td>പദവി <i>Designation</i>: ${line}</td></tr>
+    <tr><td>തീയതി <i>Date</i>: ${fmtGen(gen).slice(0,10)}</td><td>തീയതി <i>Date</i>: ${line}</td></tr>
+    <tr class="sg"><td>ഒപ്പ് <i>Signature</i>: ${line}</td><td>ഒപ്പ് <i>Signature</i>: ${line}</td></tr></table></div>`;
+  return head+d.innerHTML+sign}
+function reportMeta(){const fk=[$('#rArea').value,$('#rWard').value,$('#rPlace').value,$('#rWorker').value,$('#rType').value].join('|');let hsh=0;for(const c of fk)hsh=(hsh*31+c.charCodeAt(0))>>>0;const sfx=fk.replace(/\|/g,'')?'-F'+hsh.toString(36).slice(0,4).toUpperCase():'';
+  if(rMode==='day'){const d=$('#rDate').value||today();return {titleMl:`ദിവസ റിപ്പോർട്ട് – ${fmtDate(d)}`,titleEn:`Daily Cleaning Report – ${d.split('-').reverse().join('/')}`,id:`BEB-DR-${d.replace(/-/g,'')}${sfx}`}}
+  const m=$('#rMonth').value||today().slice(0,7);const [y,mo]=m.split('-');return {titleMl:`മാസ റിപ്പോർട്ട് – ${fmtMonth(m)}`,titleEn:`Monthly Cleaning Report – ${new Date(+y,+mo-1,1).toLocaleString('en-GB',{month:'long'})} ${y}`,id:`BEB-MR-${y}${mo}${sfx}`}}
+function textCanvas(parts,w,h){const c=document.createElement('canvas');c.width=w*2;c.height=h*2;const x=c.getContext('2d');x.scale(2,2);x.fillStyle='#fff';x.fillRect(0,0,w,h);
+  x.strokeStyle='#9aa5b1';x.lineWidth=.8;x.beginPath();x.moveTo(0,parts.top?h-1:1);x.lineTo(w,parts.top?h-1:1);x.stroke();
+  x.fillStyle='#374151';x.font=`11px "Noto Sans Malayalam","Inter",sans-serif`;x.textBaseline='middle';
+  if(parts.l){x.textAlign='left';x.fillText(parts.l,2,h/2+1)}if(parts.c){x.textAlign='center';x.fillText(parts.c,w/2,h/2+1)}if(parts.r){x.textAlign='right';x.fillText(parts.r,w-2,h/2+1)}return c.toDataURL('image/png')}
+/* render report-style HTML into an A4 PDF (rasterised so Malayalam always renders) */
+async function htmlToPdf(html,title,prog,meta){if(meta)html=formalHTML(html,meta);
+  await Promise.all([loadScript('vendor/html2canvas.min.js'),loadScript('vendor/jspdf.umd.min.js')]);
   try{await document.fonts.ready}catch(e){}
   const W=794,PAGE_H=Math.floor(277*W/190),MM=190/W;
-  const sheet=document.createElement('div');sheet.className='pdfpage';sheet.innerHTML=$('#reportOut').innerHTML;document.body.appendChild(sheet);
+  const sheet=document.createElement('div');sheet.className='pdfpage'+(meta?' fsheet':'');sheet.innerHTML=html;document.body.appendChild(sheet);
   await Promise.all([...sheet.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):0));
   // split blocks taller than a page: group their children into page-sized chunks, each wrapped in a shallow copy of the parent
   const LIM=PAGE_H*0.92;
-  const isHead=el=>el.classList.contains('rp-sub')||/^H[1-4]$/.test(el.tagName)||(el.children.length>0&&el.children.length<=2&&[...el.children].every(c=>c.classList.contains('rp-sub')||/^H[1-4]$/.test(c.tagName)));
+  const hd=c=>c.classList.contains('rp-sub')||c.classList.contains('ewt-h')||/^H[1-4]$/.test(c.tagName);const isHead=el=>hd(el)||(el.children.length>0&&el.children.length<=2&&[...el.children].every(hd));
   const outerH=el=>{const cs=getComputedStyle(el);return el.getBoundingClientRect().height+(parseFloat(cs.marginTop)||0)+(parseFloat(cs.marginBottom)||0)};
   const split=el=>{if(el.offsetHeight<=LIM||!el.children.length||/^(TABLE|IMG|FIGURE|UL)$/.test(el.tagName))return [el];
     const kids=[...el.children].map(k=>({k,h:outerH(k)}));const shellPad=el.offsetHeight-kids.reduce((n,x)=>n+x.h,0);
@@ -509,9 +591,8 @@ async function buildReportPdf(){
     if(bot-start>PAGE_H){const carry=[];while(cur.length>1&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());pages.push(cur);cur=[...carry,it];start=(carry[0]||it).offsetTop}else cur.push(it)}
   if(cur.length)pages.push(cur);
   const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
-  const title=rMode==='day'?`Daily report ${($('#rDate').value||'').split('-').reverse().join('/')}`:`Monthly report ${$('#rMonth').value}`;
-  for(let i=0;i<pages.length;i++){pdfProg(true,`PDF തയ്യാറാക്കുന്നു… ${i+1}/${pages.length} പേജ് (Creating PDF)`,(i+.3)/pages.length);
-    const pg=document.createElement('div');pg.className='pdfpage';pages[i].forEach(n=>pg.appendChild(n));document.body.appendChild(pg);
+  for(let i=0;i<pages.length;i++){prog(true,`PDF തയ്യാറാക്കുന്നു… ${i+1}/${pages.length} പേജ് (Creating PDF)`,(i+.3)/pages.length);
+    const pg=document.createElement('div');pg.className='pdfpage'+(meta?' fsheet':'');pages[i].forEach(n=>pg.appendChild(n));document.body.appendChild(pg);
     const firstM=parseFloat(getComputedStyle(pg.firstElementChild).marginTop)||0;pg.firstElementChild.style.marginTop='0';
     const cv=await window.html2canvas(pg,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1024,onclone:fixCloneColors});
     pg.remove();if(i)pdf.addPage();
@@ -523,15 +604,17 @@ async function buildReportPdf(){
         if(!first)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.86),'JPEG',10,10,190,h/2*MM,undefined,'FAST');y+=h;first=false}}
     await new Promise(r=>setTimeout(r,0))}
   sheet.remove();
-  const n=pdf.getNumberOfPages();for(let i=1;i<=n;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(110);pdf.text(`Bhadram Ee Bhoomi - Daily Cleaning  |  ${title}  |  ${i}/${n}`,105,292,{align:'center'})}
-  pdfProg(true,'✅ PDF തയ്യാർ (Ready)',1);
-  const name=`Bhadram-Ee-Bhoomi-${rMode==='day'?'Daily-Report-'+$('#rDate').value:'Monthly-Report-'+$('#rMonth').value}.pdf`;
-  const blob=pdf.output('blob');return {file:new File([blob],name,{type:'application/pdf'}),blob,name,title,key:reportKey(),pages:n}}
+  const n=pdf.getNumberOfPages();
+  for(let i=1;i<=n;i++){pdf.setPage(i);
+    if(meta){pdf.addImage(textCanvas({l:'Generated by ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)',c:meta.id,r:`Page ${i} of ${n}`},718,22),'PNG',10,287.5,190,190*22/718,undefined,'FAST');
+      if(i>1)pdf.addImage(textCanvas({l:'ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം',r:noEmoji(meta.titleMl),top:true},718,22),'PNG',10,2.2,190,190*22/718,undefined,'FAST')}
+    else{pdf.setFontSize(8);pdf.setTextColor(110);pdf.text(`Bhadram Ee Bhoomi - Daily Cleaning  |  ${title}  |  ${i}/${n}`,105,292,{align:'center'})}}
+  return pdf}
 function downloadPdf(r){const u=URL.createObjectURL(r.blob);const a=document.createElement('a');a.href=u;a.download=r.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);toast('⬇️ PDF ഡൗൺലോഡ് ചെയ്തു (Downloaded) – '+r.name,4000)}
-async function sharePdf(r){
+async function sharePdf(r,btnSel='#rPdf',kind){
   if(navigator.canShare&&navigator.share&&navigator.canShare({files:[r.file]})){
-    try{await navigator.share({files:[r.file],title:'ഭദ്രം ഈ ഭൂമി – '+(rMode==='day'?'ദിവസ റിപ്പോർട്ട്':'മാസ റിപ്പോർട്ട്'),text:'ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം: '+r.title});return 'shared'}
-    catch(e){if(e.name==='AbortError')return 'aborted';if(e.name==='NotAllowedError'){const b=$('#rPdf');b.classList.add('ready');b.innerHTML='<svg class="ic"><use href="#i-share"/></svg><span>PDF തയ്യാർ – ഷെയർ ചെയ്യാൻ തൊടുക <small class="en">(Ready – tap to share)</small></span>';toast('📄 PDF തയ്യാർ – വീണ്ടും തൊടുക (Tap again to share)',3500);return 'needtap'}console.error(e)}}
+    try{await navigator.share({files:[r.file],title:'ഭദ്രം ഈ ഭൂമി – '+(kind||(rMode==='day'?'ദിവസ റിപ്പോർട്ട്':'മാസ റിപ്പോർട്ട്')),text:'ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം: '+r.title});return 'shared'}
+    catch(e){if(e.name==='AbortError')return 'aborted';if(e.name==='NotAllowedError'){const b=$(btnSel);if(b){b.classList.add('ready');b.innerHTML='<svg class="ic"><use href="#i-share"/></svg><span>PDF തയ്യാർ – ഷെയർ ചെയ്യാൻ തൊടുക <small class="en">(Ready – tap to share)</small></span>'}toast('📄 PDF തയ്യാർ – വീണ്ടും തൊടുക (Tap again to share)',3500);return 'needtap'}console.error(e)}}
   downloadPdf(r);return 'downloaded'}
 $('#rPdf').onclick=async()=>{if(pdfBusy)return;
   if(pdfReady&&pdfReady.key===reportKey()){await sharePdf(pdfReady);return}
@@ -818,4 +901,4 @@ if('serviceWorker'in navigator&&location.protocol.startsWith('http')&&!EMU){
     // safety net: if the server already has a newer version than this page, reload once (or offer the button while a form is open)
     latestVer().then(L=>{if(L&&L!==APP_VER){check();if(formBusy())showUpdateBar();else if(sessionStorage.getItem('updTried')!==L){sessionStorage.setItem('updTried',L);setTimeout(()=>forceUpdate(),1500)}}})
   }).catch(()=>{})}
-window.__app={get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F};
+window.__app={get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML};
