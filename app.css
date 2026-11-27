@@ -303,3 +303,27 @@ div.thumb{background:var(--brand-50)!important}
 @media (max-width:380px){.ractions .row:not(.actions3) .btn{flex-direction:column;gap:2px;padding-top:6px;padding-bottom:6px}}
 @media (max-width:350px){.ractions .actions3 .ic{display:none}}
 @media (max-width:350px){#v-report .daynav{gap:4px}#v-report .daynav .iconbtn{flex:0 0 36px!important;width:36px;min-width:36px}#v-report .daynav input{font-size:14px;padding:10px 2px}#rToday{padding:0 8px}}
+/* places / roads checklist (reports + PDF) */
+.rp-filt{margin-top:4px;font-size:13px;color:var(--text-2)}
+.pcl{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 14px;margin:6px 0 12px}
+.pci{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;line-height:1.35;background:#fff;break-inside:avoid;page-break-inside:avoid}
+.pci.on{border-color:var(--good-100,#bfe3cf)}
+.pcn{flex:1;min-width:0;overflow-wrap:anywhere}.pcn .en{font-size:12px}
+.pcb{display:inline-flex;align-items:center;justify-content:center;flex:0 0 20px;width:20px;height:20px;border:2px solid #4b5563;border-radius:4px;background:#fff;color:#0a7a3e;font-weight:900;font-size:15px;line-height:1;vertical-align:-4px}
+.pcb.on{border-color:#0a7a3e}
+.pcc{flex:0 0 auto;font-size:12px;font-weight:700;color:#0a7a3e;background:#e8f6ee;border-radius:999px;padding:2px 8px}
+.pcl-legend{font-size:12px;color:var(--text-2);margin:2px 0 2px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}.pcl-legend .pcb{width:16px;height:16px;flex-basis:16px;font-size:12px;border-width:2px}
+.pdfpage .pcl{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media print{.pcl{grid-template-columns:repeat(3,minmax(0,1fr))}.pci{border-color:#999}}
+/* places manager */
+.pl-head{display:flex;align-items:center;gap:8px;margin-top:16px}
+.plrow{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}.plrow:last-child{border-bottom:0}
+.plrow.off .plnm b{color:var(--text-2);text-decoration:line-through}
+.plno{flex:0 0 24px;height:24px;border-radius:50%;background:var(--brand-50);color:var(--brand-600);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+.plnm{flex:1;min-width:0;overflow-wrap:anywhere}
+.plbtns{display:flex;gap:4px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
+.plbtns .iconbtn{flex:0 0 38px!important;width:38px;min-height:38px;height:38px}
+.plbtns .iconbtn[disabled]{opacity:.35}
+.plbtns .warnb{color:var(--warn);border-color:var(--warn-50,#f5d9a8)}
+@media (max-width:380px){.plrow{flex-wrap:wrap}.plbtns{width:100%;justify-content:flex-end}}
+#mMsg{white-space:pre-line}

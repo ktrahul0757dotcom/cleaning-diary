@@ -40,7 +40,7 @@
 <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
 <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
 <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
-<symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></symbol>
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
 <symbol id="i-zin" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></symbol>
@@ -276,16 +276,19 @@
       <label class="f">ഫോൺ <span class="en">(Phone, optional)</span></label><input type="tel" id="sPhone">
       <div class="row" style="margin-top:14px"><button class="btn" id="sSave"><svg class="ic"><use href="#i-save"/></svg>സേവ്</button><button class="btn out" data-act="logout"><svg class="ic"><use href="#i-logout"/></svg>ലോഗൗട്ട്</button></div>
     </div>
-    <div class="card" id="placesCard" style="display:none"><h2><span class="hic"><svg class="ic"><use href="#i-pin"/></svg></span>സ്ഥലങ്ങൾ <span class="en">(Areas, wards & places)</span></h2>
-      <div class="row wrap"><input type="text" id="pArea" placeholder="ഏരിയ (Area)" list="areaList"><input type="text" id="pWard" placeholder="വാർഡ് (Ward)" list="wardList"><input type="text" id="pName" placeholder="സ്ഥലം (Place)"></div>
+    <div class="card" id="placesCard" style="display:none"><h2><span class="hic"><svg class="ic"><use href="#i-pin"/></svg></span>സ്ഥലങ്ങൾ / റോഡുകൾ <span class="en">(Manage places / roads)</span></h2>
+      <div class="row wrap"><input type="text" id="pArea" placeholder="ഏരിയ (Area)" list="areaList"><input type="text" id="pWard" placeholder="വാർഡ് (Ward)" list="wardList"><input type="text" id="pName" placeholder="സ്ഥലം / റോഡ് (Place / road)"></div>
       <label class="f">തരം <span class="en">(Type)</span></label><select id="pType"></select>
       <input type="text" id="pTypeOther" placeholder="തരം എഴുതുക (Describe type)" maxlength="60" style="margin-top:8px;display:none">
-      <datalist id="areaList"></datalist><datalist id="wardList"></datalist>
+      <p class="hint" id="pEditHint" style="display:none;margin:8px 0 0">✏️ <b id="pEditName"></b> – പേര് മാറ്റിയാലും പഴയ എൻട്രികൾ ഈ സ്ഥലവുമായി ബന്ധിപ്പിച്ചിരിക്കും (Old entries stay linked after rename)</p><datalist id="areaList"></datalist><datalist id="wardList"></datalist>
       <div class="row" style="margin-top:12px"><button class="btn out" id="pCancel" style="display:none"><svg class="ic"><use href="#i-x"/></svg>റദ്ദാക്കുക</button><button class="btn block" id="pAdd"><svg class="ic"><use href="#i-plus"/></svg>ചേർക്കുക <span class="en">(Add place)</span></button></div>
       <details id="ctDetails" class="more" style="margin-top:12px;display:none"><summary><svg class="ic sm"><use href="#i-tag"/></svg> പുതിയ തരം ചേർക്കുക <span class="en">(Admin: add custom type)</span></summary>
         <div class="row" style="margin-top:10px"><input type="text" id="ctIcon" placeholder="🏷️" maxlength="4" style="flex:0 0 64px;text-align:center"><input type="text" id="ctMl" placeholder="മലയാളം പേര്" maxlength="40"><input type="text" id="ctEn" placeholder="English" maxlength="40"></div>
         <button class="btn sec block sm" id="ctAdd" style="margin-top:8px"><svg class="ic sm"><use href="#i-plus"/></svg>തരം ചേർക്കുക <span class="en">(Add type)</span></button><div id="ctList" class="place-list" style="margin-top:8px"></div></details>
-      <div id="pList" class="plist" style="margin-top:10px"></div></div>
+      <div class="pl-head"><b>ഇപ്പോഴത്തെ ലിസ്റ്റ് <span class="en">(Current list)</span></b> <span class="cnt" id="pCount"></span></div>
+      <p class="hint" style="margin:2px 0 6px">✏️ പേര് മാറ്റാം (rename) · ▲▼ ക്രമം മാറ്റാം (reorder) · ⏸ ഒഴിവാക്കാം (remove – പഴയ റിപ്പോർട്ടുകളിൽ പേര് നിലനിൽക്കും / old reports keep the name)</p>
+      <div id="pList" class="plist"></div>
+      <details class="more" id="pOffWrap" style="margin-top:10px;display:none"><summary><svg class="ic sm"><use href="#i-pause"/></svg> ഒഴിവാക്കിയ സ്ഥലങ്ങൾ <span class="en">(Removed places)</span> <span class="cnt" id="pOffCount"></span></summary><div id="pOffList" class="plist"></div></details></div>
     <div class="card" id="usersCard" style="display:none"><h2><span class="hic info"><svg class="ic"><use href="#i-users"/></svg></span>അംഗങ്ങളും റോളുകളും <span class="en">(Members & roles)</span></h2>
       <p class="hint" style="margin-top:-6px">പുതിയ അംഗങ്ങൾ ലോഗിൻ ചെയ്താൽ ഇവിടെ "pending" ആയി വരും. റോൾ നൽകുക. (New sign-ins appear as pending – assign a role.)</p>
       <div class="ulist" id="uList"></div></div>

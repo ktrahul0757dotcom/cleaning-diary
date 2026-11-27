@@ -96,7 +96,7 @@ function startApp(){unsubs.splice(1).forEach(u=>u());entryUnsub&&entryUnsub();en
   $('#phMode').textContent=OPT.storageEnabled?'☁️ ഫോട്ടോകൾ Firebase Storage-ൽ സൂക്ഷിക്കുന്നു (Photos stored in Cloud Storage)':'💾 ഫോട്ടോകൾ ചുരുക്കി (~200KB) ഡാറ്റാബേസിൽ സൂക്ഷിക്കുന്നു (Free-plan mode: compressed photos in Firestore)';
   $('#aboutTxt').innerHTML=`ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം (Bhadram Ee Bhoomi – Daily Cleaning) · പതിപ്പ് (version) team-3 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
   unsubs.push(onSnapshot(doc(db,'meta','placeTypes'),s=>{customTypes=(s.data()?.types||[]).filter(t=>t&&t.id&&t.ml);renderPlaces();fillFilters();if($('#v-dash').classList.contains('active'))renderDash()},e=>console.error('types',e)));
-  unsubs.push(onSnapshot(collection(db,'places'),s=>{places=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.area+a.ward+a.name).localeCompare(b.area+b.ward+b.name));renderPlaces();if(can.staff())fillSquadPlaces()},e=>console.error(e)));
+  unsubs.push(onSnapshot(collection(db,'places'),s=>{places=s.docs.map(d=>({id:d.id,...d.data()})).sort(placeSort);renderPlaces();if(can.staff())fillSquadPlaces()},e=>console.error(e)));
   unsubs.push(onSnapshot(collection(db,'users'),s=>{users=s.docs.map(d=>({uid:d.id,...d.data()}));renderUsers();fillFilters()},e=>console.error(e)));
   unsubs.push(onSnapshot(query(collection(db,'users',me.uid,'notifications'),orderBy('createdAt','desc'),limit(100)),s=>{
     if(notifReady)s.docChanges().forEach(c=>{if(c.type==='added'&&!c.doc.metadata.hasPendingWrites){const n=c.doc.data();toast('🔔 '+n.text,4500);try{if(Notification.permission==='granted')new Notification('ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം',{body:n.text,icon:'icon-192.png'})}catch(e){}}});
@@ -117,7 +117,7 @@ function fillFilters(){for(const p of ['d','r']){const ar=$(`#${p}Area`),wd=$(`#
   ar.innerHTML='<option value="">എല്ലാ ഏരിയയും (All areas)</option>'+uniq(places.map(x=>x.area).concat(entries.map(e=>e.area))).map(x=>`<option>${esc(x)}</option>`).join('');ar.value=a;
   wd.innerHTML='<option value="">എല്ലാ വാർഡും (All wards)</option>'+uniq(places.filter(x=>!ar.value||x.area===ar.value).map(x=>x.ward).concat(entries.filter(e=>!ar.value||e.area===ar.value).map(e=>e.ward))).map(x=>`<option>${esc(x)}</option>`).join('');wd.value=w;
   wk.innerHTML='<option value="">എല്ലാ തൊഴിലാളികളും (All workers)</option>'+users.filter(u=>['worker','supervisor','admin'].includes(u.role)).map(u=>`<option value="${u.uid}">${esc(u.name)}</option>`).join('');wk.value=k}
-  {const s=$('#rPlace'),v=s.value,a=$('#rArea').value,w=$('#rWard').value;s.innerHTML='<option value="">എല്ലാ സ്ഥലവും (All places)</option>'+places.filter(p=>(!a||p.area===a)&&(!w||p.ward===w)).map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}</option>`).join('');s.value=v}
+  {const s=$('#rPlace'),v=s.value,a=$('#rArea').value,w=$('#rWard').value;s.innerHTML='<option value="">എല്ലാ സ്ഥലവും (All places)</option>'+places.filter(p=>(!a||p.area===a)&&(!w||p.ward===w)).map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}${placeOffTag(p)}</option>`).join('');s.value=v}
   for(const id of ['#dType','#rType']){const s=$(id),v=s.value;s.innerHTML=typeOptions('എല്ലാ തരവും (All types)');s.value=v}
   $('#areaList').innerHTML=uniq(places.map(x=>x.area)).map(x=>`<option value="${esc(x)}">`).join('');$('#wardList').innerHTML=uniq(places.map(x=>x.ward)).map(x=>`<option value="${esc(x)}">`).join('')}
 function filtered(p='d'){const ty=$(`#${p}Type`).value,a=$(`#${p}Area`).value,w=$(`#${p}Ward`).value,k=$(`#${p}Worker`).value,q=p==='d'?$('#dSearch').value.trim().toLowerCase():'';
@@ -146,14 +146,30 @@ function renderDash(){fillFilters();const list=filtered('d');const st=stats(list
 
 /* ---------- places & users (admin) ---------- */
 let editingPlace=null;
+function placeSort(a,b){const oa=typeof a.order==='number'?a.order:1e9,ob=typeof b.order==='number'?b.order:1e9;return oa-ob||((a.area||'')+(a.ward||'')+(a.name||'')).localeCompare((b.area||'')+(b.ward||'')+(b.name||''))}
+const isActivePlace=p=>p&&p.active!==false;
+const activePlaces=()=>places.filter(isActivePlace);
+const placeOffTag=p=>isActivePlace(p)?'':' (ഒഴിവാക്കി · removed)';
+function placeRowHTML(p,i,n,on){const sub=[p.ward,p.area].filter(Boolean).map(esc).join(' · ');
+  return `<div class="plrow${on?'':' off'}" data-row="${p.id}">${on?`<span class="plno">${i+1}</span>`:''}<div class="plnm"><b>${esc(p.name)}</b>${sub?` <span class="en">${sub}</span>`:''}<br>${typeBadge(p.type||'other',p)}</div>
+  <div class="plbtns">${on?`<button class="btn out sm iconbtn" data-pup="${p.id}" aria-label="move up" ${i===0?'disabled':''}>${ico('up')}</button><button class="btn out sm iconbtn" data-pdn="${p.id}" aria-label="move down" ${i===n-1?'disabled':''}>${ico('down')}</button><button class="btn sec sm iconbtn" data-pedit="${p.id}" aria-label="rename / edit">${ico('edit')}</button><button class="btn out sm iconbtn warnb" data-poff="${p.id}" aria-label="remove (deactivate)">${ico('pause')}</button>`
+    :`<button class="btn sec sm" data-pon="${p.id}">${ico('undo','sm')}തിരികെ <span class="en">(Restore)</span></button>${can.admin()?`<button class="btn danger sm iconbtn" data-pdel="${p.id}" aria-label="delete permanently">${ico('trash')}</button>`:''}`}</div></div>`}
+function orderFix(b,act){act.forEach((p,k)=>{if(p.order!==k)b.update(doc(db,'places',p.id),{order:k,updatedBy:me.uid,updatedAt:serverTimestamp()})})}
+async function movePlace(id,dir){const act=activePlaces();const i=act.findIndex(p=>p.id===id),j=i+dir;if(i<0||j<0||j>=act.length)return;
+  [act[i],act[j]]=[act[j],act[i]];const b=writeBatch(db);let n=0;act.forEach((p,k)=>{if(p.order!==k){b.update(doc(db,'places',p.id),{order:k,updatedBy:me.uid,updatedAt:serverTimestamp()});n++}});
+  try{await b.commit()}catch(e){toast('⚠️ '+(e.code||e.message))}}
 function renderPlaces(){const sel=$('#fPlace'),cur=sel.value,ft=$('#fType').value;
   const ftv=$('#fType').value;$('#fType').innerHTML=typeOptions('🔎 എല്ലാ തരവും (All types)');$('#fType').value=ftv;
   const pv=$('#pType').value;$('#pType').innerHTML=typeOptions('-- തരം തിരഞ്ഞെടുക്കുക (Select type) --');$('#pType').value=pv;
-  const groups=allTypes().map(t=>({t,ps:places.filter(p=>(p.type||'other')===t.id||(t.id==='other'&&!typeById(p.type||'other')))})).filter(g=>g.ps.length&&(!ft||g.t.id===ft));
-  sel.innerHTML='<option value="">-- സ്ഥലം തിരഞ്ഞെടുക്കുക (Select place) --</option>'+groups.map(g=>`<optgroup label="${g.t.icon} ${esc(g.t.ml)}${g.t.en?' ('+esc(g.t.en)+')':''}">${g.ps.map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}${p.area?' ('+esc(p.area)+')':''}${p.typeOther?' · '+esc(p.typeOther):''}</option>`).join('')}</optgroup>`).join('');
+  const selPl=places.filter(p=>isActivePlace(p)||(editing&&editing.placeId===p.id));
+  const groups=allTypes().map(t=>({t,ps:selPl.filter(p=>(p.type||'other')===t.id||(t.id==='other'&&!typeById(p.type||'other')))})).filter(g=>g.ps.length&&(!ft||g.t.id===ft));
+  sel.innerHTML='<option value="">-- സ്ഥലം തിരഞ്ഞെടുക്കുക (Select place) --</option>'+groups.map(g=>`<optgroup label="${g.t.icon} ${esc(g.t.ml)}${g.t.en?' ('+esc(g.t.en)+')':''}">${g.ps.map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}${p.area?' ('+esc(p.area)+')':''}${p.typeOther?' · '+esc(p.typeOther):''}${placeOffTag(p)}</option>`).join('')}</optgroup>`).join('');
   sel.value=cur;if(sel.value!==cur)sel.value='';
-  $('#fPlaceHint').textContent=places.length?'':(can.sup()?'⚙️ ക്രമീകരണത്തിൽ സ്ഥലങ്ങൾ ചേർക്കുക (Add places in Settings)':'സൂപ്പർവൈസർ സ്ഥലങ്ങൾ ചേർക്കണം (Supervisor must add places)');
-  $('#pList').innerHTML=places.map(p=>`<div class="u" style="display:flex;gap:8px;align-items:center;padding:10px 0"><div style="flex:1;min-width:0"><b>${esc(p.name)}</b> <span class="en">${esc(p.ward)} · ${esc(p.area)}</span><br>${typeBadge(p.type||'other',p)}</div><button class="btn sec sm iconbtn" data-pedit="${p.id}" aria-label="edit">${ico('edit')}</button><button class="btn danger sm iconbtn" data-pid="${p.id}" aria-label="delete">${ico('trash')}</button></div>`).join('')||'<p class="hint">ഇതുവരെ ഇല്ല (none yet)</p>';
+  $('#fPlaceHint').textContent=activePlaces().length?'':(can.sup()?'⚙️ ക്രമീകരണത്തിൽ സ്ഥലങ്ങൾ ചേർക്കുക (Add places in Settings)':'സൂപ്പർവൈസർ സ്ഥലങ്ങൾ ചേർക്കണം (Supervisor must add places)');
+  {const act=activePlaces(),off=places.filter(p=>!isActivePlace(p));
+  $('#pList').innerHTML=act.map((p,k)=>placeRowHTML(p,k,act.length,true)).join('')||'<p class="hint">ഇതുവരെ ഇല്ല – മുകളിൽ ചേർക്കുക (none yet – add above)</p>';
+  $('#pCount').textContent=act.length;$('#pOffCount').textContent=off.length;$('#pOffWrap').style.display=off.length?'block':'none';
+  $('#pOffList').innerHTML=off.map(p=>placeRowHTML(p,0,0,false)).join('')}
   $('#ctDetails').style.display=can.admin()?'block':'none';
   $('#ctList').innerHTML=customTypes.map(t=>`<span>${t.icon} ${esc(t.ml)} ${t.en?'('+esc(t.en)+')':''}<button data-ctdel="${t.id}" title="remove">✕</button></span>`).join('');
   $$('[data-ctdel]').forEach(b=>b.onclick=async()=>{const t=customTypes.find(x=>x.id===b.dataset.ctdel);if(!await ask(`"${t.ml}" തരം നീക്കണോ? (Remove type?) – ഈ തരത്തിലുള്ള സ്ഥലങ്ങൾ "മറ്റുള്ളവ" ആയി കാണിക്കും.`))return;
@@ -161,17 +177,27 @@ function renderPlaces(){const sel=$('#fPlace'),cur=sel.value,ft=$('#fType').valu
   renderQRList();renderFeedback();
   $$('#pList [data-pedit]').forEach(b=>b.onclick=()=>{const p=places.find(x=>x.id===b.dataset.pedit);editingPlace=p;$('#pArea').value=p.area||'';$('#pWard').value=p.ward||'';$('#pName').value=p.name||'';
     $('#pType').value=typeById(p.type)?p.type:(p.type?'other':'');$('#pTypeOther').value=p.typeOther||'';$('#pTypeOther').style.display=$('#pType').value==='other'?'block':'none';
-    $('#pAdd').innerHTML=ico('save')+'മാറ്റം സേവ് <span class="en">(Save place)</span>';$('#pCancel').style.display='flex';$('#pName').scrollIntoView({block:'center'})});
-  $$('#pList [data-pid]').forEach(b=>b.onclick=async()=>{const p=places.find(x=>x.id===b.dataset.pid);if(await ask(`"${p.name}" നീക്കണോ? (Remove place?)`))deleteDoc(doc(db,'places',p.id)).catch(e=>toast('⚠️ '+e.code))});fillFilters()}
+    $('#pAdd').innerHTML=ico('save')+'മാറ്റം സേവ് <span class="en">(Save place)</span>';$('#pCancel').style.display='flex';$('#pEditName').textContent=p.name||'';$('#pEditHint').style.display='block';$('#pName').scrollIntoView({block:'center'})});
+  $$('#pList [data-pup]').forEach(b=>b.onclick=()=>movePlace(b.dataset.pup,-1));$$('#pList [data-pdn]').forEach(b=>b.onclick=()=>movePlace(b.dataset.pdn,1));
+  $$('#pList [data-poff]').forEach(b=>b.onclick=async()=>{const p=places.find(x=>x.id===b.dataset.poff);
+    if(!await ask(`"${p.name}" ലിസ്റ്റിൽ നിന്ന് ഒഴിവാക്കണോ? (Remove from list?)\nപുതിയ എൻട്രികൾക്ക് കാണിക്കില്ല. പഴയ എൻട്രികളും റിപ്പോർട്ടുകളും അതേപടി നിലനിൽക്കും; പിന്നീട് തിരികെ ചേർക്കാം. (Hidden for new entries; old entries & reports stay; can be restored.)`))return;
+    if(editingPlace?.id===p.id)resetPlaceForm();
+    updateDoc(doc(db,'places',p.id),{active:false,removedAt:serverTimestamp(),updatedBy:me.uid,updatedAt:serverTimestamp()}).then(()=>toast('⏸ ഒഴിവാക്കി (Removed) – '+p.name)).catch(e=>toast('⚠️ '+e.code))});
+  $$('#pOffList [data-pon]').forEach(b=>b.onclick=()=>{const p=places.find(x=>x.id===b.dataset.pon);
+    const act=activePlaces(),bt=writeBatch(db);orderFix(bt,act);bt.update(doc(db,'places',p.id),{active:true,order:act.length,updatedBy:me.uid,updatedAt:serverTimestamp()});bt.commit().then(()=>toast('✅ തിരികെ ചേർത്തു (Restored) – '+p.name)).catch(e=>toast('⚠️ '+e.code))});
+  $$('#pOffList [data-pdel]').forEach(b=>b.onclick=async()=>{const p=places.find(x=>x.id===b.dataset.pdel);
+    if(!await ask(`"${p.name}" സ്ഥിരമായി ഡിലീറ്റ് ചെയ്യണോ? (Delete permanently?)\nപഴയ എൻട്രികൾ ഡിലീറ്റ് ആകില്ല, പക്ഷേ ഈ സ്ഥലം വീണ്ടും തിരികെ ചേർക്കാൻ കഴിയില്ല. (Old entries are kept, but this cannot be undone.)`))return;
+    deleteDoc(doc(db,'places',p.id)).then(()=>toast('🗑️ ഡിലീറ്റ് ചെയ്തു (Deleted)')).catch(e=>toast('⚠️ '+e.code))});
+  fillFilters()}
 $('#fType').onchange=renderPlaces;
 $('#pType').onchange=()=>{$('#pTypeOther').style.display=$('#pType').value==='other'?'block':'none'};
-function resetPlaceForm(){editingPlace=null;$('#pName').value='';$('#pType').value='';$('#pTypeOther').value='';$('#pTypeOther').style.display='none';$('#pAdd').innerHTML=ico('plus')+'ചേർക്കുക <span class="en">(Add place)</span>';$('#pCancel').style.display='none'}
+function resetPlaceForm(){editingPlace=null;$('#pName').value='';$('#pType').value='';$('#pTypeOther').value='';$('#pTypeOther').style.display='none';$('#pAdd').innerHTML=ico('plus')+'ചേർക്കുക <span class="en">(Add place)</span>';$('#pCancel').style.display='none';$('#pEditHint').style.display='none'}
 $('#pCancel').onclick=resetPlaceForm;
 $('#pAdd').onclick=async()=>{const area=$('#pArea').value.trim(),ward=$('#pWard').value.trim(),name=$('#pName').value.trim(),type=$('#pType').value;if(!name)return toast('⚠️ സ്ഥലത്തിൻ്റെ പേര് നൽകുക (Enter place name)');
   if(!type)return toast('⚠️ തരം തിരഞ്ഞെടുക്കുക (Select a type)');const t=typeById(type);
   const data={area,ward,name,type,typeOther:type==='other'?$('#pTypeOther').value.trim().slice(0,60):'',typeLabel:t.ml,typeIcon:t.icon};
   try{if(editingPlace){updateDoc(doc(db,'places',editingPlace.id),{...data,updatedBy:me.uid,updatedAt:serverTimestamp()}).catch(e=>toast('⚠️ '+e.code));toast('✅ മാറ്റം സേവ് ചെയ്തു (Saved)')}
-    else{setDoc(doc(collection(db,'places')),{...data,createdBy:me.uid,createdAt:serverTimestamp()}).catch(e=>toast('⚠️ '+e.code));toast('✅ ചേർത്തു (Added)')}resetPlaceForm()}catch(e){toast('⚠️ '+e.message)}};
+    else{const act=activePlaces(),b=writeBatch(db);orderFix(b,act);b.set(doc(collection(db,'places')),{...data,active:true,order:act.length,createdBy:me.uid,createdAt:serverTimestamp()});b.commit().catch(e=>toast('⚠️ '+e.code));toast('✅ ചേർത്തു (Added)')}resetPlaceForm()}catch(e){toast('⚠️ '+e.message)}};
 $('#ctAdd').onclick=()=>{const ml=$('#ctMl').value.trim(),en=$('#ctEn').value.trim(),icon=$('#ctIcon').value.trim()||'🏷️';if(!ml)return toast('⚠️ മലയാളം പേര് നൽകുക');
   const id='c_'+Date.now().toString(36);setDoc(doc(db,'meta','placeTypes'),{types:[...customTypes,{id,icon:icon.slice(0,4),ml:ml.slice(0,40),en:en.slice(0,40)}],updatedBy:me.uid,updatedAt:serverTimestamp()}).then(()=>toast('✅ തരം ചേർത്തു (Type added)')).catch(e=>toast('⚠️ '+e.code));
   $('#ctMl').value='';$('#ctEn').value='';$('#ctIcon').value=''};
@@ -220,12 +246,12 @@ function renderGPS(){$('#gpsTxt').innerHTML=gps?`✅ ${gps.lat.toFixed(6)}, ${gp
 $('#gpsBtn').onclick=()=>{if(!navigator.geolocation)return toast('⚠️ GPS ലഭ്യമല്ല');$('#gpsTxt').textContent='⏳ ലൊക്കേഷൻ എടുക്കുന്നു...';
   navigator.geolocation.getCurrentPosition(p=>{gps={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};renderGPS()},e=>{$('#gpsTxt').textContent='⚠️ ലൊക്കേഷൻ കിട്ടിയില്ല ('+e.message+')'},{enableHighAccuracy:true,timeout:20000})};
 $('#gpsClr').onclick=()=>{gps=null;renderGPS()};
-function resetForm(){editing=null;curPhotos=[];gps=null;$('#fDate').value=today();$('#fTime').value=nowTime();$('#fPlace').value=places.length===1?places[0].id:'';
+function resetForm(){editing=null;curPhotos=[];gps=null;$('#fDate').value=today();$('#fTime').value=nowTime();{const ap=activePlaces();$('#fPlace').value=ap.length===1?ap[0].id:''}
   $$('#fWork input').forEach(i=>{i.checked=false;i.closest('.chip').classList.remove('on')});$('#fWorkOther').value='';$('#fWorkOther').style.display='none';
   ['#fWorkers','#fWaste','#fNotes'].forEach(s=>$(s).value='');$('#fWasteUnit').selectedIndex=0;renderFormPhotos();renderGPS();
   $('#formTitle').innerHTML='📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span>';$('#cancelEdit').style.display='none'}
 $('#cancelEdit').onclick=()=>{resetForm();show('v-dash')};
-async function editEntry(e){resetForm();editing=e;$('#fDate').value=e.date;$('#fTime').value=e.time||'';$('#fPlace').value=e.placeId||'';
+async function editEntry(e){resetForm();editing=e;if(e.placeId&&!isActivePlace(places.find(p=>p.id===e.placeId)))renderPlaces();$('#fDate').value=e.date;$('#fTime').value=e.time||'';$('#fPlace').value=e.placeId||'';
   $$('#fWork input').forEach(i=>{i.checked=(e.works||[]).includes(i.value);i.closest('.chip').classList.toggle('on',i.checked)});$('#fWorkOther').value=e.workOther||'';$('#fWorkOther').style.display=(e.works||[]).includes('other')?'block':'none';
   $('#fWorkers').value=e.workers??'';$('#fWaste').value=e.waste??'';if(e.wasteUnit)$('#fWasteUnit').value=e.wasteUnit;$('#fNotes').value=e.notes||'';gps=e.gps||null;renderGPS();
   const ps=await getDocs(collection(db,'entries',e.id,'photos'));curPhotos=ps.docs.map(d=>({id:d.id,...d.data(),isNew:false,src:d.data().url||d.data().data}));renderFormPhotos();
@@ -330,22 +356,32 @@ function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class=
 function dayFbHTML(list){if(!list.length)return '<p class="hint">ഈ ദിവസം സ്ഥലവാസികളുടെ അഭിപ്രായം ഇല്ല (No resident feedback this day)</p>';
   return list.map(f=>`<div class="dr-fb">${starsHTML(f.rating)} <b>${f.rating}/5</b> · <b>${esc(f.placeName||'')}</b>${f.ward?' · '+esc(f.ward):''} <span class="hint">${fbDate(f)?fbDate(f).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):''}${f.name?' · '+esc(f.name):''}</span>
     ${f.comment?`<div>💬 ${esc(f.comment)}</div>`:''}${f.suggestion?`<div>💡 <b>നിർദ്ദേശം (Suggestion):</b> ${esc(f.suggestion)}</div>`:''}${f.photo?`<img class="fbph" src="${f.photo}" alt="">`:''}</div>`).join('')}
+/* places/roads checklist for reports: every place in scope with a ✓ box when it had work in the period */
+function reportPlaces(list,{a,w,rty,pl}){const keys=new Set(list.map(placeKey));
+  return places.filter(p=>(!rty||placeTypeOf(p)===rty)&&(!a||p.area===a)&&(!w||p.ward===w)&&(!pl||p.id===pl)&&(isActivePlace(p)||keys.has(p.id)))}
+function placeDone(p,list){return list.filter(e=>e.placeId?e.placeId===p.id:e.placeName===p.name)}
+function placeChecklistHTML(pls,list,monthly,wk){if(!pls.length)return '';
+  const rows=pls.map(p=>{const es=placeDone(p,list),on=es.length>0,n=monthly?new Set(es.map(e=>e.date)).size:es.length;
+    return {p,on,n}});const dn=rows.filter(r=>r.on).length;
+  return `<div class="rp-sub" style="font-size:15px">📍 സ്ഥലങ്ങൾ / റോഡുകൾ <span class="en">(Places / roads)</span> – ✓ ${dn}/${rows.length}${rows.length-dn?` · ബാക്കി <span class="en">(not done)</span> ${rows.length-dn}`:''}</div>
+  <div class="pcl-legend">${wk?`👤 ${esc(wk)} · `:''}<span class="pcb on">✓</span> ജോലി ചെയ്തു <span class="en">(work done${monthly?', days':''})</span> &nbsp; <span class="pcb"></span> ${monthly?'ഈ മാസം ജോലി ഇല്ല':'ബാക്കി'} <span class="en">(${monthly?'no work this month':'not done'})</span></div>
+  <div class="pcl">${rows.map(({p,on,n})=>`<div class="pci${on?' on':' pend'}"><span class="pcb${on?' on':''}">${on?'✓':''}</span><span class="pcn">${typeInfo(placeTypeOf(p),p).icon} <b>${esc(p.name)}</b>${p.ward?` <span class="en">– ${esc(p.ward)}</span>`:''}${isActivePlace(p)?'':' <span class="en">(ഒഴിവാക്കി · removed)</span>'}</span>${on?`<span class="pcc">${n}${monthly?' ദിവസം':''}</span>`:''}</div>`).join('')}</div>`}
 async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($('#rDate').value=today());
   $('#reportOut').innerHTML=skelHTML(3);
   const a=$('#rArea').value,w=$('#rWard').value,k=$('#rWorker').value,rty=$('#rType').value,pl=$('#rPlace').value;
   const s=await getDocs(query(collection(db,'entries'),where('date','==',d)));if(tok!==reportToken)return;
   const list=s.docs.map(x=>({id:x.id,...x.data({serverTimestamps:'estimate'})})).filter(e=>(!rty||placeTypeOf(e)===rty)&&(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)&&(!pl||e.placeId===pl)).sort((x,z)=>(x.time||'').localeCompare(z.time||''));
   const [fbList,sqList]=can.staff()?await Promise.all([rangeFeedback(new Date(d+'T00:00:00'),new Date(d+'T23:59:59.999'),a,w,rty,pl),rangeSquad(new Date(d+'T00:00:00'),new Date(d+'T23:59:59.999'),a,w,rty,pl)]):[[],[]];if(tok!==reportToken)return;
-  const pls=places.filter(p=>(!rty||placeTypeOf(p)===rty)&&(!a||p.area===a)&&(!w||p.ward===w)&&(!pl||p.id===pl));
-  const done=new Set(list.map(placeKey));const pending=k?[]:pls.filter(p=>!done.has(p.id));const doneN=k?done.size:pls.filter(p=>done.has(p.id)).length;
+  const pls=reportPlaces(list,{a,w,rty,pl});
+  const pending=k?[]:pls.filter(p=>isActivePlace(p)&&!placeDone(p,list).length);const doneN=k?new Set(list.map(placeKey)).size:pls.filter(p=>placeDone(p,list).length).length;
   const st=stats(list);const rcount=list.reduce((n,e)=>n+(e.remarkCount||0),0);const fbAvg=fbList.length?fbList.reduce((n,f)=>n+f.rating,0)/fbList.length:null;
   const wk=k?users.find(u=>u.uid===k)?.name:'',pn=pl?places.find(p=>p.id===pl)?.name:'';
-  const filt=[a,w,pn,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)';
-  let h=REPORT_HEAD(`📅 ദിവസ റിപ്പോർട്ട് (Daily Report) – ${fmtDate(d)}`)+`<div>${filt}</div></div>`;
+  const filt=[a,w,pn,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ');
+  let h=REPORT_HEAD(`📅 ദിവസ റിപ്പോർട്ട് (Daily Report) – ${fmtDate(d)}`)+(filt?`<div class="rp-filt">🔎 ${filt}</div>`:'')+`</div>`;
   h+=`<div class="rp-sum"><div class="dr-kpi"><div><b>${list.length}</b>ജോലി<br>(Entries)</div><div><b>${k?doneN:doneN+'/'+pls.length}</b>സ്ഥലം പൂർത്തി<br>(Places done)</div><div><b style="color:${scoreColor(st.avg)}">${st.avg??'–'}</b>സ്കോർ<br>(Avg score)</div>
     <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>സ്ഥലവാസി അഭിപ്രായം<br>(Resident fb)</div></div>${can.staff()?`<div class="sq-line">🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ &amp; സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന <span class="en">(Inspections)</span>: <b>${sqList.length}</b>${sqList.length?` · ✅ ${sqList.filter(f=>f.overall==='good').length} · ⚠️ ${sqList.filter(f=>f.overall==='partial').length} · ❌ ${sqList.filter(f=>f.overall==='poor').length} · ${(sqList.reduce((n,f)=>n+f.rating,0)/sqList.length).toFixed(1)}★`:''}</div>`:''}
     👥 ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos} · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}%${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}</div>`;
-  if(!k)h+=`<div class="rp-sub" style="font-size:15px">⏳ ബാക്കി സ്ഥലങ്ങൾ (Not done today): ${pending.length}</div>`+(pending.length?`<ul style="font-size:13px;margin:2px 0 10px;columns:2">${pending.map(p=>`<li class="pend">${typeInfo(placeTypeOf(p),p).icon} ${esc(p.name)}${p.ward?' – '+esc(p.ward):''}</li>`).join('')}</ul>`:'<p class="hint">✅ എല്ലാ സ്ഥലവും പൂർത്തിയായി (All places done)</p>');
+  h+=placeChecklistHTML(pls,list,false,wk);
   h+=typeReportHTML(list,fbList);
   if(list.length){h+=`<div class="rp-sub" style="font-size:15px">🧹 ജോലി വിവരങ്ങൾ (Work entries)</div>`;const withPh=$('#rPhotos').checked;
     const parts=await Promise.all(list.map(async e=>{const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);
@@ -353,11 +389,11 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   else h+=emptyHTML('inbox','ഈ ദിവസം ജോലി എൻട്രികൾ ഇല്ല','No work entries this day');
   if(can.staff())h+=`<div class="rp-sub" style="font-size:15px">🗣️ സ്ഥലവാസികളുടെ അഭിപ്രായം / നിർദ്ദേശങ്ങൾ (Resident feedback & suggestions)</div>`+dayFbHTML(fbList)+sqDayHTML(sqList);
   h+=CREDIT();$('#reportOut').innerHTML=h;
-  const L=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,...(jdText?[`🏛️ ${jdLines().join(' · ')}`]:[]),`📅 ദിവസ റിപ്പോർട്ട് (Daily report): ${fmtDate(d)}`,filt.replace(/<[^>]+>/g,'')==='എല്ലാം (All)'?'':`🔎 ${[a,w,pn,wk,rty?typeInfo(rty).ml:''].filter(Boolean).join(' · ')}`,
+  const L=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,...(jdText?[`🏛️ ${jdLines().join(' · ')}`]:[]),`📅 ദിവസ റിപ്പോർട്ട് (Daily report): ${fmtDate(d)}`,filt?`🔎 ${[a,w,pn,wk,rty?typeInfo(rty).ml:''].filter(Boolean).join(' · ')}`:'',
     `✅ സ്ഥലം പൂർത്തി (Places done): ${k?doneN:doneN+'/'+pls.length}`,`🧹 ജോലി (Entries): ${list.length}`,`⭐ സ്കോർ (Avg score): ${st.avg??'–'}`,`💬 അഭിപ്രായം (Remarks): ${rcount} · ബാക്കി (awaiting) ${st.awaiting}`,
     can.staff()?`🗣️ സ്ഥലവാസി അഭിപ്രായം (Resident feedback): ${fbList.length}${fbAvg!=null?' · ശരാശരി '+fbAvg.toFixed(1)+'★':''}`:'',
     can.staff()&&sqList.length?`🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ & സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന (Inspections): ${sqList.length} · ${sqList.map(f=>`${f.officialName} (${f.designation}) – ${(SQ_OVR[f.overall]||[''])[0]} ${f.rating}★`).join('; ')}`:'',
-    !k&&pending.length?`⏳ ബാക്കി (Not done): ${pending.map(p=>p.name).join(', ')}`:''].filter(Boolean);
+    pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>`${placeDone(p,list).length?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}`).join('\n')}`:''].filter(Boolean);
   const E=list.map(e=>`• ${e.time||''} ${e.placeName} – ${e.workerName||''} – ${worksText(e)}${e.score!=null?' – സ്കോർ '+e.score:''}`);
   shareText=L.join('\n')+(E.length?'\n\n'+E.join('\n'):'')+'\n\n— ഭദ്രം ഈ ഭൂമി app'}
 async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value||today().slice(0,7);const [y,mo]=m.split('-').map(Number);const last=ymd(new Date(y,mo,0));
@@ -366,12 +402,14 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   const s=await getDocs(query(collection(db,'entries'),where('date','>=',m+'-01'),where('date','<=',last),orderBy('date')));if(tok!==reportToken)return;
   const a=$('#rArea').value,w=$('#rWard').value,k=$('#rWorker').value,rty=$('#rType').value;
   const list=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).filter(e=>(!rty||placeTypeOf(e)===rty)&&(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)&&(!pl||e.placeId===pl)).sort((x,z)=>(x.date+(x.time||'')).localeCompare(z.date+(z.time||'')));
-  const st=stats(list);const wk=k?users.find(u=>u.uid===k)?.name:'';
-  let h=`<div class="rp-h"><div class="rp-brand"><span class="mark">${MARK_SVG}</span><b>ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</b></div><div class="en">Bhadram Ee Bhoomi – Daily Cleaning</div><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2>${jdReportHTML()}<div>${[a,w,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ')||'എല്ലാം (All)'}</div></div>`;
+  const st=stats(list);const wk=k?users.find(u=>u.uid===k)?.name:'',pn=pl?places.find(p=>p.id===pl)?.name:'';const pls=reportPlaces(list,{a,w,rty,pl});
+  const mfilt=[a,w,pn,wk,rty?typeInfo(rty).icon+' '+typeInfo(rty).ml:''].filter(Boolean).map(esc).join(' · ');
+  let h=`<div class="rp-h"><div class="rp-brand"><span class="mark">${MARK_SVG}</span><b>ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</b></div><div class="en">Bhadram Ee Bhoomi – Daily Cleaning</div><h2>🧹 മാസ റിപ്പോർട്ട് (Monthly Report) – ${fmtMonth(m)}</h2>${jdReportHTML()}${mfilt?`<div class="rp-filt">🔎 ${mfilt}</div>`:''}</div>`;
   const fbList=can.staff()?(await monthFeedback(m,last,a,w,rty)).filter(f=>!pl||f.placeId===pl):[];const sqList=can.staff()?await rangeSquad(new Date(m+'-01T00:00:00'),new Date(last+'T23:59:59.999'),a,w,rty,pl):[];if(tok!==reportToken)return;
-  if(!list.length){const fb=can.staff()?typeReportHTML([],fbList)+fbReportHTML(fbList)+sqMonthHTML(sqList):'';$('#reportOut').innerHTML=h+emptyHTML('inbox','ജോലി എൻട്രികൾ ഇല്ല','No work entries')+fb+CREDIT();return}
+  if(!list.length){const fb=can.staff()?typeReportHTML([],fbList)+fbReportHTML(fbList)+sqMonthHTML(sqList):'';$('#reportOut').innerHTML=h+placeChecklistHTML(pls,list,true,wk)+emptyHTML('inbox','ജോലി എൻട്രികൾ ഇല്ല','No work entries')+fb+CREDIT();return}
   h+=`<div class="rp-sum"><b>ആകെ (Summary):</b> ${list.length} ജോലി (entries) · ${st.days} ദിവസം (days) · ${st.places} സ്ഥലം (places) · ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos}${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}<br>
     <b>ശുചിത്വ സ്കോർ (Cleanliness score): <span style="color:${scoreColor(st.avg)}">${st.avg??'–'}/100</span></b> · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}% · അഭിപ്രായം ബാക്കി (awaiting remark) ${st.awaiting}</div>`;
+  h+=placeChecklistHTML(pls,list,true,wk);
   const byW={};list.forEach(e=>{const key=e.ward||e.placeName;(byW[key]=byW[key]||[]).push(e)});
   h+=`<table class="rp-tbl"><tr><th>വാർഡ് (Ward)</th><th>ജോലി (Entries)</th><th>സ്കോർ (Score)</th></tr>${Object.entries(byW).map(([k2,v])=>`<tr><td>${esc(k2)}</td><td>${v.length}</td><td>${stats(v).avg??'–'}</td></tr>`).join('')}</table>`;
   h+=typeReportHTML(list,fbList);if(can.staff())h+=fbReportHTML(fbList)+sqMonthHTML(sqList);
@@ -379,7 +417,7 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   for(const e of list){const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);if(tok!==reportToken)return;
     h+=entryHTML(e,ps?ps.docs.map(d=>d.data()).sort((x,z)=>x.ts-z.ts):[],rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}
   h+=`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')} · ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)<br>ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ) · Developed by Rahul K T with Grok</p>`;$('#reportOut').innerHTML=h;
-  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ സ്ഥലവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'','— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
+  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ സ്ഥലവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'',pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>{const n=new Set(placeDone(p,list).map(e=>e.date)).size;return `${n?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}${n?` (${n} ദിവസം)`:''}`}).join('\n')}`:'','— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
 async function ensureShare(){if(!shareText||!$('#reportOut .rp-h'))await makeReport();return shareText||$('#reportOut').innerText.slice(0,1500)}
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(_){toast('⚠️ copy failed')}ta.remove()}}
 $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){try{await navigator.share({title:'ഭദ്രം ഈ ഭൂമി – റിപ്പോർട്ട്',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)};
@@ -511,9 +549,9 @@ function setFbMode(m){fbMode=m;$$('#fbMode button').forEach(x=>x.classList.toggl
 $$('#fbMode button').forEach(b=>b.onclick=()=>setFbMode(b.dataset.m));
 $$('#sqLinkF button').forEach(b=>b.onclick=()=>{sqLinkFilter=b.dataset.f;$$('#sqLinkF button').forEach(x=>x.classList.toggle('on',x===b));renderSquadLinks()});
 ['#sqfPlace','#sqfShow'].forEach(s=>$(s).addEventListener('change',renderSquad));
-function fillSquadPlaces(){const o=places.map(p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}</option>`).join('');
+function fillSquadPlaces(){const opt=p=>`<option value="${p.id}">${esc(p.name)}${p.ward?' – '+esc(p.ward):''}${placeOffTag(p)}</option>`,o=activePlaces().map(opt).join(''),oAll=places.map(opt).join('');
   const s1=$('#sqPlace'),c1=s1.value;s1.innerHTML='<option value="">— സ്ഥലം തിരഞ്ഞെടുക്കുക (Place) —</option>'+o;s1.value=c1;
-  const s2=$('#sqfPlace'),c2=s2.value;s2.innerHTML='<option value="">എല്ലാ സ്ഥലങ്ങളും (All places)</option>'+o;s2.value=c2;$('#sqExpWrap').style.display=can.admin()?'':'none'}
+  const s2=$('#sqfPlace'),c2=s2.value;s2.innerHTML='<option value="">എല്ലാ സ്ഥലങ്ങളും (All places)</option>'+oAll;s2.value=c2;$('#sqExpWrap').style.display=can.admin()?'':'none'}
 function sqOutHTML(l){const url=sqUrl(l.id);return `<div class="sq-ok">${ico('check','sm')} ലിങ്ക് തയ്യാർ <span class="en">(Link ready)</span> – ${sqWhere(l)}</div>
   <div class="sq-url"><input type="text" readonly value="${esc(url)}" aria-label="link"></div>
   <div class="row actions3"><button class="btn sm" data-sqa="share" data-id="${l.id}">${ico('share','sm')}പങ്കിടുക <span class="en">(Share)</span></button><button class="btn sm wa" data-sqa="wa" data-id="${l.id}">${ico('chat','sm')}WhatsApp</button><button class="btn out sm" data-sqa="copy" data-id="${l.id}">${ico('copy','sm')}കോപ്പി <span class="en">(Copy)</span></button></div>
@@ -598,7 +636,7 @@ function fbReportHTML(list){
     (list.some(f=>f.suggestion)?`<div class="rp-sub">💡 നിർദ്ദേശങ്ങൾ (Suggestions)</div><ul style="font-size:13px;margin-top:2px">${list.filter(f=>f.suggestion).map(f=>`<li><b>${esc(f.placeName)}</b>: ${esc(f.suggestion)}</li>`).join('')}</ul>`:'')}
 /* QR codes */
 const fbLink=id=>{const u=new URL('feedback.html',location.href);u.search='';u.hash='';u.searchParams.set('place',id);if(EMU)u.searchParams.set('emulator','1');return u.toString()};
-function renderQRList(){if(!can.staff())return;$('#qrList').innerHTML=places.map(p=>`<div class="qrrow"><div class="nm"><b>${esc(p.name)}</b> ${typeBadge(p.type||'other',p)}<br><span class="en">${esc([p.ward,p.area].filter(Boolean).join(' · '))}</span></div><button class="btn sm" data-qr="${p.id}">${ico('qr','sm')} QR</button></div>`).join('')||'<p class="hint">ആദ്യം സ്ഥലങ്ങൾ ചേർക്കുക (Add places first)</p>';
+function renderQRList(){if(!can.staff())return;$('#qrList').innerHTML=activePlaces().map(p=>`<div class="qrrow"><div class="nm"><b>${esc(p.name)}</b> ${typeBadge(p.type||'other',p)}<br><span class="en">${esc([p.ward,p.area].filter(Boolean).join(' · '))}</span></div><button class="btn sm" data-qr="${p.id}">${ico('qr','sm')} QR</button></div>`).join('')||'<p class="hint">ആദ്യം സ്ഥലങ്ങൾ ചേർക്കുക (Add places first)</p>';
   $$('[data-qr]').forEach(b=>b.onclick=()=>openQR(places.find(p=>p.id===b.dataset.qr)))}
 let qrPlace=null;
 function wrapText(x,t,maxW){const out=[];let line='';for(const w of t.split(' ')){const tt=line?line+' '+w:w;if(x.measureText(tt).width>maxW&&line){out.push(line);line=w}else line=tt}if(line)out.push(line);return out}
