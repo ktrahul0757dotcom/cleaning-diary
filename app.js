@@ -1,4 +1,4 @@
-const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v17';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -39,7 +39,7 @@ function ask(msg){return new Promise(res=>{$('#mMsg').textContent=msg;$('#modal'
 const scoreColor=s=>s==null?'#94a3b8':s>=85?'#15803d':s>=65?'#b45309':'#b91c1c';
 const worksText=(e,en)=>{const r=(e.works||[]).map(w=>w==='other'&&e.workOther?e.workOther:(WMAP[w]?(en?WMAP[w][2]:WMAP[w][1]):w));return e.mass?`💪 ${en?'Mass work':'മാസ് വർക്ക്'}: `+massLabels(e,en,false).concat(r).join(', '):r.join(', ')};
 
-function show(v){$$('.view').forEach(e=>e.classList.toggle('active',e.id===v));$$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));window.scrollTo(0,0);
+function show(v){if(v==='v-set')setTimeout(renderVer,0);$$('.view').forEach(e=>e.classList.toggle('active',e.id===v));$$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));window.scrollTo(0,0);
   if(v==='v-new'&&!editing)setTimeout(()=>{},0);if(v==='v-report'&&!$('#reportOut').innerHTML)makeReport();if(v==='v-dash'&&meDoc)renderDash()}
 const params=new URLSearchParams(location.search);const EMU=params.has('emulator');
 let cfg=window.FIREBASE_CONFIG;if(!cfg&&EMU)cfg={apiKey:'demo-key',authDomain:'demo-cleaning.firebaseapp.com',projectId:'demo-cleaning',storageBucket:'demo-cleaning.appspot.com',appId:'1:1:web:1'};
@@ -798,5 +798,24 @@ document.addEventListener('click',async e=>{const im=e.target.closest('img');if(
 
 /* ---------- tabs & SW ---------- */
 $$('nav.tabs button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='v-new'&&!editing)resetForm();show(b.dataset.v)});
-if('serviceWorker'in navigator&&location.protocol.startsWith('http')&&!EMU)navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* ---------- app updates: new versions apply on the next open (or via ക്രമീകരണം → പുതുക്കുക) ---------- */
+const formBusy=()=>$('#v-new').classList.contains('active')&&(!!editing||curPhotos.length>0||!!$('#fNotes').value.trim()||$$('#fWork input:checked,#fMassWork input:checked').length>0||!!$('#fMassOther').value.trim());
+function showUpdateBar(){if($('#updBar'))return;const d=document.createElement('div');d.id='updBar';d.className='updbar';d.innerHTML=`<span>🔄 പുതിയ പതിപ്പ് തയ്യാർ <span class="en">(New version ready)</span></span><button class="btn sm" id="updNow">പുതുക്കുക</button>`;document.body.appendChild(d);d.querySelector('#updNow').onclick=()=>location.reload()}
+async function latestVer(){try{const t=await (await fetch('sw.js?v='+Date.now(),{cache:'no-store'})).text();return (t.match(/cleaning-team-(v\d+)/)||[])[1]||''}catch(e){return ''}}
+async function renderVer(){const el=$('#verInfo');if(!el)return;el.innerHTML=`📱 ആപ്പ് പതിപ്പ് <span class="en">(App version)</span>: <b>${APP_VER}</b>`;const L=await latestVer();
+  if(L&&L!==APP_VER){el.innerHTML+=` · <span class="pend">പുതിയത് ലഭ്യം (new: ${esc(L)})</span>`;$('#updBtn').classList.add('big')}else if(L)el.innerHTML+=` · <span style="color:var(--good)">✓ ഏറ്റവും പുതിയത് (up to date)</span>`}
+async function forceUpdate(){const b=$('#updBtn');b.disabled=true;b.innerHTML=ico('refresh')+'പുതുക്കുന്നു… <span class="en">(Updating)</span>';
+  try{const r=await navigator.serviceWorker?.getRegistration();if(r){await r.update().catch(()=>{});r.waiting?.postMessage('skipWaiting')}}catch(e){}
+  try{for(const k of await caches.keys())if(k.startsWith('cleaning-team'))await caches.delete(k)}catch(e){}
+  location.reload()}
+$('#updBtn').onclick=forceUpdate;
+if('serviceWorker'in navigator&&location.protocol.startsWith('http')&&!EMU){
+  const hadCtl=!!navigator.serviceWorker.controller;let reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadCtl||reloading)return;if(formBusy())return showUpdateBar();reloading=true;location.reload()});
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
+    const check=()=>reg.update().catch(()=>{});setInterval(check,30*60*1000);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});
+    // safety net: if the server already has a newer version than this page, reload once (or offer the button while a form is open)
+    latestVer().then(L=>{if(L&&L!==APP_VER){check();if(formBusy())showUpdateBar();else if(sessionStorage.getItem('updTried')!==L){sessionStorage.setItem('updTried',L);setTimeout(()=>forceUpdate(),1500)}}})
+  }).catch(()=>{})}
 window.__app={get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F};
