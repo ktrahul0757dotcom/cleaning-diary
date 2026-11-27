@@ -1,4 +1,4 @@
-const APP_VER='v23';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v24';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -120,10 +120,11 @@ function startApp(){unsubs.splice(1).forEach(u=>u());entryUnsub&&entryUnsub();en
   const r=role();
   if(r==='none'||r==='pending'||r==='disabled'){$('#tabs').style.display='none';$('#pendingMail').textContent=me.email+' · '+(ROLES[r]||'');show('v-pending');return}
   $('#tabs').style.display='flex';$('#tabNew').style.display=can.work()?'flex':'none';
-  $('#placesCard').style.display=can.sup()?'block':'none';$('#mwCard').style.display=can.sup()?'block':'none';$('#crCard').style.display=can.sup()?'block':'none';$('#tabFb').style.display=can.staff()?'flex':'none';$('#qrCard').style.display=can.staff()?'block':'none';$('#usersCard').style.display=can.admin()?'block':'none';$('#jdCard').style.display=can.admin()?'block':'none';
+  $('#placesCard').style.display=can.sup()?'block':'none';$('#mwCard').style.display=can.sup()?'block':'none';$('#crCard').style.display=can.sup()?'block':'none';$('#ofCard').style.display=can.sup()?'block':'none';$('#tabFb').style.display=can.staff()?'flex':'none';$('#qrCard').style.display=can.staff()?'block':'none';$('#usersCard').style.display=can.admin()?'block':'none';$('#jdCard').style.display=can.admin()?'block':'none';
   $('#sName').value=meDoc.name||'';$('#sPhone').value=meDoc.phone||'';if(document.activeElement!==$('#sDesig'))$('#sDesig').value=meDoc.desig||'';$('#meInfo').textContent=`${me.email} · ${ROLES[r]}`;
   $('#phMode').textContent=OPT.storageEnabled?'☁️ ഫോട്ടോകൾ Firebase Storage-ൽ സൂക്ഷിക്കുന്നു (Photos stored in Cloud Storage)':'💾 ഫോട്ടോകൾ ചുരുക്കി (~200KB) ഡാറ്റാബേസിൽ സൂക്ഷിക്കുന്നു (Free-plan mode: compressed photos in Firestore)';
   $('#aboutTxt').innerHTML=`ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം (Bhadram Ee Bhoomi – Daily Cleaning) · പതിപ്പ് (version) team-3 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
+  unsubs.push(onSnapshot(doc(db,'meta','officers'),s=>{const n=s.data()?.list;offNames=Array.isArray(n)?n.filter(x=>x&&x.id&&x.name):[];renderOffManager()},e=>console.warn('officers',e.code)));
   unsubs.push(onSnapshot(doc(db,'meta','crew'),s=>{const n=s.data()?.names;crewNames=Array.isArray(n)?n.filter(x=>x&&x.id&&x.name):[];renderCrewChips();renderCrewManager()},e=>console.warn('crew',e.code)));
   unsubs.push(onSnapshot(doc(db,'meta','massWorks'),s=>{const t=s.data()?.types;massTypes=Array.isArray(t)&&t.length?t.filter(x=>x&&x.id&&x.ml):MASS_DEFAULT.slice();renderMassChips();renderMassManager()},e=>console.warn('massWorks',e.code)));
   unsubs.push(onSnapshot(doc(db,'meta','placeTypes'),s=>{customTypes=(s.data()?.types||[]).filter(t=>t&&t.id&&t.ml);renderPlaces();fillFilters();if($('#v-dash').classList.contains('active'))renderDash()},e=>console.error('types',e)));
@@ -274,6 +275,105 @@ $('#crAdd').onclick=()=>{const name=$('#crName').value.trim().replace(/\s+/g,' '
   if(editingCrew){const id=editingCrew.id;saveCrew(crewNames.map(x=>x.id===id?{...x,name}:x),'✅ മാറ്റം സേവ് ചെയ്തു (Saved)')}
   else saveCrew([...crewNames,{id:'w_'+Date.now().toString(36),name,active:true}],'✅ ചേർത്തു (Added) – '+name);resetCrewForm()};
 $('#crName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#crAdd').click()}});
+/* ---------- officers' evaluation ("ഓഫീസർമാരുടെ പ്രവർത്തനങ്ങളുടെ വിലയിരുത്തൽ") – one review per date (reviews/{YYYY-MM-DD}); officer list in meta/officers ---------- */
+const RV_H1='തിരുവനന്തപുരം നഗരസഭ, പബ്ലിക് ഹെൽത്ത് ഇൻസ്പെക്ടർ ഓഫീസ്, സെക്രട്ടേറിയറ്റ് സർക്കിൾ';
+const RV_H2='പൊതുജനങ്ങൾക്ക് വേണ്ടി, ഇന്ന് നടത്തിയ ശുചീകരണ പ്രവർത്തന സേവനങ്ങളിൽ, മേൽനോട്ടം വഹിച്ച ഈ സർക്കിളിലെ ഓഫീസർമാരുടെ പ്രവർത്തനങ്ങളുടെ വിലയിരുത്തൽ';
+const RV_C=['ശുചീകരണ പ്രവർത്തനങ്ങളുടെ പ്രാധാന്യം (priority) അനുസരിച്ച് ആദ്യം ചെയ്ത് തീർക്കേണ്ട ജോലികളുടെ ആസൂത്രണം',
+  'ചെയ്യാൻ പോകുന്ന ശുചീകരണ പ്രവർത്തനങ്ങളുടെ പ്രാധാന്യം, ശ്രദ്ധിക്കേണ്ട കാര്യങ്ങൾ തുടങ്ങിയ കാര്യങ്ങളെക്കുറിച്ച് സാനിട്ടേഷൻ വർക്കർമാരോട് പറഞ്ഞു മനസ്സിലാക്കി കൊടുക്കൽ',
+  'ബന്ധപ്പെട്ട സ്ഥലത്ത് ശുചീകരണം നടത്താൻ ആവശ്യമായ സാനിട്ടേഷൻ വർക്കർമാരുടെ എണ്ണത്തിൽ ഉള്ള ക്രമീകരണം',
+  'ശുചീകരണം നടത്തേണ്ട സ്ഥലങ്ങളിലെ സാനിട്ടേഷൻ വർക്കർമാർക്ക് ശുചീകരണ പ്രവർത്തനങ്ങൾ നടത്തുവാൻ ആവശ്യമായ ടൂൾസ്, ചാക്കുകൾ, ഗ്ലൗസ്, മാസ്ക് തുടങ്ങിയവ ഉറപ്പാക്കൽ',
+  'ശുചീകരണ പ്രവർത്തനങ്ങളുടെ മേൽനോട്ടം, ഏകോപനം, തുല്യ നീതി'];
+const RV_G='വളരെ മികച്ചത്',RV_P='നിലവാരമില്ലാത്തത്',RV_MIN=5;
+let offNames=[];const offById=id=>offNames.find(o=>o.id===id);const activeOff=()=>offNames.filter(o=>o.active!==false);
+const dmy=d=>(d||'').split('-').reverse().join('/');
+async function getReview(d){if(!d)return null;try{const s=await getDoc(doc(db,'reviews',d));return s.exists()?s.data({serverTimestamps:'estimate'}):null}catch(e){console.warn('review',e.code);return null}}
+async function getMonthReviews(m){try{const s=await getDocs(query(collection(db,'reviews'),where('date','>=',m+'-01'),where('date','<=',m+'-31')));return s.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((a,b)=>a.date.localeCompare(b.date))}catch(e){console.warn('reviews',e.code);return []}}
+const rvOfficers=r=>(r?.officers||[]).filter(o=>o&&(o.name||'').trim());
+const rvCrit=r=>RV_C.map((_,i)=>{const c=(r?.crit||[])[i]||{};return {v:c.v==='good'||c.v==='poor'?c.v:'',why:String(c.why||'')}});
+const rvBox=on=>`<span class="rv-bx${on?' on':''}">${on?'✓':''}</span>`;
+const rvHead=(sub)=>`<div class="rv-h"><b>${RV_H1}</b><div class="rv-h2">${RV_H2}</div><div class="rv-dt">${sub}</div></div>`;
+/* PDF / print block for one day (blank boxes + lines when not filled, for pen filling) */
+function reviewPdfHTML(r,d){const of=rvOfficers(r);const n=Math.max(RV_MIN,of.length);const cr=rvCrit(r);
+  const orows=Array.from({length:n},(_,i)=>{const o=of[i];return `<tr><td class="rvn">${i+1}</td><td>${o?esc(o.name):''}</td><td>${o?esc(o.desig||''):''}</td></tr>`}).join('');
+  const crows=cr.map((c,i)=>`<tr><td class="rvn">${i+1}</td><td class="rvq">${RV_C[i]}</td><td class="rvx">${rvBox(c.v==='good')}</td><td class="rvx">${rvBox(c.v==='poor')}</td><td class="rvw">${esc(c.why)}</td></tr>`).join('');
+  return `${rvHead(`തീയതി <i>Date</i>: <b>${d?dmy(d):'____ / ____ / ________'}</b>`)}
+  <div class="rp-sub rv-sub">മേൽനോട്ടം വഹിച്ച ഓഫീസർമാർ <span class="en">(Supervising officers)</span></div>
+  <table class="rp-tbl rv-of"><tr><th class="rvn">ക്രമ നം.</th><th>പേര് <i>Name</i></th><th>തസ്തിക <i>Designation</i></th></tr>${orows}</table>
+  <div class="rp-sub rv-sub">വിലയിരുത്തൽ <span class="en">(Evaluation – tick one per item)</span></div>
+  <table class="rp-tbl rv-ct"><tr><th class="rvn">നം.</th><th>വിഷയം <i>Item</i></th><th class="rvx">${RV_G}</th><th class="rvx">${RV_P}</th><th class="rvw">കാരണം <i>Reason</i></th></tr>${crows}</table>
+  <div class="rv-by">${r&&r.byName?`വിലയിരുത്തിയത് <i>Evaluated by</i>: <b>${esc(r.byName)}</b>${r.updatedAt?.toDate?' · '+fmtGen(r.updatedAt.toDate()):''}`:'വിലയിരുത്തിയത് <i>Evaluated by</i>: <span class="sg-line"></span>'}</div>`}
+/* monthly: the month's daily reviews summarised; blank form when none */
+function reviewMonthHTML(list,m){if(!list.length)return reviewPdfHTML(null,'').replace('തീയതി <i>Date</i>: <b>____ / ____ / ________</b>',`മാസം <i>Month</i>: <b>${esc(fmtMonth(m))}</b> · തീയതി <i>Date</i>: ____ / ____ / ________`);
+  const om=new Map();list.forEach(r=>rvOfficers(r).forEach(o=>{const k=o.name.trim().toLowerCase();const x=om.get(k)||{name:o.name.trim(),desig:o.desig||'',days:0};x.days++;if(!x.desig&&o.desig)x.desig=o.desig;om.set(k,x)}));
+  const ofs=[...om.values()];const n=Math.max(RV_MIN,ofs.length);
+  const orows=Array.from({length:n},(_,i)=>{const o=ofs[i];return `<tr><td class="rvn">${i+1}</td><td>${o?esc(o.name):''}</td><td>${o?esc(o.desig):''}</td><td class="rvx">${o?o.days:''}</td></tr>`}).join('');
+  const crows=RV_C.map((q,i)=>{let g=0,p=0;const why=[];list.forEach(r=>{const c=rvCrit(r)[i];if(c.v==='good')g++;if(c.v==='poor')p++;if(c.why.trim())why.push(`${dmy(r.date).slice(0,5)}: ${esc(c.why.trim())}`)});
+    return `<tr><td class="rvn">${i+1}</td><td class="rvq">${q}</td><td class="rvx"><b>${g}</b></td><td class="rvx"><b>${p}</b></td><td class="rvw">${why.join('<br>')}</td></tr>`}).join('');
+  return `${rvHead(`മാസം <i>Month</i>: <b>${esc(fmtMonth(m))}</b> · വിലയിരുത്തിയ ദിവസങ്ങൾ <i>Days evaluated</i>: <b>${list.length}</b>`)}
+  <div class="rp-sub rv-sub">മേൽനോട്ടം വഹിച്ച ഓഫീസർമാർ <span class="en">(Supervising officers)</span></div>
+  <table class="rp-tbl rv-of"><tr><th class="rvn">ക്രമ നം.</th><th>പേര് <i>Name</i></th><th>തസ്തിക <i>Designation</i></th><th class="rvx">ദിവസങ്ങൾ <i>Days</i></th></tr>${orows}</table>
+  <div class="rp-sub rv-sub">വിലയിരുത്തൽ – ദിവസങ്ങളുടെ എണ്ണം <span class="en">(Evaluation – number of days)</span></div>
+  <table class="rp-tbl rv-ct"><tr><th class="rvn">നം.</th><th>വിഷയം <i>Item</i></th><th class="rvx">${RV_G}</th><th class="rvx">${RV_P}</th><th class="rvw">കാരണം <i>Reason</i></th></tr>${crows}</table>
+  <div class="rv-by">ദിവസങ്ങൾ <i>Dates</i>: ${list.map(r=>dmy(r.date).slice(0,5)).join(', ')}</div>`}
+/* Reports tab card: read view for everyone, editor for admin/supervisor */
+let rvCur=null,rvEditing=false,rvTok=0;
+async function renderReviewCard(){const box=$('#rvBody');if(!box)return;const tok=++rvTok;
+  if(rMode!=='day'){const m=$('#rMonth').value||today().slice(0,7);$('#rvTitleSub').textContent=fmtMonth(m);box.innerHTML='<p class="hint">…</p>';const L=await getMonthReviews(m);if(tok!==rvTok)return;
+    box.innerHTML=`<p class="hint" style="margin-top:0">📄 മാസ PDF-ൽ ഈ മാസത്തെ വിലയിരുത്തലുകളുടെ സംഗ്രഹം ഉണ്ടാകും <span class="en">(The monthly PDF includes a summary of this month's evaluations)</span></p>`+(L.length?`<div class="rv-sum">${RV_C.map((q,i)=>{let g=0,p=0;L.forEach(r=>{const c=rvCrit(r)[i];if(c.v==='good')g++;if(c.v==='poor')p++});return `<div class="rv-sr"><span class="rvq"><b>${i+1}.</b> ${q}</span><span class="rv-cnt"><span class="g">✓ ${RV_G}: ${g}</span><span class="p">✗ ${RV_P}: ${p}</span></span></div>`}).join('')}</div><p class="hint">🗓️ ${L.length} ദിവസം <span class="en">(days)</span>: ${L.map(r=>dmy(r.date).slice(0,5)).join(', ')}</p>`:'<p class="hint">ഈ മാസം വിലയിരുത്തൽ ഇല്ല – PDF-ൽ ശൂന്യ ഫോം (blank form for pen filling)</p>');$('#rvEdit').style.display='none';return}
+  const d=$('#rDate').value||today();$('#rvTitleSub').textContent=fmtDate(d);if(rvEditing)return;box.innerHTML='<p class="hint">…</p>';
+  const r=await getReview(d);if(tok!==rvTok)return;rvCur={d,r};
+  $('#rvEdit').style.display=can.sup()?'flex':'none';$('#rvEdit').innerHTML=ico('edit')+(r?'മാറ്റം വരുത്തുക <span class="en">(Edit)</span>':'പൂരിപ്പിക്കുക <span class="en">(Fill in)</span>');
+  if(!r){box.innerHTML=`<p class="hint" style="margin:0">⏳ ഈ ദിവസം വിലയിരുത്തൽ പൂരിപ്പിച്ചിട്ടില്ല. <span class="en">(Not filled for this day – PDFs show a blank form for pen filling.)</span></p>`;return}
+  const of=rvOfficers(r),cr=rvCrit(r);
+  box.innerHTML=`<div class="rv-ofl">${of.map((o,i)=>`<div class="rv-or"><span class="no">${i+1}</span><span><b>${esc(o.name)}</b>${o.desig?` <span class="en">· ${esc(o.desig)}</span>`:''}</span></div>`).join('')||'<p class="hint">ഓഫീസർമാരുടെ പേര് ഇല്ല (no officers)</p>'}</div>
+    ${cr.map((c,i)=>`<div class="rv-sr"><span class="rvq"><b>${i+1}.</b> ${RV_C[i]}</span><span class="rv-cnt">${c.v==='good'?`<span class="g">✓ ${RV_G}</span>`:c.v==='poor'?`<span class="p">✗ ${RV_P}</span>`:'<span class="n">— ടിക്ക് ഇല്ല (not ticked)</span>'}</span>${c.why?`<span class="rv-why">കാരണം <span class="en">(Reason)</span>: ${esc(c.why)}</span>`:''}</div>`).join('')}
+    <p class="hint" style="margin:8px 0 0">✍️ ${esc(r.byName||'')}${r.updatedAt?.toDate?' · '+fmtGen(r.updatedAt.toDate()):''}</p>`}
+function rvRowHTML(o,i){return `<div class="rvo"><span class="no">${i+1}</span><div class="rvo-f"><input type="text" class="rvn" maxlength="80" list="offDl" placeholder="പേര് (Name)" value="${esc(o?.name||'')}"><input type="text" class="rvd" maxlength="80" list="offDesDl" placeholder="തസ്തിക (Designation)" value="${esc(o?.desig||'')}"></div></div>`}
+function openReviewEditor(){if(!can.sup()||!rvCur)return;rvEditing=true;const {d,r}=rvCur;
+  const base=r?rvOfficers(r):activeOff().map(o=>({id:o.id,name:o.name,desig:o.desig||''}));const rows=base.concat(Array(Math.max(0,RV_MIN-base.length)).fill(null));const cr=rvCrit(r);
+  $('#offDl').innerHTML=activeOff().map(o=>`<option value="${esc(o.name)}">`).join('');fillDesDl();
+  $('#rvEdit').style.display='none';
+  $('#rvBody').innerHTML=`<p class="hint" style="margin-top:0">🗓️ <b>${fmtDate(d)}</b> – ഓഫീസർമാരുടെ പേരും തസ്തികയും <span class="en">(officers' names & designations)</span></p>
+    <div id="rvRows">${rows.map(rvRowHTML).join('')}</div>
+    <button class="btn out sm" id="rvAddRow" type="button">${ico('plus','sm')}വരി ചേർക്കുക <span class="en">(Add row)</span></button>
+    <div class="rv-crit">${cr.map((c,i)=>`<div class="rvc" data-i="${i}"><div class="rvq"><b>${i+1}.</b> ${RV_C[i]}</div><div class="rvt"><label class="mwc rvg${c.v==='good'?' on':''}"><input type="checkbox" data-v="good"${c.v==='good'?' checked':''}><span class="mwbx"></span><span>${RV_G}</span></label><label class="mwc rvp${c.v==='poor'?' on':''}"><input type="checkbox" data-v="poor"${c.v==='poor'?' checked':''}><span class="mwbx"></span><span>${RV_P}</span></label></div><textarea class="rvw" rows="2" maxlength="300" placeholder="കാരണം (Reason)">${esc(c.why)}</textarea></div>`).join('')}</div>
+    <div class="row" style="margin-top:12px"><button class="btn out" id="rvCancel" type="button">${ico('x')}റദ്ദാക്കുക</button><button class="btn block" id="rvSave" type="button">${ico('save')}സേവ് ചെയ്യുക <span class="en">(Save)</span></button></div>
+    ${r?`<button class="btn out sm" id="rvClear" type="button" style="margin-top:10px">${ico('trash','sm')}ഈ ദിവസത്തെ വിലയിരുത്തൽ മായ്ക്കുക <span class="en">(Clear)</span></button>`:''}`;
+  $('#rvAddRow').onclick=()=>{const n=$$('#rvRows .rvo').length;if(n>=40)return toast('⚠️ പരമാവധി 40 (Max 40)');$('#rvRows').insertAdjacentHTML('beforeend',rvRowHTML(null,n));$$('#rvRows .rvn').at(-1).focus()};
+  $('#rvRows').addEventListener('change',e=>{if(!e.target.classList.contains('rvn'))return;const o=activeOff().find(x=>x.name.toLowerCase()===e.target.value.trim().toLowerCase());const dz=e.target.closest('.rvo').querySelector('.rvd');if(o&&o.desig&&!dz.value.trim())dz.value=o.desig});
+  $$('#rvBody .rvc').forEach(c=>c.addEventListener('change',e=>{const t=e.target;if(t.type!=='checkbox')return;if(t.checked)c.querySelectorAll('input[type=checkbox]').forEach(x=>{if(x!==t)x.checked=false});c.querySelectorAll('.mwc').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked))}));
+  $('#rvCancel').onclick=()=>{rvEditing=false;renderReviewCard()};
+  $('#rvSave').onclick=async()=>{const officers=$$('#rvRows .rvo').map(x=>({name:x.querySelector('.rvn').value.trim().replace(/\s+/g,' ').slice(0,80),desig:x.querySelector('.rvd').value.trim().replace(/\s+/g,' ').slice(0,80)})).filter(o=>o.name).map(o=>{const m=offNames.find(x=>x.name.toLowerCase()===o.name.toLowerCase());return m?{id:m.id,...o}:o});
+    const crit=$$('#rvBody .rvc').map(c=>({v:c.querySelector('input[data-v=good]').checked?'good':c.querySelector('input[data-v=poor]').checked?'poor':'',why:c.querySelector('.rvw').value.trim().slice(0,300)}));
+    if(!officers.length&&!crit.some(c=>c.v||c.why))return toast('⚠️ ഒന്നും പൂരിപ്പിച്ചിട്ടില്ല (Nothing filled)');
+    const b=$('#rvSave');b.disabled=true;try{await setDoc(doc(db,'reviews',d),{date:d,officers,crit,by:me.uid,byName:meDoc.name||me.email||'',updatedAt:serverTimestamp()});toast('✅ വിലയിരുത്തൽ സേവ് ചെയ്തു (Evaluation saved)');rvEditing=false;resetPdfBtn();renderReviewCard()}catch(e){toast('⚠️ '+(e.code||e.message))}finally{b.disabled=false}};
+  if($('#rvClear'))$('#rvClear').onclick=async()=>{if(!await ask(`${fmtDate(d)} – വിലയിരുത്തൽ മായ്ക്കണോ? (Clear this day's evaluation?)`,{danger:true,yes:'മായ്ക്കുക (Clear)'}))return;try{await deleteDoc(doc(db,'reviews',d));toast('🗑️ മായ്ച്ചു (Cleared)');rvEditing=false;resetPdfBtn();renderReviewCard()}catch(e){toast('⚠️ '+(e.code||e.message))}};
+  $('#rvCard').scrollIntoView({block:'start'})}
+$('#rvEdit').onclick=openReviewEditor;
+$('#rvJump').onclick=()=>$('#rvCard').scrollIntoView({block:'start',behavior:'smooth'});
+/* officers' names manager (Settings) – admin/supervisor; soft remove keeps old reviews (they store a snapshot) */
+let editingOff=null;
+function fillDesDl(){const dl=$('#offDesDl');if(dl)dl.innerHTML=[...new Set(offNames.map(o=>o.desig).filter(Boolean).concat(['ഹെൽത്ത് സൂപ്പർവൈസർ','പബ്ലിക് ഹെൽത്ത് ഇൻസ്പെക്ടർ','ഹെൽത്ത് ഇൻസ്പെക്ടർ','ജൂനിയർ പബ്ലിക് ഹെൽത്ത് ഇൻസ്പെക്ടർ']))].map(x=>`<option value="${esc(x)}">`).join('')}
+function saveOff(next,msg){setDoc(doc(db,'meta','officers'),{list:next.map(o=>({id:o.id,name:o.name,desig:o.desig||'',active:o.active!==false})),updatedBy:me.uid,updatedAt:serverTimestamp()}).catch(e=>toast('⚠️ '+(e.code||e.message)));if(msg)toast(msg)}
+function resetOffForm(){editingOff=null;$('#ofName').value='';$('#ofDesig').value='';$('#ofAdd').innerHTML=ico('plus')+'ചേർക്കുക <span class="en">(Add)</span>';$('#ofCancel').style.display='none';$('#ofEditHint').style.display='none'}
+function renderOffManager(){fillDesDl();if(!$('#ofList')||!can.sup())return;const act=activeOff(),off=offNames.filter(o=>o.active===false);
+  const row=(c,i,n,on)=>`<div class="plrow${on?'':' off'}">${on?`<span class="plno">${i+1}</span>`:''}<div class="plnm"><b>${esc(c.name)}</b>${c.desig?`<small>${esc(c.desig)}</small>`:''}</div><div class="plbtns">${on?`<button class="btn out sm iconbtn" data-oup="${esc(c.id)}" aria-label="move up"${i===0?' disabled':''}>${ico('up')}</button><button class="btn out sm iconbtn" data-odn="${esc(c.id)}" aria-label="move down"${i===n-1?' disabled':''}>${ico('down')}</button><button class="btn sec sm iconbtn" data-oedit="${esc(c.id)}" aria-label="edit">${ico('edit')}</button><button class="btn out sm iconbtn warnb" data-ooff="${esc(c.id)}" aria-label="remove">${ico('pause')}</button>`:`<button class="btn sec sm" data-oon="${esc(c.id)}">${ico('undo','sm')}തിരികെ <span class="en">(Restore)</span></button>`}</div></div>`;
+  $('#ofList').innerHTML=act.map((c,i)=>row(c,i,act.length,true)).join('')||'<p class="hint">ഇല്ല – മുകളിൽ ചേർക്കുക (none – add above)</p>';$('#ofOffList').innerHTML=off.map(c=>row(c,0,0,false)).join('');
+  $('#ofCount').textContent=act.length;$('#ofOffCount').textContent=off.length;$('#ofOffWrap').style.display=off.length?'block':'none';
+  const mv=(id,d)=>{const a=activeOff(),i=a.findIndex(c=>c.id===id),j=i+d;if(i<0||j<0||j>=a.length)return;const next=offNames.slice(),x=next.indexOf(a[i]),y=next.indexOf(a[j]);[next[x],next[y]]=[next[y],next[x]];saveOff(next)};
+  $$('#ofList [data-oup]').forEach(b=>b.onclick=()=>mv(b.dataset.oup,-1));$$('#ofList [data-odn]').forEach(b=>b.onclick=()=>mv(b.dataset.odn,1));
+  $$('#ofList [data-oedit]').forEach(b=>b.onclick=()=>{const c=offById(b.dataset.oedit);editingOff=c;$('#ofName').value=c.name;$('#ofDesig').value=c.desig||'';
+    $('#ofAdd').innerHTML=ico('save')+'മാറ്റം സേവ് <span class="en">(Save)</span>';$('#ofCancel').style.display='flex';$('#ofEditName').textContent=c.name;$('#ofEditHint').style.display='block';$('#ofName').scrollIntoView({block:'center'})});
+  $$('#ofList [data-ooff]').forEach(b=>b.onclick=async()=>{const c=offById(b.dataset.ooff);if(!await ask(`"${c.name}" ലിസ്റ്റിൽ നിന്ന് ഒഴിവാക്കണോ? (Remove from list?)\nപഴയ വിലയിരുത്തലുകളിൽ പേര് നിലനിൽക്കും; പിന്നീട് തിരികെ ചേർക്കാം. (Old evaluations keep the name; can be restored.)`))return;
+    if(editingOff?.id===c.id)resetOffForm();saveOff(offNames.map(x=>x.id===c.id?{...x,active:false}:x),'⏸ ഒഴിവാക്കി (Removed) – '+c.name)});
+  $$('#ofOffList [data-oon]').forEach(b=>b.onclick=()=>{const c=offById(b.dataset.oon);saveOff(offNames.map(x=>x.id===c.id?{...x,active:true}:x),'✅ തിരികെ ചേർത്തു (Restored) – '+c.name)})}
+$('#ofCancel').onclick=resetOffForm;
+$('#ofAdd').onclick=()=>{const name=$('#ofName').value.trim().replace(/\s+/g,' ').slice(0,80),desig=$('#ofDesig').value.trim().replace(/\s+/g,' ').slice(0,80);if(!name)return toast('⚠️ ഓഫീസറുടെ പേര് നൽകുക (Type a name)');
+  if(offNames.some(c=>c.name.toLowerCase()===name.toLowerCase()&&c.id!==editingOff?.id))return toast('⚠️ ഈ പേര് ലിസ്റ്റിൽ ഉണ്ട് (Already in the list)');
+  if(offNames.length>=100&&!editingOff)return toast('⚠️ പരമാവധി 100 (Max 100)');
+  if(editingOff){const id=editingOff.id;saveOff(offNames.map(x=>x.id===id?{...x,name,desig}:x),'✅ മാറ്റം സേവ് ചെയ്തു (Saved)')}
+  else saveOff([...offNames,{id:'o_'+Date.now().toString(36),name,desig,active:true}],'✅ ചേർത്തു (Added) – '+name);resetOffForm()};
+$('#ofName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#ofDesig').focus()}});
 /* entry form: tick boxes of names + others; count auto-fills from the names (stays editable) */
 function crewCount(){return $$('#fCrew input:checked').length+splitNames($('#fCrewOther').value).length}
 function syncCrewCount(){const n=crewCount(),w=$('#fWorkers');if(w.dataset.manual!=='1')w.value=n?n:'';$('#fCrewN').textContent=n?`✓ ${n} പേര് (names)`:''}
@@ -454,7 +554,7 @@ $$('#rMode button').forEach(b=>b.onclick=()=>{rMode=b.dataset.m;$$('#rMode butto
 const shiftDay=n=>{const d=new Date(($('#rDate').value||today())+'T12:00:00');d.setDate(d.getDate()+n);$('#rDate').value=ymd(d);makeReport()};
 $('#rPrev').onclick=()=>shiftDay(-1);$('#rNext').onclick=()=>shiftDay(1);$('#rToday').onclick=()=>{$('#rDate').value=today();makeReport()};
 let lastReportKey='';
-function makeReport(){lastReportKey=reportKey();resetPdfBtn();return rMode==='day'?makeDaily():makeMonthly()}
+function makeReport(){lastReportKey=reportKey();resetPdfBtn();renderReviewCard();return rMode==='day'?makeDaily():makeMonthly()}
 const placeKey=e=>e.placeId||e.placeName;
 async function rangeFeedback(from,to,a,w,ty,pl){try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));
   return s.docs.map(d=>({id:d.id,...d.data()})).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||placeTypeOf(f)===ty)&&(!pl||f.placeId===pl))}catch(e){console.error(e);return []}}
@@ -554,7 +654,7 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);toast('�
 $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){try{await navigator.share({title:'ഭദ്രം ഈ ഭൂമി – റിപ്പോർട്ട്',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)};
 $('#rWa').onclick=async()=>{const t=await ensureShare();window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener')};
 $('#rCopy').onclick=async()=>copyText(await ensureShare());
-$('#rPrint').onclick=async()=>{if(!$('#reportOut .rp-h')||reportKey()!==lastReportKey)await makeReport();await printFormal($('#reportOut').innerHTML,reportMeta())};
+$('#rPrint').onclick=async()=>{if(!$('#reportOut .rp-h')||reportKey()!==lastReportKey)await makeReport();await printFormal($('#reportOut').innerHTML,{...reportMeta(),review:await reportReviewHTML()})};
 /* ---------- on-device PDF (html2canvas + jsPDF, vendored for offline) ---------- */
 let pdfReady=null,pdfBusy=false;
 const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[data-src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.dataset.src=src;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s)});
@@ -566,11 +666,12 @@ const CSS_COLOR_PROPS=['color','background-color','background-image','border-top
 const toRGBA=v=>v.replace(/color\(srgb\s+([\d.e+-]+)\s+([\d.e+-]+)\s+([\d.e+-]+)(?:\s*\/\s*([\d.e+-]+))?\)/g,(m,r,g,b,a)=>`rgba(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)},${a==null?1:+a})`).replace(/(?:oklab|oklch|lab|lch|color)\([^()]*\)/g,'rgba(0,0,0,0)');
 function fixCloneColors(doc){const win=doc.defaultView;for(const el of doc.querySelectorAll('.pdfpage, .pdfpage *')){const cs=win.getComputedStyle(el);
   for(const pr of CSS_COLOR_PROPS){const v=cs.getPropertyValue(pr);if(v&&/(color|oklab|oklch|lab|lch)\(/.test(v))el.style.setProperty(pr,toRGBA(v),'important')}}}
+async function reportReviewHTML(){if(rMode==='day'){const d=$('#rDate').value||today();return reviewPdfHTML(await getReview(d),d)}const m=$('#rMonth').value||today().slice(0,7);return reviewMonthHTML(await getMonthReviews(m),m)}
 async function buildReportPdf(){
   await Promise.all([loadScript('vendor/html2canvas.min.js'),loadScript('vendor/jspdf.umd.min.js')]);
   if(!$('#reportOut .rp-h')||reportKey()!==lastReportKey)await makeReport();
   const title=rMode==='day'?`Daily report ${($('#rDate').value||'').split('-').reverse().join('/')}`:`Monthly report ${$('#rMonth').value}`;
-  const pdf=await htmlToPdf($('#reportOut').innerHTML,title,pdfProg,reportMeta());
+  const pdf=await htmlToPdf($('#reportOut').innerHTML,title,pdfProg,{...reportMeta(),review:await reportReviewHTML()});
   pdfProg(true,'✅ PDF തയ്യാർ (Ready)',1);
   const name=`Bhadram-Ee-Bhoomi-${rMode==='day'?'Daily-Report-'+$('#rDate').value:'Monthly-Report-'+$('#rMonth').value}.pdf`;
   const blob=pdf.output('blob');return {file:new File([blob],name,{type:'application/pdf'}),blob,name,title,key:reportKey(),pages:pdf.getNumberOfPages()}}
@@ -608,9 +709,9 @@ function detProg(on,msg,frac){const w=$('#detPdfProg');if(!w)return;w.hidden=!on
 async function entryData(id){let e=entries.find(x=>x.id===id);if(!e){const d=await getDoc(doc(db,'entries',id));if(!d.exists())throw new Error('entry not found');e={id,...d.data({serverTimestamps:'estimate'})}}
   const [ps,rs]=await Promise.all([getDocs(collection(db,'entries',id,'photos')),getDocs(collection(db,'entries',id,'remarks'))]);
   const photos=ps.docs.map(d=>d.data()),remarks=rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0));
-  const dd=(e.date||'').split('-').reverse().join('/');
-  const meta={titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' ('+kindText(e,false,false)+')':''}`,titleEn:`Work Entry Report – ${dd}${e.time?' '+e.time:''}${e.mass?' ('+kindText(e,true,false)+')':''}`,id:`WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`};
-  return {e,html:entryPdfHTML(e,photos,remarks),meta,title:`Work entry ${dd} ${e.time||''}`,sig:JSON.stringify([e.updatedAt||e.createdAt||null,photos.length,remarks.length,remarks.map(r=>r.text||'').join('|').length])}}
+  const dd=(e.date||'').split('-').reverse().join('/');const rv=await getReview(e.date);
+  const meta={review:reviewPdfHTML(rv,e.date),titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' ('+kindText(e,false,false)+')':''}`,titleEn:`Work Entry Report – ${dd}${e.time?' '+e.time:''}${e.mass?' ('+kindText(e,true,false)+')':''}`,id:`WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`};
+  return {e,html:entryPdfHTML(e,photos,remarks),meta,title:`Work entry ${dd} ${e.time||''}`,sig:JSON.stringify([e.updatedAt||e.createdAt||null,photos.length,remarks.length,remarks.map(r=>r.text||'').join('|').length,rv?JSON.stringify(rv):''])}}
 let entryPdfCache=null;
 async function buildEntryPdf(id){await Promise.all([loadScript('vendor/html2canvas.min.js'),loadScript('vendor/jspdf.umd.min.js')]);
   const d=await entryData(id);if(entryPdfCache&&entryPdfCache.id===id&&entryPdfCache.sig===d.sig){detProg(true,'✅ PDF തയ്യാർ (Ready)',1);return entryPdfCache.r}
@@ -638,7 +739,7 @@ function entryPdfMenu(id,btn){let m=$('#epMenu');if(m){const same=m.dataset.id==
   setTimeout(()=>{const close=ev=>{if(!m.contains(ev.target)){m.remove();document.removeEventListener('click',close,true)}};document.addEventListener('click',close,true)},0)}
 /* formal print view (reports and single entries) */
 async function printFormal(html,meta){let ps=$('#printSheet');if(!ps){ps=document.createElement('div');ps.id='printSheet';document.body.appendChild(ps)}
-  ps.className='fsheet';ps.innerHTML=formalHTML(html,meta);
+  ps.className='fsheet';ps.innerHTML=formalHTML(html,meta);{const rv=ps.querySelector(':scope>.rvwrap'),sg=ps.querySelector(':scope>.sigblk');if(rv&&sg)sg.before(rv)}
   await Promise.all([...ps.querySelectorAll('img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
   document.body.classList.add('pf');const done=()=>{document.body.classList.remove('pf');window.removeEventListener('afterprint',done)};window.addEventListener('afterprint',done);print()}
 /* ---------- formal (letterhead) layout shared by all PDFs and the print view ---------- */
@@ -661,7 +762,7 @@ function formalHTML(html,meta){const d=document.createElement('div');d.innerHTML
     <tr><td>പദവി <i>Designation</i>: ${esc(role)}</td><td>പദവി <i>Designation</i>: ${line}</td></tr>
     <tr><td>തീയതി <i>Date</i>: ${fmtGen(gen).slice(0,10)}</td><td>തീയതി <i>Date</i>: ${line}</td></tr>
     <tr class="sg"><td>ഒപ്പ് <i>Signature</i>: ${line}</td><td>ഒപ്പ് <i>Signature</i>: ${line}</td></tr></table></div>`;
-  return head+d.innerHTML+sign}
+  return head+d.innerHTML+sign+(meta.review?`<div class="rvwrap">${meta.review}</div>`:'')}
 function reportMeta(){const fk=[$('#rArea').value,$('#rWard').value,$('#rPlace').value,$('#rWorker').value,$('#rType').value].join('|');let hsh=0;for(const c of fk)hsh=(hsh*31+c.charCodeAt(0))>>>0;const sfx=fk.replace(/\|/g,'')?'-F'+hsh.toString(36).slice(0,4).toUpperCase():'';
   if(rMode==='day'){const d=$('#rDate').value||today();return {titleMl:`ദിവസ റിപ്പോർട്ട് – ${fmtDate(d)}`,titleEn:`Daily Cleaning Report – ${d.split('-').reverse().join('/')}`,id:`DR-${d.replace(/-/g,'')}${sfx}`}}
   const m=$('#rMonth').value||today().slice(0,7);const [y,mo]=m.split('-');return {titleMl:`മാസ റിപ്പോർട്ട് – ${fmtMonth(m)}`,titleEn:`Monthly Cleaning Report – ${new Date(+y,+mo-1,1).toLocaleString('en-GB',{month:'long'})} ${y}`,id:`MR-${y}${mo}${sfx}`}}
@@ -687,11 +788,19 @@ async function htmlToPdf(html,title,prog,meta){if(meta)html=formalHTML(html,meta
       if(acc+x.h>LIM&&cur.length){const carry=[];while(cur.length&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());if(cur.length)chunks.push(cur);cur=carry;acc=Math.max(0,shellPad)+carry.reduce((n,c)=>n+outerH(c),0)}cur.push(x.k);acc+=x.h}
     if(cur.length)chunks.push(cur);
     return chunks.map(ch=>{const w=el.cloneNode(false);ch.forEach(n=>w.appendChild(n));return w})};
-  for(const el of [...sheet.children]){const parts=split(el);if(parts.length>1||parts[0]!==el){const f=document.createDocumentFragment();parts.forEach(x=>f.appendChild(x));el.replaceWith(f)}}
-  const items=[...sheet.children];const pages=[];let cur=[],start=0;
-  for(const it of items){const top=it.offsetTop,bot=top+it.offsetHeight;if(!cur.length){cur=[it];start=top;continue}
-    if(bot-start>PAGE_H){const carry=[];while(cur.length>1&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());pages.push(cur);cur=[...carry,it];start=(carry[0]||it).offsetTop}else cur.push(it)}
-  if(cur.length)pages.push(cur);
+  const paginate=sh=>{for(const el of [...sh.children]){const parts=split(el);if(parts.length>1||parts[0]!==el){const f=document.createDocumentFragment();parts.forEach(x=>f.appendChild(x));el.replaceWith(f)}}
+    const items=[...sh.children];const pages=[];let cur=[],start=0;
+    for(const it of items){const top=it.offsetTop,bot=top+it.offsetHeight;if(!cur.length){cur=[it];start=top;continue}
+      if(bot-start>PAGE_H){const carry=[];while(cur.length>1&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());pages.push(cur);cur=[...carry,it];start=(carry[0]||it).offsetTop}else cur.push(it)}
+    if(cur.length)pages.push(cur);return pages};
+  // officers' evaluation: laid out on its own page(s), placed immediately before the last page
+  const rvEl=sheet.querySelector(':scope>.rvwrap');let rvSheet=null;
+  if(rvEl){rvSheet=document.createElement('div');rvSheet.className=sheet.className;while(rvEl.firstChild)rvSheet.appendChild(rvEl.firstChild);rvEl.remove();document.body.appendChild(rvSheet)}
+  const pages=paginate(sheet);
+  if(rvSheet){const rp=paginate(rvSheet);
+    if(pages.length>=2)pages.splice(pages.length-1,0,...rp);
+    else{const last=pages[0]||[];const sg=last.find(n=>n.classList&&n.classList.contains('sigblk'));
+      if(sg&&last.length>1){last.splice(last.indexOf(sg),1);pages.push(...rp,[sg])}else pages.unshift(...rp)}}
   const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
   for(let i=0;i<pages.length;i++){prog(true,`PDF തയ്യാറാക്കുന്നു… ${i+1}/${pages.length} പേജ് (Creating PDF)`,(i+.3)/pages.length);
     const pg=document.createElement('div');pg.className='pdfpage'+(meta?' fsheet':'');pages[i].forEach(n=>pg.appendChild(n));document.body.appendChild(pg);
@@ -707,7 +816,7 @@ async function htmlToPdf(html,title,prog,meta){if(meta)html=formalHTML(html,meta
       while(y<cv.height){const h=Math.min(sliceH,cv.height-y);const c=document.createElement('canvas');c.width=cv.width;c.height=h;c.getContext('2d').drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
         if(!first)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',Q),'JPEG',10,10,190,h/S*MM,undefined,'FAST');y+=h;first=false}}
     await new Promise(r=>setTimeout(r,0))}
-  sheet.remove();
+  sheet.remove();rvSheet?.remove();
   const n=pdf.getNumberOfPages();
   for(let i=1;i<=n;i++){pdf.setPage(i);
     if(meta){pdf.addImage(textCanvas({l:'Generated by ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)',c:meta.id,r:`Page ${i} of ${n}`},718,22),'PNG',10,287.5,190,190*22/718,undefined,'FAST');
@@ -1012,4 +1121,4 @@ if('serviceWorker'in navigator&&location.protocol.startsWith('http')&&!EMU){
     // safety net: if the server already has a newer version than this page, reload once (or offer the button while a form is open)
     latestVer().then(L=>{if(L&&L!==APP_VER){check();if(formBusy())showUpdateBar();else if(sessionStorage.getItem('updTried')!==L){sessionStorage.setItem('updTried',L);setTimeout(()=>forceUpdate(),1500)}}})
   }).catch(()=>{})}
-window.__app={get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML,formalHTML,fs:{getDocs,getDoc,collection,doc,updateDoc}};
+window.__app={reviewPdfHTML,htmlToPdf,reviewMonthHTML,get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML,formalHTML,fs:{getDocs,getDoc,collection,doc,updateDoc}};

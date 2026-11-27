@@ -484,3 +484,48 @@ div.thumb{background:var(--brand-50)!important}
 .pdfpage .dr-ph figure:only-child,.pdfpage .rp-ph img:only-child{grid-column:1/-1}
 .pdfpage .dr-ph figure:only-child img,.pdfpage .rp-ph img:only-child{width:auto;max-width:100%;max-height:560px}
 .pdfpage .dr-ph figcaption{margin-top:4px}
+/* v24: officers' evaluation (ഓഫീസർമാരുടെ പ്രവർത്തന വിലയിരുത്തൽ) */
+.rvjump{margin-top:8px}
+.plnm small{display:block;color:var(--text-2);font-size:12.5px;margin-top:2px}
+#rvCard .rv-ofl{display:grid;gap:4px;margin:0 0 10px}
+.rv-or{display:flex;gap:8px;align-items:baseline;font-size:14px;line-height:1.4}.rv-or .no,.rvo .no{flex:0 0 22px;height:22px;border-radius:50%;background:var(--surface-2);color:var(--text-2);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.rv-sr{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45}
+.rv-sr .rvq{word-break:keep-all;overflow-wrap:break-word}
+.rv-cnt{display:flex;flex-wrap:wrap;gap:6px}.rv-cnt span{font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+.rv-cnt .g{background:#e9f7ef;color:#0a7a3e;border-color:#9ad3b0}.rv-cnt .p{background:#fdecec;color:#b42318;border-color:#f3b4ae}.rv-cnt .n{color:var(--muted);font-weight:600}
+.rv-why{font-size:13px;color:var(--text-2);overflow-wrap:anywhere}
+.rvo{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.rvo .no{margin-top:12px}
+.rvo-f{flex:1;min-width:0;display:grid;gap:5px}.rvo-f input{width:100%;min-width:0}
+#rvAddRow{margin:2px 0 6px}
+.rv-crit{margin-top:8px}
+.rvc{border:1.5px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;background:#fff}
+.rvc .rvq{font-size:14px;line-height:1.5;word-break:keep-all;overflow-wrap:break-word;margin-bottom:8px}
+.rvt{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:8px}
+.rvt .mwc{min-height:44px;padding:8px 8px;gap:7px;font-size:13.5px;font-weight:700;word-break:keep-all;min-width:0}
+.rvt .mwc.rvg.on{border-color:#0a7a3e;background:#e9f7ef}.rvt .mwc.rvp.on{border-color:#b42318;background:#fdecec}.rvt .mwc.rvp.on .mwbx{border-color:#b42318;background:#b42318}
+.rvc textarea.rvw{width:100%;min-height:52px;resize:vertical}
+/* review page(s) in PDF / print */
+.rv-h{border:1.5px solid #374151;padding:12px 14px;text-align:center;margin:0 0 12px;background:#fff}
+.rv-h b{display:block;font-size:16px;line-height:1.45;color:#111827}
+.rv-h .rv-h2{font-size:14px;line-height:1.6;margin-top:6px;color:#111827;font-weight:600}
+.rv-h .rv-dt{font-size:12.5px;margin-top:8px;color:#374151}
+.rv-sub{margin-top:6px}
+.rv-of td,.rv-ct td{vertical-align:top;line-height:1.45}
+.rv-of td{height:30px}
+.rv-of th.rvn,.rv-of td.rvn,.rv-ct th.rvn,.rv-ct td.rvn{width:60px;text-align:center;word-break:keep-all}
+.rv-ct td.rvq{font-size:12.5px;width:40%}
+.rv-ct th.rvx,.rv-ct td.rvx,.rv-of th.rvx,.rv-of td.rvx{text-align:center;width:13%}
+.rv-ct th.rvw,.rv-ct td.rvw{width:25%}
+.rv-ct td{height:62px}
+.rv-bx{display:inline-block;width:18px;height:18px;border:1.6px solid #374151;line-height:15px;text-align:center;font-weight:900;font-size:14px;color:#111827;background:#fff}
+.rv-by{margin-top:10px;font-size:12.5px;color:#374151}.rv-by .sg-line{display:inline-block;min-width:180px}
+.rvwrap{display:none}
+body.pf #printSheet .rvwrap{display:block}
+@media print{body.pf #printSheet .rvwrap{break-before:page;break-after:page}body.pf #printSheet .rv-ct tr,body.pf #printSheet .rv-of tr{break-inside:avoid}}
+@media print{
+  body.pf #printSheet .rv-h{padding:7px 10px;margin-bottom:8px}body.pf #printSheet .rv-h b{font-size:14px}body.pf #printSheet .rv-h .rv-h2{font-size:12.5px;margin-top:4px}body.pf #printSheet .rv-h .rv-dt{margin-top:4px}
+  body.pf #printSheet .rv-of td,body.pf #printSheet .rv-ct td,body.pf #printSheet .rv-of th,body.pf #printSheet .rv-ct th{padding:4px 6px;font-size:11.5px}
+  body.pf #printSheet .rv-of td{height:auto}body.pf #printSheet .rv-ct td{height:15mm}
+  body.pf #printSheet .rv-ct td.rvq{width:47%;font-size:11.5px}body.pf #printSheet .rv-ct .rvx{width:11%}body.pf #printSheet .rv-ct .rvw{width:25%}
+  body.pf #printSheet .rv-sub{margin:6px 0 4px}body.pf #printSheet .rv-by{margin-top:6px}
+}

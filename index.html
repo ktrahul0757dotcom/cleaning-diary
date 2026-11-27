@@ -268,6 +268,7 @@
         <button class="btn big" id="rPdf"><svg class="ic"><use href="#i-share"/></svg><span>PDF ഷെയർ / WhatsApp <small class="en">(Share PDF)</small></span></button>
         <div class="row actions3 rpdf2"><button class="btn sec" id="rSave"><svg class="ic"><use href="#i-download"/></svg><span>PDF സേവ് <small class="en">(Save)</small></span></button><button class="btn sec" id="rPrint"><svg class="ic"><use href="#i-print"/></svg><span>പ്രിൻ്റ് <small class="en">(Print)</small></span></button><button class="btn out" id="rMake"><svg class="ic"><use href="#i-refresh"/></svg>തയ്യാറാക്കുക <span class="en">(Generate)</span></button></div>
         <div class="row actions3"><button class="btn out sm" id="rShare"><svg class="ic sm"><use href="#i-share"/></svg>ടെക്സ്റ്റ് <span class="en">(Text)</span></button><button class="btn sm wa" id="rWa"><svg class="ic sm"><use href="#i-chat"/></svg>WhatsApp</button><button class="btn out sm" id="rCopy"><svg class="ic sm"><use href="#i-copy"/></svg>കോപ്പി <span class="en">(Copy)</span></button></div>
+        <button class="btn out sm block rvjump" id="rvJump" type="button"><svg class="ic sm"><use href="#i-badge"/></svg>ഓഫീസർമാരുടെ വിലയിരുത്തൽ <span class="en">(Officers' evaluation)</span></button>
         <div class="pdfprog" id="rPdfProg" hidden><div class="bar"><i></i></div><span id="rPdfMsg"></span></div>
       </div>
       <details class="more" id="rFilters"><summary><svg class="ic sm"><use href="#i-filter"/></svg> ഫിൽറ്ററുകൾ <span class="en">(Area · Ward · Place · Worker · Type · Photos)</span></summary>
@@ -277,6 +278,11 @@
       <p class="hint" style="margin-bottom:0">📄 <b>PDF ഷെയർ</b>: ഫോണിൽ തന്നെ PDF ഉണ്ടാക്കി WhatsApp-ലേക്ക് അയക്കാം. <span class="en">(Creates a PDF on this phone and opens the share sheet; otherwise downloads it.)</span> <b>PDF സേവ്</b>: ഫോണിൽ (Downloads) സൂക്ഷിക്കാം. <span class="en">(Saves the PDF file to the phone.)</span></p>
     </div>
     <div id="reportOut"></div>
+    <div class="card noprint" id="rvCard"><h2><span class="hic"><svg class="ic"><use href="#i-badge"/></svg></span>ഓഫീസർമാരുടെ പ്രവർത്തന വിലയിരുത്തൽ <span class="en">(Officers' evaluation)</span></h2>
+      <p class="hint" style="margin-top:-6px"><b id="rvTitleSub"></b> · എല്ലാ PDF-ലും പ്രിൻ്റിലും അവസാന പേജിന് തൊട്ടുമുമ്പ് ഈ പേജ് ഉണ്ടാകും <span class="en">(added to every PDF / print just before the last page)</span></p>
+      <div id="rvBody"></div>
+      <button class="btn sec block" id="rvEdit" type="button" style="display:none;margin-top:10px"></button>
+      <datalist id="offDl"></datalist><datalist id="offDesDl"></datalist></div>
   </section>
 
   <!-- NOTIFICATIONS -->
@@ -326,6 +332,16 @@
       <p class="hint" style="margin:2px 0 6px">✏️ പേര് മാറ്റാം (rename) · ▲▼ ക്രമം (reorder) · ⏸ ഒഴിവാക്കാം (remove – പഴയ എൻട്രികളിൽ നിലനിൽക്കും / old entries keep it)</p>
       <div id="crList" class="plist"></div>
       <details class="more" id="crOffWrap" style="margin-top:10px;display:none"><summary><svg class="ic sm"><use href="#i-pause"/></svg> ഒഴിവാക്കിയ പേരുകൾ <span class="en">(Removed names)</span> <span class="cnt" id="crOffCount"></span></summary><div id="crOffList" class="plist"></div></details></div>
+    <div class="card" id="ofCard" style="display:none"><h2><span class="hic"><svg class="ic"><use href="#i-badge"/></svg></span>ഉദ്യോഗസ്ഥരുടെ പേരുകൾ + തസ്തിക <span class="en">(Officers' names & designations)</span></h2>
+      <p class="hint" style="margin-top:-6px">ദിവസ വിലയിരുത്തലിൽ ഈ പേരുകൾ സ്വയം വരും; ഓരോ ദിവസവും മാറ്റാം. <span class="en">(Prefills the daily officers' evaluation; editable per day.)</span></p>
+      <input type="text" id="ofName" maxlength="80" placeholder="ഓഫീസറുടെ പേര് (Officer name)">
+      <input type="text" id="ofDesig" maxlength="80" list="offDesDl" placeholder="തസ്തിക (Designation)" style="margin-top:8px">
+      <p class="hint" id="ofEditHint" style="display:none;margin:8px 0 0">✏️ <b id="ofEditName"></b> – മാറ്റുന്നു (editing)</p>
+      <div class="row" style="margin-top:10px"><button class="btn out" id="ofCancel" style="display:none"><svg class="ic"><use href="#i-x"/></svg>റദ്ദാക്കുക</button><button class="btn block" id="ofAdd"><svg class="ic"><use href="#i-plus"/></svg>ചേർക്കുക <span class="en">(Add)</span></button></div>
+      <div class="pl-head"><b>ഇപ്പോഴത്തെ ലിസ്റ്റ് <span class="en">(Current list)</span></b> <span class="cnt" id="ofCount"></span></div>
+      <p class="hint" style="margin:2px 0 6px">✏️ മാറ്റാം (edit) · ▲▼ ക്രമം (reorder) · ⏸ ഒഴിവാക്കാം (remove – പഴയ വിലയിരുത്തലുകളിൽ നിലനിൽക്കും / old evaluations keep it)</p>
+      <div id="ofList" class="plist"></div>
+      <details class="more" id="ofOffWrap" style="margin-top:10px;display:none"><summary><svg class="ic sm"><use href="#i-pause"/></svg> ഒഴിവാക്കിയ പേരുകൾ <span class="en">(Removed)</span> <span class="cnt" id="ofOffCount"></span></summary><div id="ofOffList" class="plist"></div></details></div>
     <div class="card" id="usersCard" style="display:none"><h2><span class="hic info"><svg class="ic"><use href="#i-users"/></svg></span>അംഗങ്ങളും റോളുകളും <span class="en">(Members & roles)</span></h2>
       <p class="hint" style="margin-top:-6px">പുതിയ അംഗങ്ങൾ ലോഗിൻ ചെയ്താൽ ഇവിടെ "pending" ആയി വരും. റോൾ നൽകുക. (New sign-ins appear as pending – assign a role.)</p>
       <div class="ulist" id="uList"></div></div>
