@@ -1,4 +1,4 @@
-const APP_VER='v22';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v23';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -681,7 +681,7 @@ async function htmlToPdf(html,title,prog,meta){if(meta)html=formalHTML(html,meta
   const hd=c=>c.classList.contains('rp-sub')||c.classList.contains('ewt-h')||/^H[1-4]$/.test(c.tagName);const isHead=el=>hd(el)||(el.children.length>0&&el.children.length<=2&&[...el.children].every(hd));
   const outerH=el=>{const cs=getComputedStyle(el);return el.getBoundingClientRect().height+(parseFloat(cs.marginTop)||0)+(parseFloat(cs.marginBottom)||0)};
   const split=el=>{if(el.offsetHeight<=LIM||!el.children.length||/^(TABLE|IMG|FIGURE|UL)$/.test(el.tagName))return [el];
-    const kids=[...el.children].map(k=>({k,h:outerH(k)}));const shellPad=el.offsetHeight-kids.reduce((n,x)=>n+x.h,0);
+    const kids=[...el.children].map(k=>({k,h:outerH(k)}));if(getComputedStyle(el).display==='grid'){const gap=parseFloat(getComputedStyle(el).rowGap)||0;let row=null;for(const x of kids){if(row&&Math.abs(x.k.offsetTop-row.k.offsetTop)<2){row.h=Math.max(row.h,x.h+gap);x.h=0}else{x.h+=gap;row=x}}}const shellPad=el.offsetHeight-kids.reduce((n,x)=>n+x.h,0);
     const chunks=[];let cur=[],acc=Math.max(0,shellPad);
     for(const x of kids){if(x.h>LIM){if(cur.length){chunks.push(cur);cur=[];acc=Math.max(0,shellPad)}split(x.k).forEach(piece=>chunks.push([piece]));continue}
       if(acc+x.h>LIM&&cur.length){const carry=[];while(cur.length&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());if(cur.length)chunks.push(cur);cur=carry;acc=Math.max(0,shellPad)+carry.reduce((n,c)=>n+outerH(c),0)}cur.push(x.k);acc+=x.h}
@@ -696,14 +696,16 @@ async function htmlToPdf(html,title,prog,meta){if(meta)html=formalHTML(html,meta
   for(let i=0;i<pages.length;i++){prog(true,`PDF തയ്യാറാക്കുന്നു… ${i+1}/${pages.length} പേജ് (Creating PDF)`,(i+.3)/pages.length);
     const pg=document.createElement('div');pg.className='pdfpage'+(meta?' fsheet':'');pages[i].forEach(n=>pg.appendChild(n));document.body.appendChild(pg);
     const firstM=parseFloat(getComputedStyle(pg.firstElementChild).marginTop)||0;pg.firstElementChild.style.marginTop='0';
-    const cv=await window.html2canvas(pg,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1024,onclone:fixCloneColors});
+    // pages with photos are rendered at 3x and saved at higher JPEG quality so the photos stay sharp
+    const hasPh=!!pg.querySelector('.dr-ph img,.rp-ph img,.dr-fb img,img.fbph'),S=hasPh?3:2,Q=hasPh?0.92:0.86;
+    const cv=await window.html2canvas(pg,{scale:S,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1024,onclone:fixCloneColors});
     pg.remove();if(i)pdf.addPage();
-    let hmm=cv.height/2*MM;
-    if(hmm<=277.5){pdf.addImage(cv.toDataURL('image/jpeg',0.86),'JPEG',10,10,190,hmm,undefined,'FAST')}
+    let hmm=cv.height/S*MM;
+    if(hmm<=277.5){pdf.addImage(cv.toDataURL('image/jpeg',Q),'JPEG',10,10,190,hmm,undefined,'FAST')}
     else{// very tall single block: slice across pages
-      const sliceH=Math.floor(277/MM*2);let y=0,first=true;
+      const sliceH=Math.floor(277/MM*S);let y=0,first=true;
       while(y<cv.height){const h=Math.min(sliceH,cv.height-y);const c=document.createElement('canvas');c.width=cv.width;c.height=h;c.getContext('2d').drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
-        if(!first)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.86),'JPEG',10,10,190,h/2*MM,undefined,'FAST');y+=h;first=false}}
+        if(!first)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',Q),'JPEG',10,10,190,h/S*MM,undefined,'FAST');y+=h;first=false}}
     await new Promise(r=>setTimeout(r,0))}
   sheet.remove();
   const n=pdf.getNumberOfPages();
