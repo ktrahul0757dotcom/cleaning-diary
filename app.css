@@ -429,3 +429,14 @@ div.thumb{background:var(--brand-50)!important}
 .epmenu button:active,.epmenu button:hover{background:#eef8f2}.epmenu small{font-weight:500;color:#64748b}
 .ractions .rpdf2 .btn{font-size:12.5px;padding:6px 2px;letter-spacing:-.1px}.ractions .rpdf2 #rMake{font-size:11.5px}
 .ractions .rpdf2 #rMake{flex:1.25 1 0;min-width:0}.ractions .rpdf2 #rSave,.ractions .rpdf2 #rPrint{flex:1 1 0;min-width:0}
+/* t157u: clearly visible red delete, away from Share/Save/Print */
+#detBtns{margin:2px 0 12px}
+.delzone{margin:4px 0 16px;padding:12px;border:1.5px dashed #f0b4b4;border-radius:16px;background:#fff7f7}
+.delzone .hint{margin:8px 2px 0;font-size:12.5px}
+.btn.delred,#detDel{background:#c62828!important;color:#fff!important;border-color:#c62828!important;box-shadow:none}
+#detDel{width:100%;min-height:52px;font-size:16px;font-weight:800;gap:8px}#detDel small{color:#ffe4e4;font-weight:600}#detDel .ic{color:#fff}
+.btn.delred:active{background:#a51f1f!important}
+.epmenu hr{border:0;border-top:1px solid #e5e7eb;margin:4px 6px}.epmenu .mdel{color:#c62828}.epmenu .mdel .ic{color:#c62828}
+.ulist .udesig{display:block;width:100%;margin-top:6px;padding:6px 10px;min-height:36px;font-size:13.5px}
+.ulist .u .nm{min-width:0;flex:1}
+#uList .u{flex-wrap:wrap;row-gap:8px}#uList .u .nm{flex:1 1 calc(100% - 64px)}#uList .u select{flex:1 1 100%;max-width:none;margin-left:52px;width:calc(100% - 52px)}

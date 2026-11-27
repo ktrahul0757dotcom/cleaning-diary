@@ -194,6 +194,8 @@
     <div class="detpdf noprint"><div class="pdf3"><button class="btn" id="detPdf"><svg class="ic"><use href="#i-share"/></svg><span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share)</small></span></button><button class="btn sec" id="detSave"><svg class="ic"><use href="#i-download"/></svg><span>PDF സേവ് <small class="en">(Save)</small></span></button><button class="btn sec" id="detPrint"><svg class="ic"><use href="#i-print"/></svg><span>പ്രിൻ്റ് <small class="en">(Print)</small></span></button></div>
       <div class="pdfprog" id="detPdfProg" hidden><div class="bar"><i></i></div><span id="detPdfMsg"></span></div></div>
     <div id="detOut"></div>
+    <div class="row noprint" id="detBtns"><button class="btn out" data-act="back"><svg class="ic"><use href="#i-left"/></svg>തിരികെ <span class="en">(Back)</span></button><button class="btn sec" id="detEdit"><svg class="ic"><use href="#i-edit"/></svg>തിരുത്തുക <span class="en">(Edit)</span></button></div>
+    <div class="delzone noprint" id="detDelWrap" style="display:none"><button class="btn delred" id="detDel"><svg class="ic"><use href="#i-trash"/></svg><span>നീക്കുക <small class="en">(Delete this entry)</small></span></button><p class="hint">ഈ ജോലിയും ഫോട്ടോകളും അഭിപ്രായങ്ങളും സ്ഥിരമായി നീക്കം ചെയ്യും. <span class="en">(Permanently deletes this entry with its photos and remarks.)</span></p></div>
     <div class="card" id="detRemarks"></div>
     <div class="card" id="remarkForm" style="display:none">
       <h2><span class="hic earth"><svg class="ic"><use href="#i-badge"/></svg></span>അഭിപ്രായം ചേർക്കുക <span class="en">(Add officer remark)</span></h2>
@@ -210,7 +212,7 @@
       <div class="sig-wrap"><canvas class="sig" id="rmSig"></canvas><div class="sig-ph" id="rmSigPh"><svg class="ic"><use href="#i-pen"/></svg> ഇവിടെ ഒപ്പിടുക (sign here)</div></div>
       <div class="row" style="margin-top:10px"><button class="btn danger sm" type="button" id="rmSigClr" style="flex:0 0 auto"><svg class="ic sm"><use href="#i-refresh"/></svg>മായ്ക്കുക</button><button class="btn" type="button" id="rmSave"><svg class="ic"><use href="#i-check"/></svg>അഭിപ്രായം സേവ് <span class="en">(Save remark)</span></button></div>
     </div>
-    <div class="row noprint" id="detBtns"><button class="btn out" data-act="back"><svg class="ic"><use href="#i-left"/></svg>തിരികെ</button><button class="btn sec" id="detEdit"><svg class="ic"><use href="#i-edit"/></svg>തിരുത്തുക</button><button class="btn danger" id="detDel"><svg class="ic"><use href="#i-trash"/></svg>നീക്കുക</button></div>
+
   </section>
 
   <!-- FEEDBACK: RESIDENTS + SQUAD INSPECTION -->
@@ -282,6 +284,9 @@
       <div class="verrow"><div id="verInfo" class="hint">📱 ആപ്പ് പതിപ്പ് (App version)</div><button class="btn out sm" id="updBtn"><svg class="ic"><use href="#i-refresh"/></svg>പുതുക്കുക <span class="en">(Update app)</span></button></div>
       <label class="f">പേര് <span class="en">(Name)</span></label><input type="text" id="sName">
       <label class="f">ഫോൺ <span class="en">(Phone, optional)</span></label><input type="tel" id="sPhone">
+      <label class="f">പദവി <span class="en">(Designation – shown in PDFs)</span></label><input type="text" id="sDesig" maxlength="80" list="desigList2" placeholder="ഉദാ: Sanitation Worker">
+      <datalist id="desigList2"><option value="Sanitation Worker"><option value="ശുചീകരണ തൊഴിലാളി (Sanitation Worker)"><option value="ഹെൽത്ത് ഇൻസ്പെക്ടർ (Health Inspector)"><option value="ജൂനിയർ ഹെൽത്ത് ഇൻസ്പെക്ടർ (JHI)"><option value="സൂപ്പർവൈസർ (Supervisor)"><option value="സെക്രട്ടറി (Secretary)"></datalist>
+      <p class="hint" style="margin:4px 0 0">PDF-ലെ "തയ്യാറാക്കിയത് / Prepared by" ഭാഗത്ത് ഈ പദവി കാണിക്കും. ശൂന്യമെങ്കിൽ ആപ്പ് റോൾ. <span class="en">(Used in PDFs; app role if empty. Does not change permissions.)</span></p>
       <div class="row" style="margin-top:14px"><button class="btn" id="sSave"><svg class="ic"><use href="#i-save"/></svg>സേവ്</button><button class="btn out" data-act="logout"><svg class="ic"><use href="#i-logout"/></svg>ലോഗൗട്ട്</button></div>
     </div>
     <div class="card" id="placesCard" style="display:none"><h2><span class="hic"><svg class="ic"><use href="#i-pin"/></svg></span>സ്ഥലങ്ങൾ / റോഡുകൾ <span class="en">(Manage places / roads)</span></h2>

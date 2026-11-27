@@ -1,4 +1,4 @@
-const APP_VER='v19';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v20';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -35,7 +35,7 @@ const skelHTML=(n=2)=>Array.from({length:n},()=>`<div class="skc"><div class="sk
 const typeOptions=(first)=>(first?`<option value="">${first}</option>`:'')+allTypes().map(t=>`<option value="${t.id}">${t.icon} ${esc(t.ml)}${t.en?' ('+esc(t.en)+')':''}</option>`).join('');
 const ROLES={admin:'👑 അഡ്മിൻ (Admin)',supervisor:'🧑‍💼 സൂപ്പർവൈസർ (Supervisor)',officer:'👮 ഉദ്യോഗസ്ഥൻ (Officer)',worker:'👷 തൊഴിലാളി (Worker)',pending:'⏳ കാത്തിരിക്കുന്നു (Pending)',disabled:'🚫 തടഞ്ഞു (Disabled)'};
 function toast(m,ms=2600){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms)}
-function ask(msg){return new Promise(res=>{$('#mMsg').textContent=msg;$('#modal').classList.add('show');const d=v=>{$('#modal').classList.remove('show');res(v)};$('#mYes').onclick=()=>d(true);$('#mNo').onclick=()=>d(false)})}
+function ask(msg,o={}){return new Promise(res=>{$('#mMsg').textContent=msg;const y=$('#mYes');y.textContent=o.yes||'ശരി';y.classList.toggle('delred',!!o.danger);$('#modal').classList.add('show');const d=v=>{$('#modal').classList.remove('show');y.textContent='ശരി';y.classList.remove('delred');res(v)};y.onclick=()=>d(true);$('#mNo').onclick=()=>d(false)})}
 const scoreColor=s=>s==null?'#94a3b8':s>=85?'#15803d':s>=65?'#b45309':'#b91c1c';
 const worksText=(e,en)=>{const r=(e.works||[]).map(w=>w==='other'&&e.workOther?e.workOther:(WMAP[w]?(en?WMAP[w][2]:WMAP[w][1]):w));return e.mass?`💪 ${en?'Mass work':'മാസ് വർക്ക്'}: `+massLabels(e,en,false).concat(r).join(', '):r.join(', ')};
 
@@ -98,7 +98,7 @@ function startApp(){unsubs.splice(1).forEach(u=>u());entryUnsub&&entryUnsub();en
   if(r==='none'||r==='pending'||r==='disabled'){$('#tabs').style.display='none';$('#pendingMail').textContent=me.email+' · '+(ROLES[r]||'');show('v-pending');return}
   $('#tabs').style.display='flex';$('#tabNew').style.display=can.work()?'flex':'none';
   $('#placesCard').style.display=can.sup()?'block':'none';$('#mwCard').style.display=can.sup()?'block':'none';$('#tabFb').style.display=can.staff()?'flex':'none';$('#qrCard').style.display=can.staff()?'block':'none';$('#usersCard').style.display=can.admin()?'block':'none';$('#jdCard').style.display=can.admin()?'block':'none';
-  $('#sName').value=meDoc.name||'';$('#sPhone').value=meDoc.phone||'';$('#meInfo').textContent=`${me.email} · ${ROLES[r]}`;
+  $('#sName').value=meDoc.name||'';$('#sPhone').value=meDoc.phone||'';if(document.activeElement!==$('#sDesig'))$('#sDesig').value=meDoc.desig||'';$('#meInfo').textContent=`${me.email} · ${ROLES[r]}`;
   $('#phMode').textContent=OPT.storageEnabled?'☁️ ഫോട്ടോകൾ Firebase Storage-ൽ സൂക്ഷിക്കുന്നു (Photos stored in Cloud Storage)':'💾 ഫോട്ടോകൾ ചുരുക്കി (~200KB) ഡാറ്റാബേസിൽ സൂക്ഷിക്കുന്നു (Free-plan mode: compressed photos in Firestore)';
   $('#aboutTxt').innerHTML=`ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം (Bhadram Ee Bhoomi – Daily Cleaning) · പതിപ്പ് (version) team-3 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
   unsubs.push(onSnapshot(doc(db,'meta','massWorks'),s=>{const t=s.data()?.types;massTypes=Array.isArray(t)&&t.length?t.filter(x=>x&&x.id&&x.ml):MASS_DEFAULT.slice();renderMassChips();renderMassManager()},e=>console.warn('massWorks',e.code)));
@@ -237,11 +237,11 @@ function typeReportHTML(list,fbList){const m={};const add=k=>m[k]=m[k]||{n:0,pla
   return `<div class="rp-sub" style="font-size:15px">🏷️ തരം തിരിച്ചുള്ള സംഗ്രഹം (Summary by type)</div><table class="rp-tbl"><tr><th>തരം (Type)</th><th>ജോലി (Work)</th><th>സ്ഥലങ്ങൾ (Places)</th><th>സ്കോർ (Score)</th><th>സ്ഥലവാസി ★ (Feedback avg)</th></tr>`+
     ks.map(k=>{const o=m[k],t=typeInfo(k);return `<tr><td>${t.icon} ${esc(t.ml)}${t.en?' ('+esc(t.en)+')':''}</td><td>${o.n}</td><td>${o.places.size}</td><td>${o.score.length?Math.round(o.score.reduce((a,b)=>a+b,0)/o.score.length):'–'}</td><td>${o.fb?(o.fbSum/o.fb).toFixed(1)+' ('+o.fb+')':'–'}</td></tr>`}).join('')+'</table>'}
 function renderUsers(){if(!can.admin())return;const order={pending:0,admin:1,supervisor:2,officer:3,worker:4,disabled:5};
-  $('#uList').innerHTML=users.slice().sort((a,b)=>(order[a.role]??9)-(order[b.role]??9)||String(a.name).localeCompare(b.name)).map(u=>`<div class="u">${u.photoURL?`<img src="${esc(u.photoURL)}" referrerpolicy="no-referrer" alt="">`:hic('user')}<div class="nm"><b>${esc(u.name)}</b><br><span class="en">${esc(u.email)}</span></div>
+  $('#uList').innerHTML=users.slice().sort((a,b)=>(order[a.role]??9)-(order[b.role]??9)||String(a.name).localeCompare(b.name)).map(u=>`<div class="u">${u.photoURL?`<img src="${esc(u.photoURL)}" referrerpolicy="no-referrer" alt="">`:hic('user')}<div class="nm"><b>${esc(u.name)}</b><br><span class="en">${esc(u.email)}</span><input type="text" class="udesig" data-uid="${u.uid}" maxlength="80" list="desigList2" value="${esc(u.desig||'')}" placeholder="പദവി (Designation)" aria-label="പദവി (Designation)"></div>
     <select data-uid="${u.uid}" ${u.uid===me.uid?'disabled':''}>${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}</select></div>`).join('');
-  $$('#uList select').forEach(s=>s.onchange=async()=>{const u=users.find(x=>x.uid===s.dataset.uid);if(!await ask(`${u.name} → ${ROLES[s.value]}?`)){s.value=u.role;return}
+  $$('#uList .udesig').forEach(i=>i.onchange=()=>{const v=i.value.trim().slice(0,80);updateDoc(doc(db,'users',i.dataset.uid),{desig:v}).then(()=>toast('✅ പദവി സേവ് ചെയ്തു (Designation saved)')).catch(e=>toast('⚠️ '+e.code))});$$('#uList select').forEach(s=>s.onchange=async()=>{const u=users.find(x=>x.uid===s.dataset.uid);if(!await ask(`${u.name} → ${ROLES[s.value]}?`)){s.value=u.role;return}
     updateDoc(doc(db,'users',u.uid),{role:s.value,roleBy:me.uid,roleAt:serverTimestamp()}).then(()=>toast('✅ റോൾ മാറ്റി (Role updated)')).catch(e=>{toast('⚠️ '+e.code);s.value=u.role})})}
-$('#sSave').onclick=()=>{updateDoc(doc(db,'users',me.uid),{name:$('#sName').value.trim()||me.displayName,phone:$('#sPhone').value.trim()}).catch(e=>toast('⚠️ '+e.code));toast('✅ സേവ് ചെയ്തു (Saved)')};
+$('#sSave').onclick=()=>{updateDoc(doc(db,'users',me.uid),{name:$('#sName').value.trim()||me.displayName,phone:$('#sPhone').value.trim(),desig:$('#sDesig').value.trim().slice(0,80)}).catch(e=>toast('⚠️ '+e.code));toast('✅ സേവ് ചെയ്തു (Saved)')};
 
 /* ---------- photos ---------- */
 function loadImage(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('bad image'));i.src=src})}
@@ -338,12 +338,17 @@ function remarksHTML(rs){if(!rs.length)return '';return `<div class="rp-sub">�
 function renderDetail(){const e=entries.find(x=>x.id===detailId);if(!e){$('#detOut').innerHTML=skelHTML(1);return}
   $('#detOut').innerHTML=entryHTML(e,detPhotos,null);{const b=$('#detPdf');if(!b.classList.contains('ready')||b.dataset.id!==e.id){b.classList.remove('ready');b.dataset.id=e.id;b.innerHTML=EPDF_LABEL;b.onclick=()=>entryPdfAction(e.id,'share',b)}$('#detSave').onclick=()=>entryPdfAction(e.id,'save',$('#detSave'));$('#detPrint').onclick=()=>entryPdfAction(e.id,'print',$('#detPrint'))}
   $('#detRemarks').innerHTML=`<h2>${hic('badge','earth')}അഭിപ്രായങ്ങൾ <span class="en">(Remarks – live)</span></h2>`+(detRemarks.length?remarksHTML(detRemarks).replace(/^<div class="rp-sub">.*?<\/div>/,''):'<p class="hint">ഇതുവരെ അഭിപ്രായം ഇല്ല (No remarks yet)</p>');
-  const own=e.workerUid===me.uid;$('#detEdit').style.display=(own&&can.work())||can.sup()?'flex':'none';$('#detDel').style.display=(own&&can.work())||can.sup()?'flex':'none'}
+  const own=e.workerUid===me.uid;$('#detEdit').style.display=(own&&can.work())||can.sup()?'flex':'none';$('#detDelWrap').style.display=canDelEntry(e)?'block':'none'}
 $('#detEdit').onclick=()=>{const e=entries.find(x=>x.id===detailId);if(e)editEntry(e)};
-$('#detDel').onclick=async()=>{const e=entries.find(x=>x.id===detailId);if(!e)return;if(!await ask(`ഈ എൻട്രി നീക്കം ചെയ്യണോ? (Delete this entry?)\n📍 ${e.placeName} – ${fmtDate(e.date)}`))return;
-  try{const b=writeBatch(db);detPhotos.forEach(p=>b.delete(doc(db,'entries',e.id,'photos',p.id)));detRemarks.forEach(r=>b.delete(doc(db,'entries',e.id,'remarks',r.id)));b.delete(doc(db,'entries',e.id));
-    if(storage)detPhotos.filter(p=>p.path).forEach(p=>S.deleteObject(S.ref(storage,p.path)).catch(()=>{}));
-    b.commit().catch(err=>toast('⚠️ '+err.code));detailUnsubs.forEach(u=>u());detailUnsubs=[];toast('🗑️ നീക്കം ചെയ്തു (Deleted)');show('v-dash')}catch(err){toast('⚠️ '+err.message)}};
+const canDelEntry=e=>!!e&&((e.workerUid===me.uid&&can.work())||can.sup());
+/* permanent delete of one entry with its photos and remarks (confirmation first) */
+async function deleteEntry(id){const e=entries.find(x=>x.id===id);if(!e||!canDelEntry(e))return false;
+  let ps,rs;try{[ps,rs]=await Promise.all([getDocs(collection(db,'entries',id,'photos')),getDocs(collection(db,'entries',id,'remarks'))])}catch(err){toast('⚠️ '+(err.code||err.message));return false}
+  if(!await ask(`🗑️ ഈ ജോലി സ്ഥിരമായി നീക്കം ചെയ്യണോ? (Permanently delete this entry?)\n📍 ${e.placeName||''} – ${fmtDate(e.date)}${e.time?' · '+e.time:''}\n👷 ${e.workerName||''}\n📷 ഫോട്ടോ (Photos): ${ps.size} · 👮 അഭിപ്രായം (Remarks): ${rs.size}\nഇത് തിരിച്ചെടുക്കാൻ കഴിയില്ല. (This cannot be undone.)`,{danger:true,yes:'നീക്കുക (Delete)'}))return false;
+  try{const b=writeBatch(db);ps.docs.forEach(d=>b.delete(d.ref));rs.docs.forEach(d=>b.delete(d.ref));b.delete(doc(db,'entries',id));
+    if(storage)ps.docs.map(d=>d.data()).filter(p=>p.path).forEach(p=>S.deleteObject(S.ref(storage,p.path)).catch(()=>{}));
+    b.commit().catch(err=>toast('⚠️ '+err.code,5000));if(detailId===id){detailUnsubs.forEach(u=>u());detailUnsubs=[]}toast('🗑️ നീക്കം ചെയ്തു (Deleted)');return true}catch(err){toast('⚠️ '+err.message);return false}}
+$('#detDel').onclick=async()=>{const b=$('#detDel');b.disabled=true;try{if(await deleteEntry(detailId))show('v-dash')}finally{b.disabled=false}};
 
 /* ---------- signature pad ---------- */
 function SigPad(canvas,ph){const ctx=canvas.getContext('2d');let drawing=false,last=null,dirty=false;
@@ -356,7 +361,7 @@ function SigPad(canvas,ph){const ctx=canvas.getContext('2d');let drawing=false,l
     data(){const c=document.createElement('canvas');const s=Math.min(1,500/canvas.width);c.width=canvas.width*s;c.height=canvas.height*s;c.getContext('2d').drawImage(canvas,0,0,c.width,c.height);return c.toDataURL('image/png')}}}
 const sig=SigPad($('#rmSig'),$('#rmSigPh'));$('#rmSigClr').onclick=()=>sig.clear();addEventListener('resize',()=>{if(!sig.dirty)sig.size()});
 $('#rmRating').addEventListener('change',()=>$$('#rmRating label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked)));
-function resetRemark(){$('#rmText').value='';$$('#rmRating input').forEach(i=>i.checked=false);$$('#rmRating label').forEach(l=>l.classList.remove('on'));sig.clear();$('#rmDesig').value=localStorage.getItem('desig')||''}
+function resetRemark(){$('#rmText').value='';$$('#rmRating input').forEach(i=>i.checked=false);$$('#rmRating label').forEach(l=>l.classList.remove('on'));sig.clear();$('#rmDesig').value=localStorage.getItem('desig')||meDoc?.desig||''}
 $('#rmSave').onclick=async()=>{const e=entries.find(x=>x.id===detailId);if(!e)return;const rating=($('#rmRating input:checked')||{}).value;const text=$('#rmText').value.trim();
   if(!rating)return toast('⚠️ വിലയിരുത്തൽ തിരഞ്ഞെടുക്കുക (Choose a rating)');
   const desig=$('#rmDesig').value.trim();localStorage.setItem('desig',desig);
@@ -549,10 +554,10 @@ const shareEntryPdf=(id,btn)=>entryPdfAction(id,'share',btn);
 /* small menu on list cards: Share / Save / Print */
 function entryPdfMenu(id,btn){let m=$('#epMenu');if(m){const same=m.dataset.id===id;m.remove();if(same)return}
   m=document.createElement('div');m.id='epMenu';m.className='epmenu noprint';m.dataset.id=id;m.setAttribute('role','menu');
-  m.innerHTML=`<button data-a="share" role="menuitem">${ico('share','sm')}<span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share)</small></span></button><button data-a="save" role="menuitem">${ico('download','sm')}<span>PDF സേവ് <small class="en">(Save)</small></span></button><button data-a="print" role="menuitem">${ico('print','sm')}<span>പ്രിൻ്റ് <small class="en">(Print)</small></span></button>`;
+  m.innerHTML=`<button data-a="share" role="menuitem">${ico('share','sm')}<span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share)</small></span></button><button data-a="save" role="menuitem">${ico('download','sm')}<span>PDF സേവ് <small class="en">(Save)</small></span></button><button data-a="print" role="menuitem">${ico('print','sm')}<span>പ്രിൻ്റ് <small class="en">(Print)</small></span></button>${canDelEntry(entries.find(x=>x.id===id))?`<hr><button data-a="delete" role="menuitem" class="mdel">${ico('trash','sm')}<span>നീക്കുക <small class="en">(Delete)</small></span></button>`:''}`;
   document.body.appendChild(m);const rc=btn.getBoundingClientRect(),mw=m.offsetWidth,mh=m.offsetHeight;
   let top=rc.bottom+6;if(top+mh>innerHeight-8)top=Math.max(8,rc.top-mh-6);m.style.top=(top+scrollY)+'px';m.style.left=Math.max(8,Math.min(innerWidth-mw-8,rc.right-mw))+'px';
-  m.querySelectorAll('button').forEach(x=>x.onclick=ev=>{ev.stopPropagation();m.remove();entryPdfAction(id,x.dataset.a,btn)});
+  m.querySelectorAll('button').forEach(x=>x.onclick=ev=>{ev.stopPropagation();m.remove();if(x.dataset.a==='delete')deleteEntry(id);else entryPdfAction(id,x.dataset.a,btn)});
   setTimeout(()=>{const close=ev=>{if(!m.contains(ev.target)){m.remove();document.removeEventListener('click',close,true)}};document.addEventListener('click',close,true)},0)}
 /* formal print view (reports and single entries) */
 async function printFormal(html,meta){let ps=$('#printSheet');if(!ps){ps=document.createElement('div');ps.id='printSheet';document.body.appendChild(ps)}
@@ -569,7 +574,7 @@ function formalHTML(html,meta){const d=document.createElement('div');d.innerHTML
   const h=d.querySelector('.rp-h');const filt=h?.querySelector('.rp-filt')?.textContent||'';if(h)h.remove();
   d.querySelectorAll('svg.ic,.mark,.hic').forEach(x=>x.remove());
   d.querySelectorAll('.pcb').forEach(b=>{b.textContent=b.classList.contains('on')?'✓':''});
-  stripEmojiDom(d);const gen=meta.gen||new Date();const jd=jdLines();const role=noEmoji(ROLES[meDoc?.role]||'');
+  stripEmojiDom(d);const gen=meta.gen||new Date();const jd=jdLines();const role=noEmoji((meDoc?.desig||'').trim()||ROLES[meDoc?.role]||'');
   const head=`<div class="lh"><div class="lh-top"><div class="lh-mark">${MARK_SVG}</div><div class="lh-name"><b>ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</b><span>Bhadram Ee Bhoomi – Daily Cleaning</span></div>${jd.length?`<div class="lh-office">${jd.map(esc).join('<br>')}</div>`:''}</div>
     <div class="lh-title"><b>${esc(meta.titleMl)}</b><span>${esc(meta.titleEn)}</span></div>
     <table class="lh-meta"><tr><td>റിപ്പോർട്ട് നമ്പർ <i>Report No.</i></td><td><b>${esc(meta.id)}</b></td><td>തയ്യാറാക്കിയ സമയം <i>Generated</i></td><td>${fmtGen(gen)}</td></tr>${filt?`<tr><td>ഫിൽറ്റർ <i>Filter</i></td><td colspan="3">${esc(noEmoji(filt))}</td></tr>`:''}</table></div>`;
@@ -928,4 +933,4 @@ if('serviceWorker'in navigator&&location.protocol.startsWith('http')&&!EMU){
     // safety net: if the server already has a newer version than this page, reload once (or offer the button while a form is open)
     latestVer().then(L=>{if(L&&L!==APP_VER){check();if(formBusy())showUpdateBar();else if(sessionStorage.getItem('updTried')!==L){sessionStorage.setItem('updTried',L);setTimeout(()=>forceUpdate(),1500)}}})
   }).catch(()=>{})}
-window.__app={get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML};
+window.__app={get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML,formalHTML,fs:{getDocs,getDoc,collection,doc,updateDoc}};
