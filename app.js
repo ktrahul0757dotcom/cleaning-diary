@@ -1,4 +1,4 @@
-const APP_VER='v20';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v21';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -15,6 +15,25 @@ let massTypes=MASS_DEFAULT.slice();
 const massById=id=>massTypes.find(t=>t.id===id);
 const activeMass=()=>massTypes.filter(t=>t.active!==false);
 function massLabels(e,en,icons=true){const snap=e.massLabels||[];const L=(e.massWorks||[]).map((id,i)=>{const t=massById(id);return t?((icons&&t.icon?t.icon+' ':'')+(en&&t.en?t.en:t.ml)):(snap[i]||id)});if(e.massOther)L.push(e.massOther);return L}
+/* workers' names ("തൊഴിലാളികളുടെ പേരുകൾ") – managed list in meta/crew; entries keep a snapshot */
+let crewNames=[];
+const crewById=id=>crewNames.find(c=>c.id===id);
+const activeCrew=()=>crewNames.filter(c=>c.active!==false);
+const splitNames=t=>String(t||'').split(/[,،\n;]+/).map(x=>x.trim()).filter(Boolean);
+function crewOf(e){const snap=e.crewNames||[];const L=(e.crew||[]).map((id,i)=>crewById(id)?.name||snap[i]||id);return L.concat(splitNames(e.crewOther))}
+/* kind of work for mass-mode entries: മാസ് വർക്ക് and/or സ്പെഷ്യൽ വർക്ക് (old mass entries = മാസ് വർക്ക്) */
+const KIND={mass:['💪','മാസ് വർക്ക്','Mass work'],special:['⭐','സ്പെഷ്യൽ വർക്ക്','Special work']};
+const kindsOf=e=>e&&e.mass?(Array.isArray(e.massKind)&&e.massKind.length?e.massKind.filter(k=>KIND[k]):['mass']):[];
+const kindText=(e,en,icons=true)=>kindsOf(e).map(k=>(icons?KIND[k][0]+' ':'')+(en?KIND[k][2]:KIND[k][1])).join(' + ');
+const kindBadge=e=>e.mass?kindsOf(e).map(k=>`<span class="badge mwb${k==='special'?' spb':''}">${KIND[k][0]} ${KIND[k][1]}</span>`).join(' ')+' ':'';
+const massPlaceOf=e=>e.mass?(e.massPlace||(!e.placeId?e.placeName:'')||''):'';
+const massWardOf=e=>e.mass?(e.massWard||(!e.placeId?e.ward:'')||''):'';
+const massAreaOf=e=>e.mass?(e.massArea||(!e.placeId?e.area:'')||''):'';
+const massLocText=(e,sep=' · ')=>[massPlaceOf(e),massWardOf(e)?'വാർഡ് (Ward): '+massWardOf(e):'',massAreaOf(e)?'ഏരിയ (Area): '+massAreaOf(e):''].filter(Boolean).join(sep);
+/* every active common work type (+ removed/unknown ones used by this entry) with done state */
+function massItems(e){const mw=e.massWorks||[];const known=new Set(massTypes.map(t=>t.id));
+  const L=massTypes.filter(t=>t.active!==false||mw.includes(t.id)).map(t=>({on:mw.includes(t.id),label:(t.icon?t.icon+' ':'')+t.ml,removed:t.active===false}));
+  mw.filter(id=>!known.has(id)).forEach(id=>L.push({on:true,label:(e.massLabels||[])[mw.indexOf(id)]||id,removed:true}));return L}
 const RATE={good:['👍 നല്ലത്','Good','r-good',100],ok:['👌 തൃപ്തികരം','Satisfactory','r-ok',70],bad:['⚠️ മെച്ചപ്പെടണം','Needs improvement','r-bad',40]};
 const BUILTIN_TYPES=[['main_road','🛣️','മെയിൻ റോഡ്','Main road'],['byroad','🛤️','ഇടറോഡ്','By-road'],['lane','🚶','ഇടവഴി','Lane / footpath'],['busstop','🚏','ബസ് സ്റ്റോപ്പ്','Bus stop'],
   ['office_road','🏢','ഓഫീസുകൾക്ക് മുന്നിലെ റോഡ്','Road in front of offices'],['shop_road','🏪','കടകൾക്ക് മുന്നിലെ റോഡ്','Road in front of shops'],['house_road','🏘️','വീടുകൾക്ക് മുന്നിലെ റോഡ്','Road in front of houses'],
@@ -37,7 +56,7 @@ const ROLES={admin:'👑 അഡ്മിൻ (Admin)',supervisor:'🧑‍💼 സ
 function toast(m,ms=2600){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms)}
 function ask(msg,o={}){return new Promise(res=>{$('#mMsg').textContent=msg;const y=$('#mYes');y.textContent=o.yes||'ശരി';y.classList.toggle('delred',!!o.danger);$('#modal').classList.add('show');const d=v=>{$('#modal').classList.remove('show');y.textContent='ശരി';y.classList.remove('delred');res(v)};y.onclick=()=>d(true);$('#mNo').onclick=()=>d(false)})}
 const scoreColor=s=>s==null?'#94a3b8':s>=85?'#15803d':s>=65?'#b45309':'#b91c1c';
-const worksText=(e,en)=>{const r=(e.works||[]).map(w=>w==='other'&&e.workOther?e.workOther:(WMAP[w]?(en?WMAP[w][2]:WMAP[w][1]):w));return e.mass?`💪 ${en?'Mass work':'മാസ് വർക്ക്'}: `+massLabels(e,en,false).concat(r).join(', '):r.join(', ')};
+const worksText=(e,en)=>{const r=(e.works||[]).map(w=>w==='other'&&e.workOther?e.workOther:(WMAP[w]?(en?WMAP[w][2]:WMAP[w][1]):w));return e.mass?`${kindText(e,en)}: `+massLabels(e,en,false).concat(r).join(', '):r.join(', ')};
 
 function show(v){if(v==='v-set')setTimeout(renderVer,0);$$('.view').forEach(e=>e.classList.toggle('active',e.id===v));$$('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));window.scrollTo(0,0);
   if(v==='v-new'&&!editing)setTimeout(()=>{},0);if(v==='v-report'&&!$('#reportOut').innerHTML)makeReport();if(v==='v-dash'&&meDoc)renderDash()}
@@ -97,10 +116,11 @@ function startApp(){unsubs.splice(1).forEach(u=>u());entryUnsub&&entryUnsub();en
   const r=role();
   if(r==='none'||r==='pending'||r==='disabled'){$('#tabs').style.display='none';$('#pendingMail').textContent=me.email+' · '+(ROLES[r]||'');show('v-pending');return}
   $('#tabs').style.display='flex';$('#tabNew').style.display=can.work()?'flex':'none';
-  $('#placesCard').style.display=can.sup()?'block':'none';$('#mwCard').style.display=can.sup()?'block':'none';$('#tabFb').style.display=can.staff()?'flex':'none';$('#qrCard').style.display=can.staff()?'block':'none';$('#usersCard').style.display=can.admin()?'block':'none';$('#jdCard').style.display=can.admin()?'block':'none';
+  $('#placesCard').style.display=can.sup()?'block':'none';$('#mwCard').style.display=can.sup()?'block':'none';$('#crCard').style.display=can.sup()?'block':'none';$('#tabFb').style.display=can.staff()?'flex':'none';$('#qrCard').style.display=can.staff()?'block':'none';$('#usersCard').style.display=can.admin()?'block':'none';$('#jdCard').style.display=can.admin()?'block':'none';
   $('#sName').value=meDoc.name||'';$('#sPhone').value=meDoc.phone||'';if(document.activeElement!==$('#sDesig'))$('#sDesig').value=meDoc.desig||'';$('#meInfo').textContent=`${me.email} · ${ROLES[r]}`;
   $('#phMode').textContent=OPT.storageEnabled?'☁️ ഫോട്ടോകൾ Firebase Storage-ൽ സൂക്ഷിക്കുന്നു (Photos stored in Cloud Storage)':'💾 ഫോട്ടോകൾ ചുരുക്കി (~200KB) ഡാറ്റാബേസിൽ സൂക്ഷിക്കുന്നു (Free-plan mode: compressed photos in Firestore)';
   $('#aboutTxt').innerHTML=`ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം (Bhadram Ee Bhoomi – Daily Cleaning) · പതിപ്പ് (version) team-3 · Firebase: ${esc(cfg.projectId)}${EMU?' (emulator)':''} · Photos: ${OPT.storageEnabled?'Storage':'Firestore (free plan)'}`;
+  unsubs.push(onSnapshot(doc(db,'meta','crew'),s=>{const n=s.data()?.names;crewNames=Array.isArray(n)?n.filter(x=>x&&x.id&&x.name):[];renderCrewChips();renderCrewManager()},e=>console.warn('crew',e.code)));
   unsubs.push(onSnapshot(doc(db,'meta','massWorks'),s=>{const t=s.data()?.types;massTypes=Array.isArray(t)&&t.length?t.filter(x=>x&&x.id&&x.ml):MASS_DEFAULT.slice();renderMassChips();renderMassManager()},e=>console.warn('massWorks',e.code)));
   unsubs.push(onSnapshot(doc(db,'meta','placeTypes'),s=>{customTypes=(s.data()?.types||[]).filter(t=>t&&t.id&&t.ml);renderPlaces();fillFilters();if($('#v-dash').classList.contains('active'))renderDash()},e=>console.error('types',e)));
   unsubs.push(onSnapshot(collection(db,'places'),s=>{places=s.docs.map(d=>({id:d.id,...d.data()})).sort(placeSort);renderPlaces();if(can.staff())fillSquadPlaces()},e=>console.error(e)));
@@ -148,7 +168,7 @@ function renderDash(){fillFilters();const list=filtered('d');const st=stats(list
   if(!$('#dStats .dash-more').textContent.trim())$('#dStats .dash-more').remove();
   if(!list.length){$('#dList').innerHTML=emptyHTML('inbox','ഈ കാലയളവിൽ ജോലികൾ ഇല്ല','No entries for this period');return}
   let h='',last='';for(const e of list){if(e.date!==last){h+=`<div class="dayhead">${ico('cal','sm')} ${fmtDate(e.date)}</div>`;last=e.date}const r=RATE[e.lastRating];
-    h+=`<div class="card entry" data-id="${e.id}">${e.thumb?`<img class="thumb" src="${e.thumb}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.placeName)} <span class="en">${esc(e.time||'')}</span></div><div>${e.mass?'<span class="badge mwb">💪 മാസ് വർക്ക്</span> ':''}${typeBadge(placeTypeOf(e),e)}</div><div class="s">👷 ${esc(e.workerName)} · ${esc(e.ward||'')}</div><div class="s">${esc(worksText(e))}</div><div>${e.photoCount?`<span class="badge">📷 ${e.photoCount}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:'<span class="badge">💬 അഭിപ്രായം ബാക്കി</span>'}${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">${e.score}</span>`:''}${e._pending?'<span class="badge r-ok">⏫ സിങ്ക് ബാക്കി</span>':''}</div></div><button class="epdf" data-epdf="${e.id}" aria-label="PDF – അയയ്ക്കുക / സേവ് / പ്രിൻ്റ് (Share / Save / Print)" aria-haspopup="menu" title="PDF – അയയ്ക്കുക / സേവ് / പ്രിൻ്റ്">${ico('share')}<span>PDF</span></button></div>`}
+    h+=`<div class="card entry" data-id="${e.id}">${e.thumb?`<img class="thumb" src="${e.thumb}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.placeName)} <span class="en">${esc(e.time||'')}</span></div><div>${kindBadge(e)}${typeBadge(placeTypeOf(e),e)}</div><div class="s">👷 ${esc(e.workerName)} · ${esc(e.ward||'')}</div>${crewOf(e).length?`<div class="s crs">👥 ${esc(crewOf(e).join(', '))}</div>`:''}<div class="s">${esc(worksText(e))}</div><div>${e.photoCount?`<span class="badge">📷 ${e.photoCount}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:'<span class="badge">💬 അഭിപ്രായം ബാക്കി</span>'}${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">${e.score}</span>`:''}${e._pending?'<span class="badge r-ok">⏫ സിങ്ക് ബാക്കി</span>':''}</div></div><button class="epdf" data-epdf="${e.id}" aria-label="PDF – അയയ്ക്കുക / സേവ് / പ്രിൻ്റ് (Share / Save / Print)" aria-haspopup="menu" title="PDF – അയയ്ക്കുക / സേവ് / പ്രിൻ്റ്">${ico('share')}<span>PDF</span></button></div>`}
   $('#dList').innerHTML=h;$$('#dList .entry').forEach(el=>el.onclick=()=>openDetail(el.dataset.id));$$('#dList [data-epdf]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();entryPdfMenu(b.dataset.epdf,b)})}
 
 /* ---------- places & users (admin) ---------- */
@@ -228,6 +248,46 @@ $('#mwAdd').onclick=()=>{const ml=$('#mwMl').value.trim(),en=$('#mwEn').value.tr
   if(massTypes.some(t=>t.ml===ml&&t.id!==editingMass?.id))return toast('⚠️ ഈ ജോലി ലിസ്റ്റിൽ ഉണ്ട് (Already in the list)');
   if(editingMass){const id=editingMass.id;saveMass(massTypes.map(x=>x.id===id?{...x,ml,en,icon}:x),'✅ മാറ്റം സേവ് ചെയ്തു (Saved)')}
   else saveMass([...massTypes,{id:'mw_'+Date.now().toString(36),icon:icon||'🧹',ml,en,active:true}],'✅ ചേർത്തു (Added)');resetMassForm()};
+/* workers' names manager (Settings) – admin/supervisor */
+let editingCrew=null;
+function saveCrew(next,msg){setDoc(doc(db,'meta','crew'),{names:next.map(c=>({id:c.id,name:c.name,active:c.active!==false})),updatedBy:me.uid,updatedAt:serverTimestamp()}).catch(e=>toast('⚠️ '+(e.code||e.message)));if(msg)toast(msg)}
+function resetCrewForm(){editingCrew=null;$('#crName').value='';$('#crAdd').innerHTML=ico('plus')+'പേര് ചേർക്കുക <span class="en">(Add name)</span>';$('#crCancel').style.display='none';$('#crEditHint').style.display='none'}
+function renderCrewManager(){if(!$('#crList')||!can.sup())return;const act=activeCrew(),off=crewNames.filter(c=>c.active===false);
+  const row=(c,i,n,on)=>`<div class="plrow${on?'':' off'}">${on?`<span class="plno">${i+1}</span>`:''}<div class="plnm"><b>${esc(c.name)}</b></div><div class="plbtns">${on?`<button class="btn out sm iconbtn" data-cup="${esc(c.id)}" aria-label="move up"${i===0?' disabled':''}>${ico('up')}</button><button class="btn out sm iconbtn" data-cdn="${esc(c.id)}" aria-label="move down"${i===n-1?' disabled':''}>${ico('down')}</button><button class="btn sec sm iconbtn" data-cedit="${esc(c.id)}" aria-label="rename">${ico('edit')}</button><button class="btn out sm iconbtn warnb" data-coff="${esc(c.id)}" aria-label="remove">${ico('pause')}</button>`:`<button class="btn sec sm" data-con="${esc(c.id)}">${ico('undo','sm')}തിരികെ <span class="en">(Restore)</span></button>`}</div></div>`;
+  $('#crList').innerHTML=act.map((c,i)=>row(c,i,act.length,true)).join('')||'<p class="hint">ഇല്ല – മുകളിൽ ചേർക്കുക (none – add above)</p>';$('#crOffList').innerHTML=off.map(c=>row(c,0,0,false)).join('');
+  $('#crCount').textContent=act.length;$('#crOffCount').textContent=off.length;$('#crOffWrap').style.display=off.length?'block':'none';
+  const mv=(id,d)=>{const a=activeCrew(),i=a.findIndex(c=>c.id===id),j=i+d;if(i<0||j<0||j>=a.length)return;const next=crewNames.slice(),x=next.indexOf(a[i]),y=next.indexOf(a[j]);[next[x],next[y]]=[next[y],next[x]];saveCrew(next)};
+  $$('#crList [data-cup]').forEach(b=>b.onclick=()=>mv(b.dataset.cup,-1));$$('#crList [data-cdn]').forEach(b=>b.onclick=()=>mv(b.dataset.cdn,1));
+  $$('#crList [data-cedit]').forEach(b=>b.onclick=()=>{const c=crewById(b.dataset.cedit);editingCrew=c;$('#crName').value=c.name;
+    $('#crAdd').innerHTML=ico('save')+'മാറ്റം സേവ് <span class="en">(Save)</span>';$('#crCancel').style.display='flex';$('#crEditName').textContent=c.name;$('#crEditHint').style.display='block';$('#crName').scrollIntoView({block:'center'})});
+  $$('#crList [data-coff]').forEach(b=>b.onclick=async()=>{const c=crewById(b.dataset.coff);if(!await ask(`"${c.name}" ലിസ്റ്റിൽ നിന്ന് ഒഴിവാക്കണോ? (Remove from list?)\nപുതിയ എൻട്രികൾക്ക് കാണിക്കില്ല. പഴയ എൻട്രികളിലും റിപ്പോർട്ടുകളിലും പേര് നിലനിൽക്കും; പിന്നീട് തിരികെ ചേർക്കാം. (Hidden for new entries; old entries keep the name; can be restored.)`))return;
+    if(editingCrew?.id===c.id)resetCrewForm();saveCrew(crewNames.map(x=>x.id===c.id?{...x,active:false}:x),'⏸ ഒഴിവാക്കി (Removed) – '+c.name)});
+  $$('#crOffList [data-con]').forEach(b=>b.onclick=()=>{const c=crewById(b.dataset.con);saveCrew(crewNames.map(x=>x.id===c.id?{...x,active:true}:x),'✅ തിരികെ ചേർത്തു (Restored) – '+c.name)})}
+$('#crCancel').onclick=resetCrewForm;
+$('#crAdd').onclick=()=>{const name=$('#crName').value.trim().replace(/\s+/g,' ').slice(0,80);if(!name)return toast('⚠️ തൊഴിലാളിയുടെ പേര് നൽകുക (Type a name)');
+  if(crewNames.some(c=>c.name.toLowerCase()===name.toLowerCase()&&c.id!==editingCrew?.id))return toast('⚠️ ഈ പേര് ലിസ്റ്റിൽ ഉണ്ട് (Already in the list)');
+  if(crewNames.length>=300&&!editingCrew)return toast('⚠️ പരമാവധി 300 പേര് (Max 300 names)');
+  if(editingCrew){const id=editingCrew.id;saveCrew(crewNames.map(x=>x.id===id?{...x,name}:x),'✅ മാറ്റം സേവ് ചെയ്തു (Saved)')}
+  else saveCrew([...crewNames,{id:'w_'+Date.now().toString(36),name,active:true}],'✅ ചേർത്തു (Added) – '+name);resetCrewForm()};
+$('#crName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#crAdd').click()}});
+/* entry form: tick boxes of names + others; count auto-fills from the names (stays editable) */
+function crewCount(){return $$('#fCrew input:checked').length+splitNames($('#fCrewOther').value).length}
+function syncCrewCount(){const n=crewCount(),w=$('#fWorkers');if(w.dataset.manual!=='1')w.value=n?n:'';$('#fCrewN').textContent=n?`✓ ${n} പേര് (names)`:''}
+function renderCrewChips(){const box=$('#fCrew');if(!box)return;const cur=new Set($$('#fCrew input:checked').map(i=>i.value));const keep=new Set(editing?.crew||[]);
+  const list=crewNames.filter(c=>c.active!==false||keep.has(c.id)||cur.has(c.id));
+  box.innerHTML=list.map(c=>`<label class="mwc crc${cur.has(c.id)?' on':''}"><input type="checkbox" value="${esc(c.id)}"${cur.has(c.id)?' checked':''}><span class="mwbx"></span><span class="mwt">${esc(c.name)}${c.active===false?' <span class="en">(ഒഴിവാക്കി · removed)</span>':''}</span></label>`).join('');
+  // names removed from the list entirely but on the entry being edited
+  if(editing)(editing.crew||[]).forEach((id,i)=>{if(!crewById(id)){box.insertAdjacentHTML('beforeend',`<label class="mwc crc${cur.has(id)?' on':''}"><input type="checkbox" value="${esc(id)}"${cur.has(id)?' checked':''}><span class="mwbx"></span><span class="mwt">${esc((editing.crewNames||[])[i]||id)}</span></label>`)}});
+  $('#fCrewEmpty').style.display=list.length?'none':'block';syncCrewCount()}
+$('#fCrew').addEventListener('change',e=>{const l=e.target.closest('.mwc');if(l)l.classList.toggle('on',e.target.checked);syncCrewCount()});
+$('#fCrewOther').addEventListener('input',syncCrewCount);
+$('#fWorkers').addEventListener('input',()=>{$('#fWorkers').dataset.manual=$('#fWorkers').value===''?'':'1'});
+function crewReportHTML(list,monthly){const m=new Map();list.forEach(e=>crewOf(e).forEach(n=>{const k=n.toLowerCase();const o=m.get(k)||{n,days:new Set(),es:0,pl:new Set()};o.days.add(e.date);o.es++;o.pl.add(e.placeName);m.set(k,o)}));
+  if(!m.size)return '';const order=new Map(crewNames.map((c,i)=>[c.name.toLowerCase(),i]));
+  const rows=[...m.entries()].sort((a,b)=>(order.get(a[0])??1e9)-(order.get(b[0])??1e9)||a[1].n.localeCompare(b[1].n)).map(x=>x[1]);
+  return `<div class="rp-sub" style="font-size:15px">👥 തൊഴിലാളികളുടെ പേരുകൾ <span class="en">(Workers' names)</span>: ${rows.length}</div><table class="rp-tbl crtbl"><tr><th>#</th><th>പേര് (Name)</th>${monthly?'<th>ദിവസം (Days)</th>':''}<th>ജോലി (Entries)</th><th>സ്ഥലം (Places)</th></tr>${rows.map((o,i)=>`<tr><td>${i+1}</td><td>${esc(o.n)}</td>${monthly?`<td><b>${o.days.size}</b></td>`:''}<td>${o.es}</td><td>${esc([...o.pl].join(', '))}</td></tr>`).join('')}</table>`}
+function crewShare(list,monthly){const m=new Map();list.forEach(e=>crewOf(e).forEach(n=>{const k=n.toLowerCase();const o=m.get(k)||{n,days:new Set()};o.days.add(e.date);m.set(k,o)}));
+  return m.size?`👥 തൊഴിലാളികൾ (Workers): ${m.size}\n`+[...m.values()].map(o=>`   • ${o.n}${monthly?` – ${o.days.size} ദിവസം`:''}`).join('\n'):''}
 function typeDashHTML(list){const m={};list.forEach(e=>{const k=placeTypeOf(e);(m[k]=m[k]||[]).push(e)});const ks=Object.keys(m);if(ks.length<1)return '';
   return `<div class="rp-sub">${ico('tag','sm')}തരം തിരിച്ച് <span class="en">(By type)</span></div>`+ks.map(k=>{const t=typeInfo(k),s=stats(m[k]).avg;return `<div class="wardrow"><div>${t.icon} ${esc(t.ml)} <span class="en">(${m[k].length})</span></div><div class="bar"><i style="width:${s??0}%;background:${scoreColor(s)}"></i></div><b style="color:${scoreColor(s)}">${s??'–'}</b></div>`}).join('')}
 function typeReportHTML(list,fbList){const m={};const add=k=>m[k]=m[k]||{n:0,places:new Set(),fb:0,fbSum:0,score:[]};
@@ -273,7 +333,8 @@ function renderGPS(){$('#gpsTxt').innerHTML=gps?`✅ ${gps.lat.toFixed(6)}, ${gp
 $('#gpsBtn').onclick=()=>{if(!navigator.geolocation)return toast('⚠️ GPS ലഭ്യമല്ല');$('#gpsTxt').textContent='⏳ ലൊക്കേഷൻ എടുക്കുന്നു...';
   navigator.geolocation.getCurrentPosition(p=>{gps={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};renderGPS()},e=>{$('#gpsTxt').textContent='⚠️ ലൊക്കേഷൻ കിട്ടിയില്ല ('+e.message+')'},{enableHighAccuracy:true,timeout:20000})};
 $('#gpsClr').onclick=()=>{gps=null;renderGPS()};
-function syncMassForm(){const m=$('#fMass');if(!m)return;const on=m.checked,sel=$('#fPlace');let o=sel.querySelector('option[value="__oneoff"]');
+const massOn=()=>$('#fMass').checked||$('#fSpecial').checked;
+function syncMassForm(){const m=$('#fMass');if(!m)return;const on=massOn();$$('#fKind .mwc').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const sel=$('#fPlace');let o=sel.querySelector('option[value="__oneoff"]');
   if(on&&!o)sel.insertAdjacentHTML('beforeend','<option value="__oneoff">✍️ പട്ടികയിൽ ഇല്ലാത്ത സ്ഥലം എഴുതുക (Type a one-off place)</option>');
   if(!on&&o){if(sel.value==='__oneoff')sel.value='';o.remove()}
   $('#fMassWrap').style.display=on?'block':'none';$('#fRegWrap').style.display=on?'none':'block';$('#fOneOffWrap').style.display=on&&sel.value==='__oneoff'?'flex':'none';
@@ -282,26 +343,27 @@ function renderMassChips(){const box=$('#fMassWork');if(!box)return;const cur=ne
   const list=massTypes.filter(t=>t.active!==false||keep.has(t.id)||cur.has(t.id));
   box.innerHTML=list.map(t=>`<label class="mwc${cur.has(t.id)?' on':''}"><input type="checkbox" value="${esc(t.id)}"${cur.has(t.id)?' checked':''}><span class="mwbx"></span><span class="mwt">${t.icon?esc(t.icon)+' ':''}${esc(t.ml)}${t.en?`<span class="en">${esc(t.en)}</span>`:''}</span></label>`).join('')}
 $('#fMassWork').addEventListener('change',e=>{const l=e.target.closest('.mwc');if(l)l.classList.toggle('on',e.target.checked)});
-$('#fMass').addEventListener('change',()=>{syncMassForm();renderMassChips()});
+['#fMass','#fSpecial'].forEach(s=>$(s).addEventListener('change',()=>{syncMassForm();renderMassChips()}));
 $('#fPlace').addEventListener('change',syncMassForm);
 function resetForm(){editing=null;curPhotos=[];gps=null;$('#fDate').value=today();$('#fTime').value=nowTime();{const ap=activePlaces();$('#fPlace').value=ap.length===1?ap[0].id:''}
   $$('#fWork input').forEach(i=>{i.checked=false;i.closest('.chip').classList.remove('on')});$('#fWorkOther').value='';$('#fWorkOther').style.display='none';
-  ['#fWorkers','#fWaste','#fNotes','#fMassOther','#fOneName','#fOneWard'].forEach(s=>$(s).value='');$('#fMass').checked=false;$$('#fMassWork input').forEach(i=>i.checked=false);renderMassChips();syncMassForm();$('#fWasteUnit').selectedIndex=0;renderFormPhotos();renderGPS();
+  ['#fWorkers','#fWaste','#fNotes','#fMassOther','#fMassPlace','#fMassWard','#fMassArea','#fCrewOther'].forEach(s=>$(s).value='');$('#fWorkers').dataset.manual='';$$('#fCrew input').forEach(i=>i.checked=false);renderCrewChips();$('#fMass').checked=false;$('#fSpecial').checked=false;$$('#fMassWork input').forEach(i=>i.checked=false);renderMassChips();syncMassForm();$('#fWasteUnit').selectedIndex=0;renderFormPhotos();renderGPS();
   $('#formTitle').innerHTML='📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span>';$('#cancelEdit').style.display='none'}
 $('#cancelEdit').onclick=()=>{resetForm();show('v-dash')};
 async function editEntry(e){resetForm();editing=e;if(e.placeId&&!isActivePlace(places.find(p=>p.id===e.placeId)))renderPlaces();$('#fDate').value=e.date;$('#fTime').value=e.time||'';$('#fPlace').value=e.placeId||'';
   $$('#fWork input').forEach(i=>{i.checked=(e.works||[]).includes(i.value);i.closest('.chip').classList.toggle('on',i.checked)});$('#fWorkOther').value=e.workOther||'';$('#fWorkOther').style.display=(e.works||[]).includes('other')?'block':'none';
   $('#fWorkers').value=e.workers??'';$('#fWaste').value=e.waste??'';if(e.wasteUnit)$('#fWasteUnit').value=e.wasteUnit;$('#fNotes').value=e.notes||'';gps=e.gps||null;renderGPS();
   const ps=await getDocs(collection(db,'entries',e.id,'photos'));curPhotos=ps.docs.map(d=>({id:d.id,...d.data(),isNew:false,src:d.data().url||d.data().data}));renderFormPhotos();
-  $('#fMass').checked=!!e.mass;renderMassChips();$$('#fMassWork input').forEach(i=>{i.checked=(e.massWorks||[]).includes(i.value);i.closest('.mwc').classList.toggle('on',i.checked)});$('#fMassOther').value=e.massOther||'';syncMassForm();
-  if(e.mass&&!e.placeId){$('#fPlace').value='__oneoff';$('#fOneName').value=e.placeName||'';$('#fOneWard').value=e.ward||'';syncMassForm()}
+  renderCrewChips();$$('#fCrew input').forEach(i=>{i.checked=(e.crew||[]).includes(i.value);i.closest('.mwc').classList.toggle('on',i.checked)});$('#fCrewOther').value=e.crewOther||'';{const n=crewCount();$('#fWorkers').dataset.manual=(e.workers??null)!==(n||null)&&e.workers!=null?'1':'';$('#fWorkers').value=e.workers??'';$('#fCrewN').textContent=n?`✓ ${n} പേര് (names)`:''}
+  {const ks=kindsOf(e);$('#fMass').checked=ks.includes('mass');$('#fSpecial').checked=ks.includes('special')}$('#fMassPlace').value=massPlaceOf(e);$('#fMassWard').value=massWardOf(e);$('#fMassArea').value=massAreaOf(e);renderMassChips();$$('#fMassWork input').forEach(i=>{i.checked=(e.massWorks||[]).includes(i.value);i.closest('.mwc').classList.toggle('on',i.checked)});$('#fMassOther').value=e.massOther||'';syncMassForm();
+  if(e.mass&&!e.placeId){$('#fPlace').value='__oneoff';syncMassForm()}
   $('#formTitle').innerHTML='✏️ തിരുത്തുന്നു <span class="en">(Editing entry)</span>';$('#cancelEdit').style.display='inline-flex';show('v-new')}
-$('#saveBtn').onclick=async()=>{const mass=$('#fMass').checked,oneOff=mass&&$('#fPlace').value==='__oneoff';const works=mass?[]:$$('#fWork input:checked').map(i=>i.value);
-  const pl=oneOff?{id:'',name:$('#fOneName').value.trim(),area:'',ward:$('#fOneWard').value.trim(),type:'other',typeOther:''}:places.find(p=>p.id===$('#fPlace').value);
-  if(oneOff&&!pl.name)return toast('⚠️ സ്ഥലത്തിൻ്റെ പേര് എഴുതുക (Type the place name)');
+$('#saveBtn').onclick=async()=>{const mass=massOn(),mKind=mass?['mass','special'].filter(k=>$(k==='mass'?'#fMass':'#fSpecial').checked):[],mPlace=mass?$('#fMassPlace').value.trim().slice(0,160):'',mWard=mass?$('#fMassWard').value.trim().slice(0,80):'',mArea=mass?$('#fMassArea').value.trim().slice(0,80):'',oneOff=mass&&$('#fPlace').value==='__oneoff';const works=mass?[]:$$('#fWork input:checked').map(i=>i.value);
+  const pl=oneOff?{id:'',name:mPlace,area:mArea,ward:mWard,type:'other',typeOther:''}:places.find(p=>p.id===$('#fPlace').value);
+  if(oneOff&&!pl.name){$('#fMassPlace').focus();return toast('⚠️ ചെയ്ത സ്ഥലം എഴുതുക (Type the place where the work was done)')}
   if(!pl)return toast('⚠️ സ്ഥലം തിരഞ്ഞെടുക്കുക (Select a place)');
-  const mIds=mass?$$('#fMassWork input:checked').map(i=>i.value):[],mOther=mass?$('#fMassOther').value.trim():'';
-  if(mass){if(!mIds.length&&!mOther)return toast('⚠️ മാസ് വർക്കിൽ ചെയ്ത ജോലികൾ ടിക്ക് ചെയ്യുക (Tick the mass works done)')}
+  const cIds=$$('#fCrew input:checked').map(i=>i.value);const mIds=mass?$$('#fMassWork input:checked').map(i=>i.value):[],mOther=mass?$('#fMassOther').value.trim():'';
+  if(mass){if(!mIds.length&&!mOther)return toast('⚠️ ചെയ്ത ജോലികൾ ടിക്ക് ചെയ്യുക (Tick the works done)')}
   else if(!works.length&&!$('#fNotes').value.trim())return toast('⚠️ ചെയ്ത ജോലി തിരഞ്ഞെടുക്കുക (Select work done)');
   const btn=$('#saveBtn');btn.disabled=true;
   try{const ref=editing?doc(db,'entries',editing.id):doc(collection(db,'entries'));const live=curPhotos.filter(p=>!p.removed);
@@ -309,7 +371,7 @@ $('#saveBtn').onclick=async()=>{const mass=$('#fMass').checked,oneOff=mass&&$('#
     if(useStorage){toast('⏫ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുന്നു...');for(const p of newPh){try{const sr=S.ref(storage,`photos/${ref.id}/${p.id}.jpg`);await S.uploadBytes(sr,p.blob,{contentType:'image/jpeg'});p.url=await S.getDownloadURL(sr);p.path=sr.fullPath}catch(e){console.warn('storage upload failed, inline fallback',e)}}}
     const thumbP=live.find(p=>p.kind==='after')||live[0];let thumb=editing?.thumb||'';if(thumbP&&thumbP.thumb)thumb=thumbP.thumb;else if(!live.length)thumb='';
     else if(thumbP&&thumbP.id!==editing?.thumbId){try{thumb=(await toCanvasBlob(await loadImage(thumbP.src),240,0.6)).c.toDataURL('image/jpeg',0.6)}catch(e){}}
-    const data={date:$('#fDate').value||today(),time:$('#fTime').value,placeId:pl.id,placeName:pl.name,area:pl.area||'',ward:pl.ward||'',placeType:pl.type||'other',placeTypeOther:pl.typeOther||'',works,workOther:mass?'':$('#fWorkOther').value.trim(),mass,massWorks:mIds,massLabels:mIds.map(id=>massById(id)?.ml||id),massOther:mOther,oneOff,
+    const data={date:$('#fDate').value||today(),time:$('#fTime').value,placeId:pl.id,placeName:pl.name,area:pl.area||'',ward:pl.ward||'',placeType:pl.type||'other',placeTypeOther:pl.typeOther||'',works,workOther:mass?'':$('#fWorkOther').value.trim(),mass,massWorks:mIds,massLabels:mIds.map(id=>massById(id)?.ml||id),massOther:mOther,oneOff,massKind:mKind,massPlace:mPlace,massWard:mWard,massArea:mArea,crew:cIds,crewNames:cIds.map((id,i)=>crewById(id)?.name||(editing?.crewNames||[])[(editing?.crew||[]).indexOf(id)]||id),crewOther:$('#fCrewOther').value.trim().slice(0,500),
       workers:$('#fWorkers').value===''?null:+$('#fWorkers').value,waste:$('#fWaste').value===''?null:+$('#fWaste').value,wasteUnit:$('#fWasteUnit').value,notes:$('#fNotes').value.trim(),gps:gps||null,
       photoCount:live.length,hasBefore:live.some(p=>p.kind==='before'),hasAfter:live.some(p=>p.kind==='after'),thumb,thumbId:thumbP?.id||'',updatedAt:serverTimestamp()};
     const b=writeBatch(db);
@@ -329,10 +391,10 @@ function openDetail(id){detailId=id;detailUnsubs.forEach(u=>u());detPhotos=[];de
     onSnapshot(collection(db,'entries',id,'remarks'),s=>{detRemarks=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));renderDetail()},e=>console.error(e))];
   getDoc(doc(db,'entries',id)).then(s=>{if(s.exists()&&!entries.find(e=>e.id===id))entries.push({id,...s.data({serverTimestamps:'estimate'})});renderDetail()});
   $('#remarkForm').style.display=can.remark()?'block':'none';resetRemark();show('v-detail');setTimeout(()=>sig.size(),50)}
-function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🧹 ജോലി (Work)',e.mass?'':worksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
+function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🧹 ജോലി (Work)',e.mass?'':worksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Names)',crewOf(e).join(', ')],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
   const gpsRow=e.gps?`<tr><td>🛰️ GPS</td><td><a href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank" rel="noopener">${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}</a></td></tr>`:'';
   const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy" data-cap="${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}">`).join('')}</div>`:''};
-  return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.placeName)} ${e.mass?'<span class="badge mwb">💪 മാസ് വർക്ക്</span>':''} ${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:''}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${esc(x[1])}</td></tr>`).join('')}${gpsRow}</table>${e.mass?massBlockHTML(e):''}
+  return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.placeName)} ${kindBadge(e)} ${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:''}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${esc(x[1])}</td></tr>`).join('')}${gpsRow}</table>${e.mass?massBlockHTML(e):''}
     ${withPhotos?grid('before')+grid('after'):''}${remarks?remarksHTML(remarks):''}</div>`}
 function remarksHTML(rs){if(!rs.length)return '';return `<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div>`+rs.map(r=>{const t=RATE[r.rating];return `<div class="remark"><b>${esc(r.officerName)}</b>${r.desig?', '+esc(r.desig):''} ${t?`<span class="badge ${t[2]}">${t[0]} (${t[1]})</span>`:''}<div>${esc(r.text)}</div>${r.signature?`<img src="${r.signature}" alt="signature">`:''}<div class="hint">${r.createdAt?new Date(r.createdAt.seconds*1000).toLocaleString('en-IN'):''}</div></div>`}).join('')}
 function renderDetail(){const e=entries.find(x=>x.id===detailId);if(!e){$('#detOut').innerHTML=skelHTML(1);return}
@@ -397,8 +459,8 @@ function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class=
   const proof=e.hasBefore&&e.hasAfter?'✅ മുമ്പും ശേഷവും ഫോട്ടോ (Before+after)':e.hasBefore||e.hasAfter?'⚠️ ഭാഗിക ഫോട്ടോ (Partial photos)':'❌ ഫോട്ടോ ഇല്ല (No photos)';
   const ph=photos.slice().sort((x,z)=>(x.kind===z.kind?0:x.kind==='before'?-1:1)||x.ts-z.ts);
   return `<div class="dr-e"><div class="hd"><span>📍 ${esc(e.placeName)}${e.ward?' · '+esc(e.ward):''}</span><span>🕐 ${esc(e.time||'')}</span></div>
-  <div>${e.mass?'<span class="badge mwb">💪 മാസ് വർക്ക് (Mass work)</span> ':''}${typeBadge(placeTypeOf(e),e)} ${sc}</div>
-  <table class="rp-tbl" style="margin:6px 0"><tr><td style="width:34%">👷 തൊഴിലാളി (Worker)</td><td>${esc(e.workerName||'')}${e.workers?` · 👥 ${e.workers}`:''}</td></tr>
+  <div>${kindBadge(e)}${typeBadge(placeTypeOf(e),e)} ${sc}</div>
+  <table class="rp-tbl" style="margin:6px 0"><tr><td style="width:34%">👷 തൊഴിലാളി (Worker)</td><td>${esc(e.workerName||'')}${e.workers?` · 👥 ${e.workers}`:''}</td></tr>${crewOf(e).length?`<tr><td>👥 തൊഴിലാളികളുടെ പേരുകൾ (Names)</td><td>${esc(crewOf(e).join(', '))}</td></tr>`:''}
   <tr><td>🧹 ജോലി (Work done)</td><td>${e.mass?massBlockHTML(e,true):esc(worksText(e))}${e.waste!=null?` · 🗑️ ${e.waste} ${esc(e.wasteUnit||'')}`:''}</td></tr>
   <tr><td>📋 നില (Status)</td><td>${proof}${e.remarkCount?` · 💬 ${e.remarkCount}`:''}</td></tr>${e.notes?`<tr><td>📝 കുറിപ്പ് (Notes)</td><td>${esc(e.notes)}</td></tr>`:''}</table>
   ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
@@ -406,10 +468,14 @@ function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class=
 function dayFbHTML(list){if(!list.length)return '<p class="hint">ഈ ദിവസം സ്ഥലവാസികളുടെ അഭിപ്രായം ഇല്ല (No resident feedback this day)</p>';
   return list.map(f=>`<div class="dr-fb">${starsHTML(f.rating)} <b>${f.rating}/5</b> · <b>${esc(f.placeName||'')}</b>${f.ward?' · '+esc(f.ward):''} <span class="hint">${fbDate(f)?fbDate(f).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):''}${f.name?' · '+esc(f.name):''}</span>
     ${f.comment?`<div>💬 ${esc(f.comment)}</div>`:''}${f.suggestion?`<div>💡 <b>നിർദ്ദേശം (Suggestion):</b> ${esc(f.suggestion)}</div>`:''}${f.photo?`<img class="fbph" src="${f.photo}" alt="">`:''}</div>`).join('')}
-function massBlockHTML(e,compact){const L=massLabels(e);return `<div class="mwbox${compact?' c':''}">${compact?'':`<div class="mwh">💪 മാസ് വർക്ക് <span class="en">(Mass work)</span> – ${L.length} ജോലി</div>`}<div class="mwl">${L.map(l=>`<div class="mwi"><span class="pcb on">✓</span><span>${esc(l)}</span></div>`).join('')}</div></div>`}
+function massBlockHTML(e,compact){const ks=kindsOf(e),pl=massPlaceOf(e),it=massItems(e);const bx=on=>`<span class="pcb${on?' on':''}">${on?'✓':''}</span>`;
+  return `<div class="mwbox${compact?' c':''}"><div class="mwk">${Object.entries(KIND).map(([k,v])=>`<span class="mwki${ks.includes(k)?' on':''}">${bx(ks.includes(k))}${v[0]} <b>${v[1]}</b> <span class="en">(${v[2]})</span></span>`).join('')}</div>
+  ${pl||massWardOf(e)||massAreaOf(e)?`<div class="mwp">📍 ചെയ്ത സ്ഥലം <span class="en">(Place where done)</span>: <b>${esc(pl||'–')}</b>${massWardOf(e)?` · വാർഡ് <span class="en">(Ward)</span>: <b>${esc(massWardOf(e))}</b>`:''}${massAreaOf(e)?` · ഏരിയ <span class="en">(Area)</span>: <b>${esc(massAreaOf(e))}</b>`:''}</div>`:''}
+  <div class="mwh2">ചെയ്ത ജോലികൾ <span class="en">(Works – ✓ done: ${it.filter(x=>x.on).length+(e.massOther?1:0)})</span></div>
+  <div class="mwl">${it.map(x=>`<div class="mwi${x.on?' on':''}">${bx(x.on)}<span>${esc(x.label)}${x.removed?' <span class="en">(ഒഴിവാക്കി · removed)</span>':''}</span></div>`).join('')}<div class="mwi${e.massOther?' on':''}">${bx(!!e.massOther)}<span>➕ മറ്റുള്ളവ <span class="en">(Other)</span>${e.massOther?': <b>'+esc(e.massOther)+'</b>':''}</span></div></div></div>`}
 function massReportHTML(list,monthly){const m=list.filter(e=>e.mass);if(!m.length)return '';
-  return `<div class="rp-sub" style="font-size:15px">💪 മാസ് വർക്ക് <span class="en">(Mass cleaning work)</span>: ${m.length}</div>`+m.map(e=>`<div class="mwrep"><div class="mwrh"><b>📍 ${esc(e.placeName)}</b>${e.ward?` <span class="en">– ${esc(e.ward)}</span>`:''}${e.placeId?'':' <span class="badge">✍️ പ്രത്യേക സ്ഥലം (one-off)</span>'}<div class="en">${monthly?'📅 '+fmtDate(e.date)+' · ':''}🕐 ${esc(e.time||'')} · 👷 ${esc(e.workerName||'')}${e.workers?' · 👥 '+e.workers:''}</div></div>${massBlockHTML(e,true)}</div>`).join('')}
-const massShare=(list,monthly)=>{const m=list.filter(e=>e.mass);return m.length?`💪 മാസ് വർക്ക് (Mass work): ${m.length}\n`+m.map(e=>`📍 ${monthly?fmtDate(e.date)+' · ':''}${e.placeName}${e.ward?' – '+e.ward:''}\n${massLabels(e,false,false).map(x=>'   ✓ '+x).join('\n')}`).join('\n'):''};
+  const nk=k=>m.filter(e=>kindsOf(e).includes(k)).length;return `<div class="rp-sub" style="font-size:15px">💪 മാസ് / ⭐ സ്പെഷ്യൽ വർക്ക് <span class="en">(Mass / special work)</span>: ${m.length} <span class="en">(മാസ് ${nk('mass')} · സ്പെഷ്യൽ ${nk('special')})</span></div>`+m.map(e=>`<div class="mwrep"><div class="mwrh"><b>📍 ${esc(e.placeName)}</b>${e.ward?` <span class="en">– ${esc(e.ward)}</span>`:''}${e.placeId?'':' <span class="badge">✍️ പ്രത്യേക സ്ഥലം (one-off)</span>'} ${kindBadge(e)}<div class="en">${monthly?'📅 '+fmtDate(e.date)+' · ':''}🕐 ${esc(e.time||'')} · 👷 ${esc(e.workerName||'')}${e.workers?' · 👥 '+e.workers:''}${crewOf(e).length?' · '+esc(crewOf(e).join(', ')):''}</div></div>${massBlockHTML(e,true)}</div>`).join('')}
+const massShare=(list,monthly)=>{const m=list.filter(e=>e.mass);return m.length?`💪 മാസ് / ⭐ സ്പെഷ്യൽ വർക്ക് (Mass / special work): ${m.length}\n`+m.map(e=>{const ks=kindsOf(e),pl=massPlaceOf(e);return `📍 ${monthly?fmtDate(e.date)+' · ':''}${e.placeName}${e.ward?' – '+e.ward:''}\n   ${ks.includes('mass')?'☑':'☐'} മാസ് വർക്ക്  ${ks.includes('special')?'☑':'☐'} സ്പെഷ്യൽ വർക്ക്${massLocText(e)?`\n   📍 ചെയ്ത സ്ഥലം: ${massLocText(e)}`:''}\n${massLabels(e,false,false).map(x=>'   ✓ '+x).join('\n')}`}).join('\n'):''};
 /* places/roads checklist for reports: every place in scope with a ✓ box when it had work in the period */
 function reportPlaces(list,{a,w,rty,pl}){const keys=new Set(list.map(placeKey));
   return places.filter(p=>(!rty||placeTypeOf(p)===rty)&&(!a||p.area===a)&&(!w||p.ward===w)&&(!pl||p.id===pl)&&(isActivePlace(p)||keys.has(p.id)))}
@@ -436,6 +502,7 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
     <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>സ്ഥലവാസി അഭിപ്രായം<br>(Resident fb)</div></div>${can.staff()?`<div class="sq-line">🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ &amp; സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന <span class="en">(Inspections)</span>: <b>${sqList.length}</b>${sqList.length?` · ✅ ${sqList.filter(f=>f.overall==='good').length} · ⚠️ ${sqList.filter(f=>f.overall==='partial').length} · ❌ ${sqList.filter(f=>f.overall==='poor').length} · ${(sqList.reduce((n,f)=>n+f.rating,0)/sqList.length).toFixed(1)}★`:''}</div>`:''}
     👥 ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos} · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}%${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}</div>`;
   h+=placeChecklistHTML(pls,list,false,wk);
+  h+=crewReportHTML(list,false);
   h+=massReportHTML(list,false);
   h+=typeReportHTML(list,fbList);
   if(list.length){h+=`<div class="rp-sub" style="font-size:15px">🧹 ജോലി വിവരങ്ങൾ (Work entries)</div>`;const withPh=$('#rPhotos').checked;
@@ -448,8 +515,8 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
     `✅ സ്ഥലം പൂർത്തി (Places done): ${k?doneN:doneN+'/'+pls.length}`,`🧹 ജോലി (Entries): ${list.length}`,`⭐ സ്കോർ (Avg score): ${st.avg??'–'}`,`💬 അഭിപ്രായം (Remarks): ${rcount} · ബാക്കി (awaiting) ${st.awaiting}`,
     can.staff()?`🗣️ സ്ഥലവാസി അഭിപ്രായം (Resident feedback): ${fbList.length}${fbAvg!=null?' · ശരാശരി '+fbAvg.toFixed(1)+'★':''}`:'',
     can.staff()&&sqList.length?`🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ & സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന (Inspections): ${sqList.length} · ${sqList.map(f=>`${f.officialName} (${f.designation}) – ${(SQ_OVR[f.overall]||[''])[0]} ${f.rating}★`).join('; ')}`:'',
-    pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>`${placeDone(p,list).length?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}`).join('\n')}`:'',massShare(list,false)].filter(Boolean);
-  const E=list.map(e=>`• ${e.time||''} ${e.placeName} – ${e.workerName||''} – ${worksText(e)}${e.score!=null?' – സ്കോർ '+e.score:''}`);
+    pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>`${placeDone(p,list).length?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}`).join('\n')}`:'',crewShare(list,false),massShare(list,false)].filter(Boolean);
+  const E=list.map(e=>`• ${e.time||''} ${e.placeName} – ${e.workerName||''}${crewOf(e).length?' (👥 '+crewOf(e).join(', ')+')':''} – ${worksText(e)}${e.score!=null?' – സ്കോർ '+e.score:''}`);
   shareText=L.join('\n')+(E.length?'\n\n'+E.join('\n'):'')+'\n\n— ഭദ്രം ഈ ഭൂമി app'}
 async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value||today().slice(0,7);const [y,mo]=m.split('-').map(Number);const last=ymd(new Date(y,mo,0));
   $('#reportOut').innerHTML=skelHTML(3);shareText='';
@@ -464,7 +531,7 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   if(!list.length){const fb=can.staff()?typeReportHTML([],fbList)+fbReportHTML(fbList)+sqMonthHTML(sqList):'';$('#reportOut').innerHTML=h+placeChecklistHTML(pls,list,true,wk)+emptyHTML('inbox','ജോലി എൻട്രികൾ ഇല്ല','No work entries')+fb+CREDIT();return}
   h+=`<div class="rp-sum"><b>ആകെ (Summary):</b> ${list.length} ജോലി (entries) · ${st.days} ദിവസം (days) · ${st.places} സ്ഥലം (places) · ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos}${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}<br>
     <b>ശുചിത്വ സ്കോർ (Cleanliness score): <span style="color:${scoreColor(st.avg)}">${st.avg??'–'}/100</span></b> · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}% · അഭിപ്രായം ബാക്കി (awaiting remark) ${st.awaiting}</div>`;
-  h+=placeChecklistHTML(pls,list,true,wk)+massReportHTML(list,true);
+  h+=placeChecklistHTML(pls,list,true,wk)+crewReportHTML(list,true)+massReportHTML(list,true);
   const byW={};list.forEach(e=>{const key=e.ward||e.placeName;(byW[key]=byW[key]||[]).push(e)});
   h+=`<table class="rp-tbl"><tr><th>വാർഡ് (Ward)</th><th>ജോലി (Entries)</th><th>സ്കോർ (Score)</th></tr>${Object.entries(byW).map(([k2,v])=>`<tr><td>${esc(k2)}</td><td>${v.length}</td><td>${stats(v).avg??'–'}</td></tr>`).join('')}</table>`;
   h+=typeReportHTML(list,fbList);if(can.staff())h+=fbReportHTML(fbList)+sqMonthHTML(sqList);
@@ -472,7 +539,7 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   for(const e of list){const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);if(tok!==reportToken)return;
     h+=entryHTML(e,ps?ps.docs.map(d=>d.data()).sort((x,z)=>x.ts-z.ts):[],rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}
   h+=`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')} · ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)<br>ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ) · Developed by Rahul K T with Grok</p>`;$('#reportOut').innerHTML=h;
-  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ സ്ഥലവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'',pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>{const n=new Set(placeDone(p,list).map(e=>e.date)).size;return `${n?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}${n?` (${n} ദിവസം)`:''}`}).join('\n')}`:'',massShare(list,true),'— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
+  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ സ്ഥലവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'',pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>{const n=new Set(placeDone(p,list).map(e=>e.date)).size;return `${n?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}${n?` (${n} ദിവസം)`:''}`}).join('\n')}`:'',crewShare(list,true),massShare(list,true),'— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
 async function ensureShare(){if(!shareText||!$('#reportOut .rp-h'))await makeReport();return shareText||$('#reportOut').innerText.slice(0,1500)}
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(_){toast('⚠️ copy failed')}ta.remove()}}
 $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){try{await navigator.share({title:'ഭദ്രം ഈ ഭൂമി – റിപ്പോർട്ട്',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)};
@@ -503,25 +570,26 @@ const boxItem=(on,label,extra)=>`<div class="pci${on?' on':''}"><span class="pcb
 function entryWorkTypesHTML(e){const works=e.works||[],mw=e.massWorks||[];
   const reg=WORKS.filter(w=>w[0]!=='other').map(w=>boxItem(works.includes(w[0]),`${esc(w[1])} <span class="en">(${esc(w[2])})</span>`)).join('');
   const regOther=boxItem(works.includes('other')||!!e.workOther&&!e.mass,`➕ മറ്റുള്ളവ <span class="en">(Other)</span>${!e.mass&&e.workOther?`: <b>${esc(e.workOther)}</b>`:''}`);
-  const mts=massTypes.filter(t=>t.active!==false||mw.includes(t.id));const known=new Set(massTypes.map(t=>t.id));
-  const lost=mw.filter(id=>!known.has(id)).map(id=>({id,ml:(e.massLabels||[])[mw.indexOf(id)]||id,active:false}));
-  const mass=mts.concat(lost).map(t=>boxItem(mw.includes(t.id),`${t.icon?esc(t.icon)+' ':''}${esc(t.ml)}${t.active===false?' <span class="en">(ഒഴിവാക്കി · removed)</span>':''}`)).join('');
+  const ks=kindsOf(e),pl=massPlaceOf(e);
+  const mass=massItems(e).map(t=>boxItem(t.on,`${esc(t.label)}${t.removed?' <span class="en">(ഒഴിവാക്കി · removed)</span>':''}`)).join('');
   const massOther=boxItem(!!(e.mass&&e.massOther),`➕ മറ്റുള്ളവ <span class="en">(Other)</span>${e.mass&&e.massOther?`: <b>${esc(e.massOther)}</b>`:''}`);
   return `<div class="rp-sub" style="font-size:16px">🧹 തൊഴിൽ തരം <span class="en">(Type of work)</span></div>
   <div class="ewt-h">ദൈനംദിന ജോലികൾ <span class="en">(Regular works)</span></div><div class="pcl ewt">${reg}${regOther}</div>
-  <div class="pcl ewt one">${boxItem(!!e.mass,`💪 <b>മാസ് വർക്ക്</b> <span class="en">(Mass cleaning work)</span>${e.mass&&!e.placeId?` – ✍️ പ്രത്യേക സ്ഥലം <span class="en">(one-off place)</span>: <b>${esc(e.placeName)}</b>${e.ward?' – '+esc(e.ward):''}`:''}`)}</div>
-  <div class="ewt-h">💪 മാസ് വർക്ക് ജോലികൾ <span class="en">(Mass work types)</span></div><div class="pcl ewt">${mass}${massOther}</div>`}
+  <div class="ewt-h">ജോലിയുടെ തരം <span class="en">(Kind of work)</span></div><div class="pcl ewt">${boxItem(ks.includes('mass'),`💪 <b>മാസ് വർക്ക്</b> <span class="en">(Mass work)</span>`)}${boxItem(ks.includes('special'),`⭐ <b>സ്പെഷ്യൽ വർക്ക്</b> <span class="en">(Special work)</span>`)}</div>
+  <div class="pcl ewt one">${boxItem(!!pl,`📍 ചെയ്ത സ്ഥലം <span class="en">(Place where done)</span>: ${pl?`<b>${esc(pl)}</b>${e.mass&&!e.placeId?' <span class="en">(one-off)</span>':''}`:'<span class="sg-line"></span>'}`)}</div>
+  <div class="pcl ewt">${boxItem(!!massWardOf(e),`വാർഡ് <span class="en">(Ward)</span>: ${massWardOf(e)?`<b>${esc(massWardOf(e))}</b>`:'<span class="sg-line"></span>'}`)}${boxItem(!!massAreaOf(e),`ഏരിയ <span class="en">(Area)</span>: ${massAreaOf(e)?`<b>${esc(massAreaOf(e))}</b>`:'<span class="sg-line"></span>'}`)}</div>
+  <div class="ewt-h">💪 മാസ് / സ്പെഷ്യൽ വർക്ക് ജോലികൾ <span class="en">(Mass / special work types)</span></div><div class="pcl ewt">${mass}${massOther}</div>`}
 function entryPdfHTML(e,photos,remarks){
   const proof=e.hasBefore&&e.hasAfter?'✅ മുമ്പും ശേഷവും ഫോട്ടോ (Before+after)':e.hasBefore||e.hasAfter?'⚠️ ഭാഗിക ഫോട്ടോ (Partial photos)':'❌ ഫോട്ടോ ഇല്ല (No photos)';
   const t=typeInfo(placeTypeOf(e),e);
   const rows=[['📅 തീയതി (Date)',esc(fmtDate(e.date))],['🕐 സമയം (Time)',esc(e.time||'')],['📍 സ്ഥലം / വാർഡ് (Place / ward)',esc([e.placeName,e.ward,e.area].filter(Boolean).join(', '))+(e.mass&&!e.placeId?' <span class="en">(one-off)</span>':'')],
-    ['🏷️ സ്ഥല തരം (Place type)',esc(t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))],['👷 തൊഴിലാളി (Worker)',esc(e.workerName||'')],['👥 തൊഴിലാളികളുടെ എണ്ണം (Workers)',e.workers!=null?esc(e.workers):''],
+    ['🏷️ സ്ഥല തരം (Place type)',esc(t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))],['👷 തൊഴിലാളി (Worker)',esc(e.workerName||'')],['👥 തൊഴിലാളികളുടെ എണ്ണം (Workers)',e.workers!=null?esc(e.workers):''],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Workers\' names)',crewOf(e).length?crewOf(e).map((n,i)=>`${i+1}. ${esc(n)}`).join('<br>'):''],
     ['🗑️ മാലിന്യം (Waste)',e.waste!=null?esc(e.waste+' '+(e.wasteUnit||'')):''],['📋 നില (Status)',proof+(e.score!=null?` · സ്കോർ (Score) <b>${e.score}</b>`:'')],
     ['🛰️ ലൊക്കേഷൻ (Location)',e.gps?`${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}${e.gps.acc?` (±${Math.round(e.gps.acc)} m)`:''}<br><span class="en">maps.google.com/?q=${e.gps.lat.toFixed(5)},${e.gps.lng.toFixed(5)}</span>`:'<span class="en">– (GPS ഇല്ല / not recorded)</span>'],
     ['📝 കുറിപ്പ് (Remarks / notes)',esc(e.notes||'')]].filter(x=>x[1]!=='');
   const ph=photos.slice().sort((x,z)=>(x.kind===z.kind?0:x.kind==='before'?-1:1)||x.ts-z.ts);
   return REPORT_HEAD(`🧾 ജോലി റിപ്പോർട്ട് (Work entry) – ${fmtDate(e.date)}${e.time?' · '+esc(e.time):''}`)+`</div>
-  ${e.mass?'<div style="margin:6px 0"><span class="badge mwb">💪 മാസ് വർക്ക് (Mass work)</span></div>':''}
+  ${e.mass?`<div style="margin:6px 0">${kindBadge(e)}</div>`:''}
   <table class="rp-tbl" style="margin:8px 0"><tbody>${rows.map(r=>`<tr><td style="width:36%">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>
   ${entryWorkTypesHTML(e)}
   ${ph.length?`<div class="rp-sub" style="font-size:15px">📷 ഫോട്ടോകൾ (Photos): ${ph.length}</div><div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt=""><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
@@ -532,7 +600,7 @@ async function entryData(id){let e=entries.find(x=>x.id===id);if(!e){const d=awa
   const [ps,rs]=await Promise.all([getDocs(collection(db,'entries',id,'photos')),getDocs(collection(db,'entries',id,'remarks'))]);
   const photos=ps.docs.map(d=>d.data()),remarks=rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0));
   const dd=(e.date||'').split('-').reverse().join('/');
-  const meta={titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' (മാസ് വർക്ക്)':''}`,titleEn:`Work Entry Report – ${dd}${e.time?' '+e.time:''}${e.mass?' (Mass cleaning work)':''}`,id:`BEB-WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`};
+  const meta={titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' ('+kindText(e,false,false)+')':''}`,titleEn:`Work Entry Report – ${dd}${e.time?' '+e.time:''}${e.mass?' ('+kindText(e,true,false)+')':''}`,id:`BEB-WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`};
   return {e,html:entryPdfHTML(e,photos,remarks),meta,title:`Work entry ${dd} ${e.time||''}`,sig:JSON.stringify([e.updatedAt||e.createdAt||null,photos.length,remarks.length,remarks.map(r=>r.text||'').join('|').length])}}
 let entryPdfCache=null;
 async function buildEntryPdf(id){await Promise.all([loadScript('vendor/html2canvas.min.js'),loadScript('vendor/jspdf.umd.min.js')]);

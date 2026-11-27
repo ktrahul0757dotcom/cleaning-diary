@@ -153,20 +153,26 @@
     <div class="card step-card" data-step="1">
       <h2><span class="stepno">1</span>ജോലി വിവരം <span class="en">(Work details)</span></h2>
       <div class="row"><div><label class="f" style="margin-top:0">തീയതി <span class="en">(Date)</span></label><input type="date" id="fDate"></div><div><label class="f" style="margin-top:0">സമയം <span class="en">(Time)</span></label><input type="time" id="fTime"></div></div>
-      <label class="switch mwswitch" style="margin-top:14px"><input type="checkbox" id="fMass"><span class="tr"></span><span>💪 <b>മാസ് വർക്ക്</b> <span class="en">(Mass cleaning work)</span></span></label>
+      <div class="kindrow" id="fKind"><div class="kh">ജോലിയുടെ തരം <span class="en">(Kind of work – tick one or both; leave empty for daily work)</span></div><div class="kgrid2"><label class="mwc kc"><input type="checkbox" id="fMass"><span class="mwbx"></span><span class="mwt"><b>മാസ് വർക്ക്</b><span class="en">💪 Mass work</span></span></label><label class="mwc kc sp"><input type="checkbox" id="fSpecial"><span class="mwbx"></span><span class="mwt"><b>സ്പെഷ്യൽ വർക്ക്</b><span class="en">⭐ Special work</span></span></label></div></div>
       <label class="f">സ്ഥലം / വാർഡ് <span class="en">(Place / Ward)</span></label>
       <select id="fType" style="margin-bottom:8px"></select>
       <select id="fPlace"></select>
       <div class="hint" id="fPlaceHint"></div>
-      <div id="fOneOffWrap" class="mwone" style="display:none"><input type="text" id="fOneName" maxlength="120" placeholder="സ്ഥലത്തിൻ്റെ പേര് (Place name – e.g. KSRTC ബസ് സ്റ്റാൻഡ്)"><input type="text" id="fOneWard" maxlength="120" placeholder="വാർഡ് (Ward – optional)" list="wardList"></div>
+      <div id="fOneOffWrap" class="mwone" style="display:none"><span class="hint" style="flex:1 1 100%;margin:0">✍️ സ്ഥലത്തിൻ്റെ പേര്, വാർഡ്, ഏരിയ താഴെ "ചെയ്ത സ്ഥലം" ഭാഗത്ത് എഴുതുക <span class="en">(type the place, ward and area under "Place where done" below)</span></span></div>
       <div id="fRegWrap"><label class="f">ചെയ്ത ജോലി <span class="en">(Work done)</span></label>
       <div class="chips" id="fWork"></div>
       <input type="text" id="fWorkOther" placeholder="മറ്റുള്ളവ എഴുതുക (Other work)" style="margin-top:8px;display:none"></div>
-      <div id="fMassWrap" class="mwwrap" style="display:none"><label class="f">💪 മാസ് വർക്കിൽ ചെയ്ത ജോലികൾ <span class="en">(Mass works done – tick all that apply)</span></label>
+      <div id="fMassWrap" class="mwwrap" style="display:none"><label class="f">📍 ചെയ്ത സ്ഥലം <span class="en">(Place where done)</span></label><input type="text" id="fMassPlace" maxlength="160" placeholder="ഉദാ: KSRTC ബസ് സ്റ്റാൻഡും പരിസരവും">
+      <div class="row mwloc"><div><label class="f">വാർഡ് <span class="en">(Ward)</span></label><input type="text" id="fMassWard" maxlength="80" list="wardList" placeholder="ഉദാ: വാർഡ് 5"></div><div><label class="f">ഏരിയ <span class="en">(Area)</span></label><input type="text" id="fMassArea" maxlength="80" list="areaList" placeholder="ഉദാ: സൗത്ത്"></div></div>
+      <label class="f">🧹 ചെയ്ത ജോലികൾ <span class="en">(Works done – tick all that apply)</span></label>
       <div class="mwchips" id="fMassWork"></div>
       <label class="f">മറ്റുള്ളവ <span class="en">(Other works – optional)</span></label><input type="text" id="fMassOther" maxlength="300" placeholder="മറ്റുള്ളവ എഴുതുക (Other works done)"></div>
+      <div id="fCrewWrap" class="crwrap"><label class="f">👥 തൊഴിലാളികളുടെ പേരുകൾ <span class="en">(Workers' names – tick who worked)</span> <span class="crn" id="fCrewN"></span></label>
+      <div class="mwchips crchips" id="fCrew"></div>
+      <p class="hint" id="fCrewEmpty" style="display:none;margin:4px 0">ലിസ്റ്റിൽ പേരുകൾ ഇല്ല – ക്രമീകരണത്തിൽ "തൊഴിലാളികളുടെ പേരുകൾ" ചേർക്കാം (അഡ്മിൻ / സൂപ്പർവൈസർ). താഴെ എഴുതുകയും ചെയ്യാം. <span class="en">(No names yet – admin/supervisor can add them in Settings; or type below.)</span></p>
+      <label class="f">മറ്റുള്ളവർ <span class="en">(Others – names, separated by commas)</span></label><input type="text" id="fCrewOther" maxlength="500" placeholder="ഉദാ: രമേശ്, സുധ (e.g. one-off helpers)"></div>
       <div class="row">
-        <div><label class="f">തൊഴിലാളികൾ <span class="en">(Workers)</span></label><input type="number" id="fWorkers" inputmode="numeric" min="0" placeholder="0"></div>
+        <div><label class="f">തൊഴിലാളികളുടെ എണ്ണം <span class="en">(Workers – auto)</span></label><input type="number" id="fWorkers" inputmode="numeric" min="0" placeholder="0"></div>
         <div><label class="f">മാലിന്യം <span class="en">(Waste)</span></label><div class="row" style="gap:6px"><input type="number" id="fWaste" inputmode="decimal" min="0" placeholder="0"><select id="fWasteUnit" style="padding-left:10px"><option>kg</option><option>ചാക്ക് (bags)</option><option>ലോഡ് (loads)</option></select></div></div>
       </div>
       <label class="f">കുറിപ്പ് <span class="en">(Notes)</span></label><textarea id="fNotes" placeholder="ഉദാ: റോഡിൻ്റെ ഇരുവശവും വൃത്തിയാക്കി"></textarea>
@@ -302,7 +308,7 @@
       <p class="hint" style="margin:2px 0 6px">✏️ പേര് മാറ്റാം (rename) · ▲▼ ക്രമം മാറ്റാം (reorder) · ⏸ ഒഴിവാക്കാം (remove – പഴയ റിപ്പോർട്ടുകളിൽ പേര് നിലനിൽക്കും / old reports keep the name)</p>
       <div id="pList" class="plist"></div>
       <details class="more" id="pOffWrap" style="margin-top:10px;display:none"><summary><svg class="ic sm"><use href="#i-pause"/></svg> ഒഴിവാക്കിയ സ്ഥലങ്ങൾ <span class="en">(Removed places)</span> <span class="cnt" id="pOffCount"></span></summary><div id="pOffList" class="plist"></div></details></div>
-    <div class="card" id="mwCard" style="display:none"><h2><span class="hic"><svg class="ic"><use href="#i-spark"/></svg></span>മാസ് വർക്ക് ജോലികൾ <span class="en">(Mass work types)</span></h2>
+    <div class="card" id="mwCard" style="display:none"><h2><span class="hic"><svg class="ic"><use href="#i-spark"/></svg></span>മാസ് / സ്പെഷ്യൽ വർക്ക് ജോലികൾ <span class="en">(Mass / special work types – one common list)</span></h2>
       <div class="row"><input type="text" id="mwIcon" placeholder="🧹" maxlength="4" style="flex:0 0 60px;text-align:center"><input type="text" id="mwMl" maxlength="80" placeholder="ജോലി (മലയാളം)"></div>
       <input type="text" id="mwEn" maxlength="80" placeholder="English (optional)" style="margin-top:8px">
       <p class="hint" id="mwEditHint" style="display:none;margin:8px 0 0">✏️ <b id="mwEditName"></b> – പേര് മാറ്റിയാലും പഴയ എൻട്രികൾ അതേപടി നിലനിൽക്കും (Old entries keep their record)</p>
@@ -311,6 +317,15 @@
       <p class="hint" style="margin:2px 0 6px">✏️ പേര് മാറ്റാം (rename) · ▲▼ ക്രമം (reorder) · ⏸ ഒഴിവാക്കാം (remove – പഴയ എൻട്രികളിൽ നിലനിൽക്കും / old entries keep it)</p>
       <div id="mwList" class="plist"></div>
       <details class="more" id="mwOffWrap" style="margin-top:10px;display:none"><summary><svg class="ic sm"><use href="#i-pause"/></svg> ഒഴിവാക്കിയ ജോലികൾ <span class="en">(Removed work types)</span> <span class="cnt" id="mwOffCount"></span></summary><div id="mwOffList" class="plist"></div></details></div>
+    <div class="card" id="crCard" style="display:none"><h2><span class="hic"><svg class="ic"><use href="#i-users"/></svg></span>തൊഴിലാളികളുടെ പേരുകൾ <span class="en">(Workers' names)</span></h2>
+      <p class="hint" style="margin-top:-6px">ആപ്പ് ഉപയോഗിക്കാത്ത തൊഴിലാളികളുടെ പേരുകളും ഇവിടെ ചേർക്കാം. ജോലി ചേർക്കുമ്പോൾ ടിക്ക് ചെയ്യാം. <span class="en">(Add every worker, including those without the app; tick them in each entry.)</span></p>
+      <input type="text" id="crName" maxlength="80" placeholder="തൊഴിലാളിയുടെ പേര് (Worker name)">
+      <p class="hint" id="crEditHint" style="display:none;margin:8px 0 0">✏️ <b id="crEditName"></b> – പേര് മാറ്റുന്നു (renaming)</p>
+      <div class="row" style="margin-top:10px"><button class="btn out" id="crCancel" style="display:none"><svg class="ic"><use href="#i-x"/></svg>റദ്ദാക്കുക</button><button class="btn block" id="crAdd"><svg class="ic"><use href="#i-plus"/></svg>പേര് ചേർക്കുക <span class="en">(Add name)</span></button></div>
+      <div class="pl-head"><b>ഇപ്പോഴത്തെ ലിസ്റ്റ് <span class="en">(Current list)</span></b> <span class="cnt" id="crCount"></span></div>
+      <p class="hint" style="margin:2px 0 6px">✏️ പേര് മാറ്റാം (rename) · ▲▼ ക്രമം (reorder) · ⏸ ഒഴിവാക്കാം (remove – പഴയ എൻട്രികളിൽ നിലനിൽക്കും / old entries keep it)</p>
+      <div id="crList" class="plist"></div>
+      <details class="more" id="crOffWrap" style="margin-top:10px;display:none"><summary><svg class="ic sm"><use href="#i-pause"/></svg> ഒഴിവാക്കിയ പേരുകൾ <span class="en">(Removed names)</span> <span class="cnt" id="crOffCount"></span></summary><div id="crOffList" class="plist"></div></details></div>
     <div class="card" id="usersCard" style="display:none"><h2><span class="hic info"><svg class="ic"><use href="#i-users"/></svg></span>അംഗങ്ങളും റോളുകളും <span class="en">(Members & roles)</span></h2>
       <p class="hint" style="margin-top:-6px">പുതിയ അംഗങ്ങൾ ലോഗിൻ ചെയ്താൽ ഇവിടെ "pending" ആയി വരും. റോൾ നൽകുക. (New sign-ins appear as pending – assign a role.)</p>
       <div class="ulist" id="uList"></div></div>

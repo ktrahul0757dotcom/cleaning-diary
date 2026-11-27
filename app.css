@@ -440,3 +440,22 @@ div.thumb{background:var(--brand-50)!important}
 .ulist .udesig{display:block;width:100%;margin-top:6px;padding:6px 10px;min-height:36px;font-size:13.5px}
 .ulist .u .nm{min-width:0;flex:1}
 #uList .u{flex-wrap:wrap;row-gap:8px}#uList .u .nm{flex:1 1 calc(100% - 64px)}#uList .u select{flex:1 1 100%;max-width:none;margin-left:52px;width:calc(100% - 52px)}
+/* t160u: workers' names */
+.crwrap{margin-top:6px}.crchips{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.mwc.crc{min-height:44px;padding:8px 10px;font-size:14px}.mwc.crc.on{border-color:#0a7a3e;background:#e9f7ef}
+.crn{float:right;color:#0a7a3e;font-weight:800;font-size:13px}
+.entry .s.crs{color:#0b5d4b}
+.crtbl td:first-child,.crtbl th:first-child{width:28px;text-align:center}
+/* t163u: kind of work (mass / special) + place where done */
+.kindrow{margin-top:14px;padding:10px;border:1.5px dashed #e0a43a;border-radius:14px;background:#fff8ea}.massmode .kindrow{border-style:solid;background:#fdecc8}
+.kindrow .kh{font-weight:800;font-size:14px;margin:0 2px 8px}.kgrid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mwc.kc{min-height:52px;padding:8px 10px;font-size:14.5px}.mwc.kc .mwt{display:flex;flex-direction:column;line-height:1.25}.mwc.kc.sp.on{border-color:#6d28d9;background:#f3e8ff}
+.badge.mwb.spb{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd}
+.mwk{display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 6px}.mwki{display:inline-flex;align-items:center;gap:6px;font-size:14px}.mwki:not(.on){color:#6b7280}
+.mwp{margin:4px 0 6px;font-size:14px}.mwh2{font-weight:700;font-size:13.5px;margin:6px 0 4px}
+.mwi:not(.on){color:#6b7280}
+.mwloc{gap:8px}.mwloc>div{flex:1 1 0;min-width:0}.mwloc input{width:100%}
+.mwc.kc .mwt b{white-space:nowrap;font-size:14.5px}.mwc.kc .mwt .en{font-size:12px}
+.mwki b{white-space:nowrap}.mwk{gap:4px 12px}.mwki .en{font-size:12px}
+.kgrid2>.mwc{min-width:0}.mwc.kc .mwt{min-width:0}.mwc.kc .mwt b{white-space:normal;overflow-wrap:normal;word-break:keep-all}
+.mwc.kc{padding:8px 6px;gap:7px}.mwc.kc .mwt b{font-size:14px}.kindrow{padding:10px 8px}.kgrid2{gap:6px}
