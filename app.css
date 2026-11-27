@@ -342,7 +342,7 @@ div.thumb{background:var(--brand-50)!important}
 .mwbox{border:1.5px solid #f0c36d;background:#fffaf0;border-radius:10px;padding:8px 10px;margin:8px 0}
 .mwbox.c{margin:2px 0;padding:6px 8px}
 .mwh{font-weight:800;color:#92400e;margin-bottom:6px}
-.mwl{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 12px}
+.mwl{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));gap:4px 12px}
 .mwi{display:flex;align-items:flex-start;gap:6px;font-size:13.5px;line-height:1.35}.mwi .pcb{width:18px;height:18px;flex-basis:18px;font-size:13px;margin-top:1px}
 .mwrep{border:1px solid #f0c36d;border-left:5px solid #d97706;border-radius:10px;padding:8px 10px;margin:6px 0 8px;background:#fff;break-inside:avoid;page-break-inside:avoid}
 .mwrh{margin-bottom:4px}.mwrh .en{font-size:12px}
@@ -459,3 +459,18 @@ div.thumb{background:var(--brand-50)!important}
 .mwki b{white-space:nowrap}.mwk{gap:4px 12px}.mwki .en{font-size:12px}
 .kgrid2>.mwc{min-width:0}.mwc.kc .mwt{min-width:0}.mwc.kc .mwt b{white-space:normal;overflow-wrap:normal;word-break:keep-all}
 .mwc.kc{padding:8px 6px;gap:7px}.mwc.kc .mwt b{font-size:14px}.kindrow{padding:10px 8px}.kgrid2{gap:6px}
+/* t166u: three work categories */
+.kgrid3{display:grid;grid-template-columns:1fr;gap:6px}
+.kgrid3 .mwc.kc{flex-direction:row;align-items:center;gap:10px;padding:9px 11px;min-height:0}
+.kgrid3 .mwc.kc .mwt{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:2px;min-width:0}
+.kgrid3 .mwc.kc .mwt b{font-size:15px;line-height:1.3;word-break:keep-all}.kgrid3 .mwc.kc .mwt .en{font-size:12px}
+.mwc.kc.dl.on{border-color:#0a7a3e;background:#e9f7ef}
+.badge.mwb.dlb{background:#e9f7ef;color:#0a5c32;border-color:#a7dcbc}
+.catsum{margin:10px 0 4px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+.fsheet .catsum{border-radius:0;border-color:#9ca3af}
+.pcl.cat3{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* v22: category row inside narrow report/detail cells must wrap */
+.mwki{flex-wrap:wrap;min-width:0;max-width:100%}.mwki b{white-space:normal;word-break:keep-all}.mwki .en{white-space:normal}
+.rp-tbl td .mwbox{min-width:0;max-width:100%;box-sizing:border-box}
+.dr-e .rp-tbl{table-layout:fixed;width:100%;box-sizing:border-box}.dr-e .rp-tbl td:first-child{width:34%}.dr-e .rp-tbl td{overflow-wrap:break-word;min-width:0}
+.dr-e .rp-tbl td:first-child{width:38%;overflow-wrap:normal;word-break:keep-all;padding-right:6px}

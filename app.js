@@ -1,4 +1,4 @@
-const APP_VER='v21';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v22';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -22,10 +22,14 @@ const activeCrew=()=>crewNames.filter(c=>c.active!==false);
 const splitNames=t=>String(t||'').split(/[,،\n;]+/).map(x=>x.trim()).filter(Boolean);
 function crewOf(e){const snap=e.crewNames||[];const L=(e.crew||[]).map((id,i)=>crewById(id)?.name||snap[i]||id);return L.concat(splitNames(e.crewOther))}
 /* kind of work for mass-mode entries: മാസ് വർക്ക് and/or സ്പെഷ്യൽ വർക്ക് (old mass entries = മാസ് വർക്ക്) */
-const KIND={mass:['💪','മാസ് വർക്ക്','Mass work'],special:['⭐','സ്പെഷ്യൽ വർക്ക്','Special work']};
-const kindsOf=e=>e&&e.mass?(Array.isArray(e.massKind)&&e.massKind.length?e.massKind.filter(k=>KIND[k]):['mass']):[];
+const KIND={daily:['🧹','ദൈനംദിന ശുചീകരണം','Daily cleaning'],mass:['💪','മാസ് വർക്ക്','Mass work'],special:['⭐','സ്പെഷ്യൽ വർക്ക്','Special work']};
+/* work categories (any combination): old entries = ദൈനംദിന unless flagged mass; old mass entries = മാസ് (+ ദൈനംദിന if they also had daily works) */
+const kindsOf=e=>{if(!e)return [];if(Array.isArray(e.cats)&&e.cats.length)return Object.keys(KIND).filter(k=>e.cats.includes(k));
+  if(!e.mass)return ['daily'];const mk=Array.isArray(e.massKind)&&e.massKind.length?e.massKind.filter(k=>KIND[k]&&k!=='daily'):['mass'];return ((e.works||[]).length?['daily']:[]).concat(mk)};
+const catMarks=(e,en)=>{const ks=kindsOf(e);return Object.entries(KIND).map(([k,v])=>`${ks.includes(k)?'☑':'☐'} ${en?v[2]:v[1]}`).join('  ')};
+const regWorksText=(e,en)=>(e.works||[]).map(w=>w==='other'&&e.workOther?e.workOther:(WMAP[w]?(en?WMAP[w][2]:WMAP[w][1]):w)).join(', ');
 const kindText=(e,en,icons=true)=>kindsOf(e).map(k=>(icons?KIND[k][0]+' ':'')+(en?KIND[k][2]:KIND[k][1])).join(' + ');
-const kindBadge=e=>e.mass?kindsOf(e).map(k=>`<span class="badge mwb${k==='special'?' spb':''}">${KIND[k][0]} ${KIND[k][1]}</span>`).join(' ')+' ':'';
+const kindBadge=e=>e.mass?kindsOf(e).map(k=>`<span class="badge mwb${k==='special'?' spb':k==='daily'?' dlb':''}">${KIND[k][0]} ${KIND[k][1]}</span>`).join(' ')+' ':'';
 const massPlaceOf=e=>e.mass?(e.massPlace||(!e.placeId?e.placeName:'')||''):'';
 const massWardOf=e=>e.mass?(e.massWard||(!e.placeId?e.ward:'')||''):'';
 const massAreaOf=e=>e.mass?(e.massArea||(!e.placeId?e.area:'')||''):'';
@@ -333,21 +337,21 @@ function renderGPS(){$('#gpsTxt').innerHTML=gps?`✅ ${gps.lat.toFixed(6)}, ${gp
 $('#gpsBtn').onclick=()=>{if(!navigator.geolocation)return toast('⚠️ GPS ലഭ്യമല്ല');$('#gpsTxt').textContent='⏳ ലൊക്കേഷൻ എടുക്കുന്നു...';
   navigator.geolocation.getCurrentPosition(p=>{gps={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};renderGPS()},e=>{$('#gpsTxt').textContent='⚠️ ലൊക്കേഷൻ കിട്ടിയില്ല ('+e.message+')'},{enableHighAccuracy:true,timeout:20000})};
 $('#gpsClr').onclick=()=>{gps=null;renderGPS()};
-const massOn=()=>$('#fMass').checked||$('#fSpecial').checked;
+const massOn=()=>$('#fMass').checked||$('#fSpecial').checked;const dailyOn=()=>$('#fDaily').checked;
 function syncMassForm(){const m=$('#fMass');if(!m)return;const on=massOn();$$('#fKind .mwc').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const sel=$('#fPlace');let o=sel.querySelector('option[value="__oneoff"]');
   if(on&&!o)sel.insertAdjacentHTML('beforeend','<option value="__oneoff">✍️ പട്ടികയിൽ ഇല്ലാത്ത സ്ഥലം എഴുതുക (Type a one-off place)</option>');
   if(!on&&o){if(sel.value==='__oneoff')sel.value='';o.remove()}
-  $('#fMassWrap').style.display=on?'block':'none';$('#fRegWrap').style.display=on?'none':'block';$('#fOneOffWrap').style.display=on&&sel.value==='__oneoff'?'flex':'none';
+  $('#fMassWrap').style.display=on?'block':'none';$('#fRegWrap').style.display=dailyOn()?'block':'none';$('#fCatHint').style.display=on||dailyOn()?'none':'block';$('#fOneOffWrap').style.display=on&&sel.value==='__oneoff'?'flex':'none';
   m.closest('.card').classList.toggle('massmode',on)}
 function renderMassChips(){const box=$('#fMassWork');if(!box)return;const cur=new Set($$('#fMassWork input:checked').map(i=>i.value));const keep=new Set(editing?.massWorks||[]);
   const list=massTypes.filter(t=>t.active!==false||keep.has(t.id)||cur.has(t.id));
   box.innerHTML=list.map(t=>`<label class="mwc${cur.has(t.id)?' on':''}"><input type="checkbox" value="${esc(t.id)}"${cur.has(t.id)?' checked':''}><span class="mwbx"></span><span class="mwt">${t.icon?esc(t.icon)+' ':''}${esc(t.ml)}${t.en?`<span class="en">${esc(t.en)}</span>`:''}</span></label>`).join('')}
 $('#fMassWork').addEventListener('change',e=>{const l=e.target.closest('.mwc');if(l)l.classList.toggle('on',e.target.checked)});
-['#fMass','#fSpecial'].forEach(s=>$(s).addEventListener('change',()=>{syncMassForm();renderMassChips()}));
+['#fDaily','#fMass','#fSpecial'].forEach(s=>$(s).addEventListener('change',()=>{syncMassForm();renderMassChips()}));
 $('#fPlace').addEventListener('change',syncMassForm);
 function resetForm(){editing=null;curPhotos=[];gps=null;$('#fDate').value=today();$('#fTime').value=nowTime();{const ap=activePlaces();$('#fPlace').value=ap.length===1?ap[0].id:''}
   $$('#fWork input').forEach(i=>{i.checked=false;i.closest('.chip').classList.remove('on')});$('#fWorkOther').value='';$('#fWorkOther').style.display='none';
-  ['#fWorkers','#fWaste','#fNotes','#fMassOther','#fMassPlace','#fMassWard','#fMassArea','#fCrewOther'].forEach(s=>$(s).value='');$('#fWorkers').dataset.manual='';$$('#fCrew input').forEach(i=>i.checked=false);renderCrewChips();$('#fMass').checked=false;$('#fSpecial').checked=false;$$('#fMassWork input').forEach(i=>i.checked=false);renderMassChips();syncMassForm();$('#fWasteUnit').selectedIndex=0;renderFormPhotos();renderGPS();
+  ['#fWorkers','#fWaste','#fNotes','#fMassOther','#fMassPlace','#fMassWard','#fMassArea','#fCrewOther'].forEach(s=>$(s).value='');$('#fWorkers').dataset.manual='';$$('#fCrew input').forEach(i=>i.checked=false);renderCrewChips();$('#fDaily').checked=true;$('#fMass').checked=false;$('#fSpecial').checked=false;$$('#fMassWork input').forEach(i=>i.checked=false);renderMassChips();syncMassForm();$('#fWasteUnit').selectedIndex=0;renderFormPhotos();renderGPS();
   $('#formTitle').innerHTML='📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span>';$('#cancelEdit').style.display='none'}
 $('#cancelEdit').onclick=()=>{resetForm();show('v-dash')};
 async function editEntry(e){resetForm();editing=e;if(e.placeId&&!isActivePlace(places.find(p=>p.id===e.placeId)))renderPlaces();$('#fDate').value=e.date;$('#fTime').value=e.time||'';$('#fPlace').value=e.placeId||'';
@@ -355,23 +359,24 @@ async function editEntry(e){resetForm();editing=e;if(e.placeId&&!isActivePlace(p
   $('#fWorkers').value=e.workers??'';$('#fWaste').value=e.waste??'';if(e.wasteUnit)$('#fWasteUnit').value=e.wasteUnit;$('#fNotes').value=e.notes||'';gps=e.gps||null;renderGPS();
   const ps=await getDocs(collection(db,'entries',e.id,'photos'));curPhotos=ps.docs.map(d=>({id:d.id,...d.data(),isNew:false,src:d.data().url||d.data().data}));renderFormPhotos();
   renderCrewChips();$$('#fCrew input').forEach(i=>{i.checked=(e.crew||[]).includes(i.value);i.closest('.mwc').classList.toggle('on',i.checked)});$('#fCrewOther').value=e.crewOther||'';{const n=crewCount();$('#fWorkers').dataset.manual=(e.workers??null)!==(n||null)&&e.workers!=null?'1':'';$('#fWorkers').value=e.workers??'';$('#fCrewN').textContent=n?`✓ ${n} പേര് (names)`:''}
-  {const ks=kindsOf(e);$('#fMass').checked=ks.includes('mass');$('#fSpecial').checked=ks.includes('special')}$('#fMassPlace').value=massPlaceOf(e);$('#fMassWard').value=massWardOf(e);$('#fMassArea').value=massAreaOf(e);renderMassChips();$$('#fMassWork input').forEach(i=>{i.checked=(e.massWorks||[]).includes(i.value);i.closest('.mwc').classList.toggle('on',i.checked)});$('#fMassOther').value=e.massOther||'';syncMassForm();
+  {const ks=kindsOf(e);$('#fDaily').checked=ks.includes('daily');$('#fMass').checked=ks.includes('mass');$('#fSpecial').checked=ks.includes('special')}$('#fMassPlace').value=massPlaceOf(e);$('#fMassWard').value=massWardOf(e);$('#fMassArea').value=massAreaOf(e);renderMassChips();$$('#fMassWork input').forEach(i=>{i.checked=(e.massWorks||[]).includes(i.value);i.closest('.mwc').classList.toggle('on',i.checked)});$('#fMassOther').value=e.massOther||'';syncMassForm();
   if(e.mass&&!e.placeId){$('#fPlace').value='__oneoff';syncMassForm()}
   $('#formTitle').innerHTML='✏️ തിരുത്തുന്നു <span class="en">(Editing entry)</span>';$('#cancelEdit').style.display='inline-flex';show('v-new')}
-$('#saveBtn').onclick=async()=>{const mass=massOn(),mKind=mass?['mass','special'].filter(k=>$(k==='mass'?'#fMass':'#fSpecial').checked):[],mPlace=mass?$('#fMassPlace').value.trim().slice(0,160):'',mWard=mass?$('#fMassWard').value.trim().slice(0,80):'',mArea=mass?$('#fMassArea').value.trim().slice(0,80):'',oneOff=mass&&$('#fPlace').value==='__oneoff';const works=mass?[]:$$('#fWork input:checked').map(i=>i.value);
+$('#saveBtn').onclick=async()=>{const mass=massOn(),mKind=mass?['mass','special'].filter(k=>$(k==='mass'?'#fMass':'#fSpecial').checked):[],mPlace=mass?$('#fMassPlace').value.trim().slice(0,160):'',mWard=mass?$('#fMassWard').value.trim().slice(0,80):'',mArea=mass?$('#fMassArea').value.trim().slice(0,80):'',oneOff=mass&&$('#fPlace').value==='__oneoff',daily=dailyOn();const works=daily?$$('#fWork input:checked').map(i=>i.value):[];
+  if(!daily&&!mass)return toast('⚠️ ജോലി വിഭാഗം ടിക്ക് ചെയ്യുക (Tick a work category)');
   const pl=oneOff?{id:'',name:mPlace,area:mArea,ward:mWard,type:'other',typeOther:''}:places.find(p=>p.id===$('#fPlace').value);
   if(oneOff&&!pl.name){$('#fMassPlace').focus();return toast('⚠️ ചെയ്ത സ്ഥലം എഴുതുക (Type the place where the work was done)')}
   if(!pl)return toast('⚠️ സ്ഥലം തിരഞ്ഞെടുക്കുക (Select a place)');
   const cIds=$$('#fCrew input:checked').map(i=>i.value);const mIds=mass?$$('#fMassWork input:checked').map(i=>i.value):[],mOther=mass?$('#fMassOther').value.trim():'';
-  if(mass){if(!mIds.length&&!mOther)return toast('⚠️ ചെയ്ത ജോലികൾ ടിക്ക് ചെയ്യുക (Tick the works done)')}
-  else if(!works.length&&!$('#fNotes').value.trim())return toast('⚠️ ചെയ്ത ജോലി തിരഞ്ഞെടുക്കുക (Select work done)');
+  if(mass&&!mIds.length&&!mOther)return toast('⚠️ മാസ് / സ്പെഷ്യൽ വർക്കിൽ ചെയ്ത ജോലികൾ ടിക്ക് ചെയ്യുക (Tick the mass / special works done)');
+  if(daily&&!mass&&!works.length&&!$('#fNotes').value.trim())return toast('⚠️ ചെയ്ത ജോലി തിരഞ്ഞെടുക്കുക (Select work done)');
   const btn=$('#saveBtn');btn.disabled=true;
   try{const ref=editing?doc(db,'entries',editing.id):doc(collection(db,'entries'));const live=curPhotos.filter(p=>!p.removed);
     const useStorage=storage&&navigator.onLine;const newPh=live.filter(p=>p.isNew);
     if(useStorage){toast('⏫ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുന്നു...');for(const p of newPh){try{const sr=S.ref(storage,`photos/${ref.id}/${p.id}.jpg`);await S.uploadBytes(sr,p.blob,{contentType:'image/jpeg'});p.url=await S.getDownloadURL(sr);p.path=sr.fullPath}catch(e){console.warn('storage upload failed, inline fallback',e)}}}
     const thumbP=live.find(p=>p.kind==='after')||live[0];let thumb=editing?.thumb||'';if(thumbP&&thumbP.thumb)thumb=thumbP.thumb;else if(!live.length)thumb='';
     else if(thumbP&&thumbP.id!==editing?.thumbId){try{thumb=(await toCanvasBlob(await loadImage(thumbP.src),240,0.6)).c.toDataURL('image/jpeg',0.6)}catch(e){}}
-    const data={date:$('#fDate').value||today(),time:$('#fTime').value,placeId:pl.id,placeName:pl.name,area:pl.area||'',ward:pl.ward||'',placeType:pl.type||'other',placeTypeOther:pl.typeOther||'',works,workOther:mass?'':$('#fWorkOther').value.trim(),mass,massWorks:mIds,massLabels:mIds.map(id=>massById(id)?.ml||id),massOther:mOther,oneOff,massKind:mKind,massPlace:mPlace,massWard:mWard,massArea:mArea,crew:cIds,crewNames:cIds.map((id,i)=>crewById(id)?.name||(editing?.crewNames||[])[(editing?.crew||[]).indexOf(id)]||id),crewOther:$('#fCrewOther').value.trim().slice(0,500),
+    const data={date:$('#fDate').value||today(),time:$('#fTime').value,placeId:pl.id,placeName:pl.name,area:pl.area||'',ward:pl.ward||'',placeType:pl.type||'other',placeTypeOther:pl.typeOther||'',works,workOther:daily?$('#fWorkOther').value.trim():'',cats:[...(daily?['daily']:[]),...mKind],mass,massWorks:mIds,massLabels:mIds.map(id=>massById(id)?.ml||id),massOther:mOther,oneOff,massKind:mKind,massPlace:mPlace,massWard:mWard,massArea:mArea,crew:cIds,crewNames:cIds.map((id,i)=>crewById(id)?.name||(editing?.crewNames||[])[(editing?.crew||[]).indexOf(id)]||id),crewOther:$('#fCrewOther').value.trim().slice(0,500),
       workers:$('#fWorkers').value===''?null:+$('#fWorkers').value,waste:$('#fWaste').value===''?null:+$('#fWaste').value,wasteUnit:$('#fWasteUnit').value,notes:$('#fNotes').value.trim(),gps:gps||null,
       photoCount:live.length,hasBefore:live.some(p=>p.kind==='before'),hasAfter:live.some(p=>p.kind==='after'),thumb,thumbId:thumbP?.id||'',updatedAt:serverTimestamp()};
     const b=writeBatch(db);
@@ -391,7 +396,7 @@ function openDetail(id){detailId=id;detailUnsubs.forEach(u=>u());detPhotos=[];de
     onSnapshot(collection(db,'entries',id,'remarks'),s=>{detRemarks=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));renderDetail()},e=>console.error(e))];
   getDoc(doc(db,'entries',id)).then(s=>{if(s.exists()&&!entries.find(e=>e.id===id))entries.push({id,...s.data({serverTimestamps:'estimate'})});renderDetail()});
   $('#remarkForm').style.display=can.remark()?'block':'none';resetRemark();show('v-detail');setTimeout(()=>sig.size(),50)}
-function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🧹 ജോലി (Work)',e.mass?'':worksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Names)',crewOf(e).join(', ')],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
+function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🗂️ വിഭാഗം (Category)',catMarks(e)],['🧹 ദൈനംദിന ജോലി (Daily work)',regWorksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Names)',crewOf(e).join(', ')],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
   const gpsRow=e.gps?`<tr><td>🛰️ GPS</td><td><a href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank" rel="noopener">${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}</a></td></tr>`:'';
   const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy" data-cap="${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}">`).join('')}</div>`:''};
   return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.placeName)} ${kindBadge(e)} ${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:''}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${esc(x[1])}</td></tr>`).join('')}${gpsRow}</table>${e.mass?massBlockHTML(e):''}
@@ -461,7 +466,8 @@ function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class=
   return `<div class="dr-e"><div class="hd"><span>📍 ${esc(e.placeName)}${e.ward?' · '+esc(e.ward):''}</span><span>🕐 ${esc(e.time||'')}</span></div>
   <div>${kindBadge(e)}${typeBadge(placeTypeOf(e),e)} ${sc}</div>
   <table class="rp-tbl" style="margin:6px 0"><tr><td style="width:34%">👷 തൊഴിലാളി (Worker)</td><td>${esc(e.workerName||'')}${e.workers?` · 👥 ${e.workers}`:''}</td></tr>${crewOf(e).length?`<tr><td>👥 തൊഴിലാളികളുടെ പേരുകൾ (Names)</td><td>${esc(crewOf(e).join(', '))}</td></tr>`:''}
-  <tr><td>🧹 ജോലി (Work done)</td><td>${e.mass?massBlockHTML(e,true):esc(worksText(e))}${e.waste!=null?` · 🗑️ ${e.waste} ${esc(e.wasteUnit||'')}`:''}</td></tr>
+  <tr><td>🗂️ വിഭാഗം (Category)</td><td class="catm">${esc(catMarks(e))}</td></tr>
+  <tr><td>🧹 ജോലി (Work done)</td><td>${(e.works||[]).length?esc(regWorksText(e)):''}${e.mass?massBlockHTML(e,true):''}${e.waste!=null?` · 🗑️ ${e.waste} ${esc(e.wasteUnit||'')}`:''}</td></tr>
   <tr><td>📋 നില (Status)</td><td>${proof}${e.remarkCount?` · 💬 ${e.remarkCount}`:''}</td></tr>${e.notes?`<tr><td>📝 കുറിപ്പ് (Notes)</td><td>${esc(e.notes)}</td></tr>`:''}</table>
   ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
   ${remarksHTML(rs)}</div>`}
@@ -475,7 +481,10 @@ function massBlockHTML(e,compact){const ks=kindsOf(e),pl=massPlaceOf(e),it=massI
   <div class="mwl">${it.map(x=>`<div class="mwi${x.on?' on':''}">${bx(x.on)}<span>${esc(x.label)}${x.removed?' <span class="en">(ഒഴിവാക്കി · removed)</span>':''}</span></div>`).join('')}<div class="mwi${e.massOther?' on':''}">${bx(!!e.massOther)}<span>➕ മറ്റുള്ളവ <span class="en">(Other)</span>${e.massOther?': <b>'+esc(e.massOther)+'</b>':''}</span></div></div></div>`}
 function massReportHTML(list,monthly){const m=list.filter(e=>e.mass);if(!m.length)return '';
   const nk=k=>m.filter(e=>kindsOf(e).includes(k)).length;return `<div class="rp-sub" style="font-size:15px">💪 മാസ് / ⭐ സ്പെഷ്യൽ വർക്ക് <span class="en">(Mass / special work)</span>: ${m.length} <span class="en">(മാസ് ${nk('mass')} · സ്പെഷ്യൽ ${nk('special')})</span></div>`+m.map(e=>`<div class="mwrep"><div class="mwrh"><b>📍 ${esc(e.placeName)}</b>${e.ward?` <span class="en">– ${esc(e.ward)}</span>`:''}${e.placeId?'':' <span class="badge">✍️ പ്രത്യേക സ്ഥലം (one-off)</span>'} ${kindBadge(e)}<div class="en">${monthly?'📅 '+fmtDate(e.date)+' · ':''}🕐 ${esc(e.time||'')} · 👷 ${esc(e.workerName||'')}${e.workers?' · 👥 '+e.workers:''}${crewOf(e).length?' · '+esc(crewOf(e).join(', ')):''}</div></div>${massBlockHTML(e,true)}</div>`).join('')}
-const massShare=(list,monthly)=>{const m=list.filter(e=>e.mass);return m.length?`💪 മാസ് / ⭐ സ്പെഷ്യൽ വർക്ക് (Mass / special work): ${m.length}\n`+m.map(e=>{const ks=kindsOf(e),pl=massPlaceOf(e);return `📍 ${monthly?fmtDate(e.date)+' · ':''}${e.placeName}${e.ward?' – '+e.ward:''}\n   ${ks.includes('mass')?'☑':'☐'} മാസ് വർക്ക്  ${ks.includes('special')?'☑':'☐'} സ്പെഷ്യൽ വർക്ക്${massLocText(e)?`\n   📍 ചെയ്ത സ്ഥലം: ${massLocText(e)}`:''}\n${massLabels(e,false,false).map(x=>'   ✓ '+x).join('\n')}`}).join('\n'):''};
+const catCount=(list,k)=>list.filter(e=>kindsOf(e).includes(k)).length;
+const catSumHTML=list=>`<div class="catsum">🗂️ വിഭാഗം <span class="en">(Category)</span>: ${Object.entries(KIND).map(([k,v])=>`${v[0]} ${v[1]} <b>${catCount(list,k)}</b>`).join(' · ')}</div>`;
+const catSumText=list=>'🗂️ '+Object.entries(KIND).map(([k,v])=>`${v[1]}: ${catCount(list,k)}`).join(' · ');
+const massShare=(list,monthly)=>{const m=list.filter(e=>e.mass);return m.length?`💪 മാസ് / ⭐ സ്പെഷ്യൽ വർക്ക് (Mass / special work): ${m.length}\n`+m.map(e=>{const ks=kindsOf(e),pl=massPlaceOf(e);return `📍 ${monthly?fmtDate(e.date)+' · ':''}${e.placeName}${e.ward?' – '+e.ward:''}\n   ${catMarks(e)}${massLocText(e)?`\n   📍 ചെയ്ത സ്ഥലം: ${massLocText(e)}`:''}\n${massLabels(e,false,false).map(x=>'   ✓ '+x).join('\n')}`}).join('\n'):''};
 /* places/roads checklist for reports: every place in scope with a ✓ box when it had work in the period */
 function reportPlaces(list,{a,w,rty,pl}){const keys=new Set(list.map(placeKey));
   return places.filter(p=>(!rty||placeTypeOf(p)===rty)&&(!a||p.area===a)&&(!w||p.ward===w)&&(!pl||p.id===pl)&&(isActivePlace(p)||keys.has(p.id)))}
@@ -501,7 +510,7 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   h+=`<div class="rp-sum"><div class="dr-kpi"><div><b>${list.length}</b>ജോലി<br>(Entries)</div><div><b>${k?doneN:doneN+'/'+pls.length}</b>സ്ഥലം പൂർത്തി<br>(Places done)</div><div><b style="color:${scoreColor(st.avg)}">${st.avg??'–'}</b>സ്കോർ<br>(Avg score)</div>
     <div><b>${rcount}</b>അഭിപ്രായം<br>(Remarks)</div><div><b>${st.awaiting}</b>അഭിപ്രായം ബാക്കി<br>(Awaiting)</div><div><b>${can.staff()?fbList.length+(fbAvg!=null?' · '+fbAvg.toFixed(1)+'★':''):'–'}</b>സ്ഥലവാസി അഭിപ്രായം<br>(Resident fb)</div></div>${can.staff()?`<div class="sq-line">🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ &amp; സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന <span class="en">(Inspections)</span>: <b>${sqList.length}</b>${sqList.length?` · ✅ ${sqList.filter(f=>f.overall==='good').length} · ⚠️ ${sqList.filter(f=>f.overall==='partial').length} · ❌ ${sqList.filter(f=>f.overall==='poor').length} · ${(sqList.reduce((n,f)=>n+f.rating,0)/sqList.length).toFixed(1)}★`:''}</div>`:''}
     👥 ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos} · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}%${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}</div>`;
-  h+=placeChecklistHTML(pls,list,false,wk);
+  h+=catSumHTML(list)+placeChecklistHTML(pls,list,false,wk);
   h+=crewReportHTML(list,false);
   h+=massReportHTML(list,false);
   h+=typeReportHTML(list,fbList);
@@ -512,11 +521,11 @@ async function makeDaily(){const tok=++reportToken;const d=$('#rDate').value||($
   if(can.staff())h+=`<div class="rp-sub" style="font-size:15px">🗣️ സ്ഥലവാസികളുടെ അഭിപ്രായം / നിർദ്ദേശങ്ങൾ (Resident feedback & suggestions)</div>`+dayFbHTML(fbList)+sqDayHTML(sqList);
   h+=CREDIT();$('#reportOut').innerHTML=h;
   const L=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,...(jdText?[`🏛️ ${jdLines().join(' · ')}`]:[]),`📅 ദിവസ റിപ്പോർട്ട് (Daily report): ${fmtDate(d)}`,filt?`🔎 ${[a,w,pn,wk,rty?typeInfo(rty).ml:''].filter(Boolean).join(' · ')}`:'',
-    `✅ സ്ഥലം പൂർത്തി (Places done): ${k?doneN:doneN+'/'+pls.length}`,`🧹 ജോലി (Entries): ${list.length}`,`⭐ സ്കോർ (Avg score): ${st.avg??'–'}`,`💬 അഭിപ്രായം (Remarks): ${rcount} · ബാക്കി (awaiting) ${st.awaiting}`,
+    `✅ സ്ഥലം പൂർത്തി (Places done): ${k?doneN:doneN+'/'+pls.length}`,`🧹 ജോലി (Entries): ${list.length}`,catSumText(list),`⭐ സ്കോർ (Avg score): ${st.avg??'–'}`,`💬 അഭിപ്രായം (Remarks): ${rcount} · ബാക്കി (awaiting) ${st.awaiting}`,
     can.staff()?`🗣️ സ്ഥലവാസി അഭിപ്രായം (Resident feedback): ${fbList.length}${fbAvg!=null?' · ശരാശരി '+fbAvg.toFixed(1)+'★':''}`:'',
     can.staff()&&sqList.length?`🏛️ SPHI, PHI, മറ്റ് ഉദ്യോഗസ്ഥർ & സ്ക്വാഡ് എന്നിവരുടെ പരിശോധന (Inspections): ${sqList.length} · ${sqList.map(f=>`${f.officialName} (${f.designation}) – ${(SQ_OVR[f.overall]||[''])[0]} ${f.rating}★`).join('; ')}`:'',
     pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>`${placeDone(p,list).length?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}`).join('\n')}`:'',crewShare(list,false),massShare(list,false)].filter(Boolean);
-  const E=list.map(e=>`• ${e.time||''} ${e.placeName} – ${e.workerName||''}${crewOf(e).length?' (👥 '+crewOf(e).join(', ')+')':''} – ${worksText(e)}${e.score!=null?' – സ്കോർ '+e.score:''}`);
+  const E=list.map(e=>`• ${e.time||''} ${e.placeName} – ${e.workerName||''}${crewOf(e).length?' (👥 '+crewOf(e).join(', ')+')':''} – ${worksText(e)}\n   ${catMarks(e)}${e.score!=null?' – സ്കോർ '+e.score:''}`);
   shareText=L.join('\n')+(E.length?'\n\n'+E.join('\n'):'')+'\n\n— ഭദ്രം ഈ ഭൂമി app'}
 async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value||today().slice(0,7);const [y,mo]=m.split('-').map(Number);const last=ymd(new Date(y,mo,0));
   $('#reportOut').innerHTML=skelHTML(3);shareText='';
@@ -531,7 +540,7 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   if(!list.length){const fb=can.staff()?typeReportHTML([],fbList)+fbReportHTML(fbList)+sqMonthHTML(sqList):'';$('#reportOut').innerHTML=h+placeChecklistHTML(pls,list,true,wk)+emptyHTML('inbox','ജോലി എൻട്രികൾ ഇല്ല','No work entries')+fb+CREDIT();return}
   h+=`<div class="rp-sum"><b>ആകെ (Summary):</b> ${list.length} ജോലി (entries) · ${st.days} ദിവസം (days) · ${st.places} സ്ഥലം (places) · ${st.workers} തൊഴിൽ (worker-days) · 📷 ${st.photos}${Object.keys(st.waste).length?' · 🗑️ '+Object.entries(st.waste).map(([u,v])=>`${+v.toFixed(2)} ${esc(u)}`).join(', '):''}<br>
     <b>ശുചിത്വ സ്കോർ (Cleanliness score): <span style="color:${scoreColor(st.avg)}">${st.avg??'–'}/100</span></b> · ഫോട്ടോ തെളിവ് (photo proof) ${st.proof}% · അഭിപ്രായം ബാക്കി (awaiting remark) ${st.awaiting}</div>`;
-  h+=placeChecklistHTML(pls,list,true,wk)+crewReportHTML(list,true)+massReportHTML(list,true);
+  h+=catSumHTML(list)+placeChecklistHTML(pls,list,true,wk)+crewReportHTML(list,true)+massReportHTML(list,true);
   const byW={};list.forEach(e=>{const key=e.ward||e.placeName;(byW[key]=byW[key]||[]).push(e)});
   h+=`<table class="rp-tbl"><tr><th>വാർഡ് (Ward)</th><th>ജോലി (Entries)</th><th>സ്കോർ (Score)</th></tr>${Object.entries(byW).map(([k2,v])=>`<tr><td>${esc(k2)}</td><td>${v.length}</td><td>${stats(v).avg??'–'}</td></tr>`).join('')}</table>`;
   h+=typeReportHTML(list,fbList);if(can.staff())h+=fbReportHTML(fbList)+sqMonthHTML(sqList);
@@ -539,7 +548,7 @@ async function makeMonthly(){const tok=++reportToken;const m=$('#rMonth').value|
   for(const e of list){const [ps,rs]=await Promise.all([withPh?getDocs(collection(db,'entries',e.id,'photos')):null,getDocs(collection(db,'entries',e.id,'remarks'))]);if(tok!==reportToken)return;
     h+=entryHTML(e,ps?ps.docs.map(d=>d.data()).sort((x,z)=>x.ts-z.ts):[],rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0)),withPh)}
   h+=`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')} · ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)<br>ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ) · Developed by Rahul K T with Grok</p>`;$('#reportOut').innerHTML=h;
-  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ സ്ഥലവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'',pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>{const n=new Set(placeDone(p,list).map(e=>e.date)).size;return `${n?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}${n?` (${n} ദിവസം)`:''}`}).join('\n')}`:'',crewShare(list,true),massShare(list,true),'— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
+  shareText=[`🧹 ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം`,jdText?`🏛️ ${jdLines().join(' · ')}`:'',`🗓️ മാസ റിപ്പോർട്ട് (Monthly report): ${fmtMonth(m)}`,`🧹 ജോലി (Entries): ${list.length} · ${st.days} ദിവസം · ${st.places} സ്ഥലം`,catSumText(list),`⭐ സ്കോർ (Score): ${st.avg??'–'}/100 · ഫോട്ടോ തെളിവ് ${st.proof}%`,`💬 അഭിപ്രായം ബാക്കി (Awaiting): ${st.awaiting}`,can.staff()&&fbList.length?`🗣️ സ്ഥലവാസി അഭിപ്രായം: ${fbList.length} · ശരാശരി ${(fbList.reduce((n,f)=>n+f.rating,0)/fbList.length).toFixed(1)}★`:'',pls.length?`📍 സ്ഥലങ്ങൾ / റോഡുകൾ (Places):\n${pls.map(p=>{const n=new Set(placeDone(p,list).map(e=>e.date)).size;return `${n?'✅':'⬜'} ${p.name}${p.ward?' – '+p.ward:''}${n?` (${n} ദിവസം)`:''}`}).join('\n')}`:'',crewShare(list,true),massShare(list,true),'— ഭദ്രം ഈ ഭൂമി app'].filter(Boolean).join('\n')}
 async function ensureShare(){if(!shareText||!$('#reportOut .rp-h'))await makeReport();return shareText||$('#reportOut').innerText.slice(0,1500)}
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('📋 കോപ്പി ചെയ്തു (Copied)')}catch(_){toast('⚠️ copy failed')}ta.remove()}}
 $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){try{await navigator.share({title:'ഭദ്രം ഈ ഭൂമി – റിപ്പോർട്ട്',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)};
@@ -569,13 +578,13 @@ async function buildReportPdf(){
 const boxItem=(on,label,extra)=>`<div class="pci${on?' on':''}"><span class="pcb${on?' on':''}">${on?'✓':''}</span><span class="pcn">${label}</span>${extra||''}</div>`;
 function entryWorkTypesHTML(e){const works=e.works||[],mw=e.massWorks||[];
   const reg=WORKS.filter(w=>w[0]!=='other').map(w=>boxItem(works.includes(w[0]),`${esc(w[1])} <span class="en">(${esc(w[2])})</span>`)).join('');
-  const regOther=boxItem(works.includes('other')||!!e.workOther&&!e.mass,`➕ മറ്റുള്ളവ <span class="en">(Other)</span>${!e.mass&&e.workOther?`: <b>${esc(e.workOther)}</b>`:''}`);
+  const regOther=boxItem(works.includes('other')||!!e.workOther,`➕ മറ്റുള്ളവ <span class="en">(Other)</span>${e.workOther?`: <b>${esc(e.workOther)}</b>`:''}`);
   const ks=kindsOf(e),pl=massPlaceOf(e);
   const mass=massItems(e).map(t=>boxItem(t.on,`${esc(t.label)}${t.removed?' <span class="en">(ഒഴിവാക്കി · removed)</span>':''}`)).join('');
   const massOther=boxItem(!!(e.mass&&e.massOther),`➕ മറ്റുള്ളവ <span class="en">(Other)</span>${e.mass&&e.massOther?`: <b>${esc(e.massOther)}</b>`:''}`);
   return `<div class="rp-sub" style="font-size:16px">🧹 തൊഴിൽ തരം <span class="en">(Type of work)</span></div>
-  <div class="ewt-h">ദൈനംദിന ജോലികൾ <span class="en">(Regular works)</span></div><div class="pcl ewt">${reg}${regOther}</div>
-  <div class="ewt-h">ജോലിയുടെ തരം <span class="en">(Kind of work)</span></div><div class="pcl ewt">${boxItem(ks.includes('mass'),`💪 <b>മാസ് വർക്ക്</b> <span class="en">(Mass work)</span>`)}${boxItem(ks.includes('special'),`⭐ <b>സ്പെഷ്യൽ വർക്ക്</b> <span class="en">(Special work)</span>`)}</div>
+  <div class="ewt-h">ജോലി വിഭാഗം <span class="en">(Work category)</span></div><div class="pcl ewt cat3">${Object.entries(KIND).map(([k,v])=>boxItem(ks.includes(k),`${v[0]} <b>${v[1]}</b> <span class="en">(${v[2]})</span>`)).join('')}</div>
+  <div class="ewt-h">ദൈനംദിന ശുചീകരണ ജോലികൾ <span class="en">(Daily cleaning works)</span></div><div class="pcl ewt">${reg}${regOther}</div>
   <div class="pcl ewt one">${boxItem(!!pl,`📍 ചെയ്ത സ്ഥലം <span class="en">(Place where done)</span>: ${pl?`<b>${esc(pl)}</b>${e.mass&&!e.placeId?' <span class="en">(one-off)</span>':''}`:'<span class="sg-line"></span>'}`)}</div>
   <div class="pcl ewt">${boxItem(!!massWardOf(e),`വാർഡ് <span class="en">(Ward)</span>: ${massWardOf(e)?`<b>${esc(massWardOf(e))}</b>`:'<span class="sg-line"></span>'}`)}${boxItem(!!massAreaOf(e),`ഏരിയ <span class="en">(Area)</span>: ${massAreaOf(e)?`<b>${esc(massAreaOf(e))}</b>`:'<span class="sg-line"></span>'}`)}</div>
   <div class="ewt-h">💪 മാസ് / സ്പെഷ്യൽ വർക്ക് ജോലികൾ <span class="en">(Mass / special work types)</span></div><div class="pcl ewt">${mass}${massOther}</div>`}
@@ -600,7 +609,7 @@ async function entryData(id){let e=entries.find(x=>x.id===id);if(!e){const d=awa
   const [ps,rs]=await Promise.all([getDocs(collection(db,'entries',id,'photos')),getDocs(collection(db,'entries',id,'remarks'))]);
   const photos=ps.docs.map(d=>d.data()),remarks=rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0));
   const dd=(e.date||'').split('-').reverse().join('/');
-  const meta={titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' ('+kindText(e,false,false)+')':''}`,titleEn:`Work Entry Report – ${dd}${e.time?' '+e.time:''}${e.mass?' ('+kindText(e,true,false)+')':''}`,id:`BEB-WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`};
+  const meta={titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' ('+kindText(e,false,false)+')':''}`,titleEn:`Work Entry Report – ${dd}${e.time?' '+e.time:''}${e.mass?' ('+kindText(e,true,false)+')':''}`,id:`WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`};
   return {e,html:entryPdfHTML(e,photos,remarks),meta,title:`Work entry ${dd} ${e.time||''}`,sig:JSON.stringify([e.updatedAt||e.createdAt||null,photos.length,remarks.length,remarks.map(r=>r.text||'').join('|').length])}}
 let entryPdfCache=null;
 async function buildEntryPdf(id){await Promise.all([loadScript('vendor/html2canvas.min.js'),loadScript('vendor/jspdf.umd.min.js')]);
@@ -633,7 +642,7 @@ async function printFormal(html,meta){let ps=$('#printSheet');if(!ps){ps=documen
   await Promise.all([...ps.querySelectorAll('img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
   document.body.classList.add('pf');const done=()=>{document.body.classList.remove('pf');window.removeEventListener('afterprint',done)};window.addEventListener('afterprint',done);print()}
 /* ---------- formal (letterhead) layout shared by all PDFs and the print view ---------- */
-const EMOJI_RE=/(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\uFE0F|\u200D\p{Extended_Pictographic}\uFE0F?|[\u{1F3FB}-\u{1F3FF}])*\uFE0F?[ \u00A0]?/gu;
+const EMOJI_RE=/(?![\u2610\u2611\u2612])(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\uFE0F|\u200D\p{Extended_Pictographic}\uFE0F?|[\u{1F3FB}-\u{1F3FF}])*\uFE0F?[ \u00A0]?/gu;
 const noEmoji=t=>String(t||'').replace(/[\u00A9\u00AE\u2122]/g,m=>m).replace(EMOJI_RE,'').replace(/\uFE0F/g,'').replace(/\s{2,}/g,' ').trim();
 function stripEmojiDom(root){const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const L=[];let n;while((n=tw.nextNode()))L.push(n);
   for(const t of L){if(t.parentElement?.closest('.pcb'))continue;const v=t.nodeValue.replace(EMOJI_RE,'').replace(/\uFE0F/g,'');if(v!==t.nodeValue)t.nodeValue=v}}
@@ -654,8 +663,8 @@ function formalHTML(html,meta){const d=document.createElement('div');d.innerHTML
     <tr class="sg"><td>ഒപ്പ് <i>Signature</i>: ${line}</td><td>ഒപ്പ് <i>Signature</i>: ${line}</td></tr></table></div>`;
   return head+d.innerHTML+sign}
 function reportMeta(){const fk=[$('#rArea').value,$('#rWard').value,$('#rPlace').value,$('#rWorker').value,$('#rType').value].join('|');let hsh=0;for(const c of fk)hsh=(hsh*31+c.charCodeAt(0))>>>0;const sfx=fk.replace(/\|/g,'')?'-F'+hsh.toString(36).slice(0,4).toUpperCase():'';
-  if(rMode==='day'){const d=$('#rDate').value||today();return {titleMl:`ദിവസ റിപ്പോർട്ട് – ${fmtDate(d)}`,titleEn:`Daily Cleaning Report – ${d.split('-').reverse().join('/')}`,id:`BEB-DR-${d.replace(/-/g,'')}${sfx}`}}
-  const m=$('#rMonth').value||today().slice(0,7);const [y,mo]=m.split('-');return {titleMl:`മാസ റിപ്പോർട്ട് – ${fmtMonth(m)}`,titleEn:`Monthly Cleaning Report – ${new Date(+y,+mo-1,1).toLocaleString('en-GB',{month:'long'})} ${y}`,id:`BEB-MR-${y}${mo}${sfx}`}}
+  if(rMode==='day'){const d=$('#rDate').value||today();return {titleMl:`ദിവസ റിപ്പോർട്ട് – ${fmtDate(d)}`,titleEn:`Daily Cleaning Report – ${d.split('-').reverse().join('/')}`,id:`DR-${d.replace(/-/g,'')}${sfx}`}}
+  const m=$('#rMonth').value||today().slice(0,7);const [y,mo]=m.split('-');return {titleMl:`മാസ റിപ്പോർട്ട് – ${fmtMonth(m)}`,titleEn:`Monthly Cleaning Report – ${new Date(+y,+mo-1,1).toLocaleString('en-GB',{month:'long'})} ${y}`,id:`MR-${y}${mo}${sfx}`}}
 function textCanvas(parts,w,h){const c=document.createElement('canvas');c.width=w*2;c.height=h*2;const x=c.getContext('2d');x.scale(2,2);x.fillStyle='#fff';x.fillRect(0,0,w,h);
   x.strokeStyle='#9aa5b1';x.lineWidth=.8;x.beginPath();x.moveTo(0,parts.top?h-1:1);x.lineTo(w,parts.top?h-1:1);x.stroke();
   x.fillStyle='#374151';x.font=`11px "Noto Sans Malayalam","Inter",sans-serif`;x.textBaseline='middle';

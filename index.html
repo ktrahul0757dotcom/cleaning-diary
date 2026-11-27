@@ -153,18 +153,18 @@
     <div class="card step-card" data-step="1">
       <h2><span class="stepno">1</span>ജോലി വിവരം <span class="en">(Work details)</span></h2>
       <div class="row"><div><label class="f" style="margin-top:0">തീയതി <span class="en">(Date)</span></label><input type="date" id="fDate"></div><div><label class="f" style="margin-top:0">സമയം <span class="en">(Time)</span></label><input type="time" id="fTime"></div></div>
-      <div class="kindrow" id="fKind"><div class="kh">ജോലിയുടെ തരം <span class="en">(Kind of work – tick one or both; leave empty for daily work)</span></div><div class="kgrid2"><label class="mwc kc"><input type="checkbox" id="fMass"><span class="mwbx"></span><span class="mwt"><b>മാസ് വർക്ക്</b><span class="en">💪 Mass work</span></span></label><label class="mwc kc sp"><input type="checkbox" id="fSpecial"><span class="mwbx"></span><span class="mwt"><b>സ്പെഷ്യൽ വർക്ക്</b><span class="en">⭐ Special work</span></span></label></div></div>
+      <div class="kindrow" id="fKind"><div class="kh">ജോലി വിഭാഗം <span class="en">(Work category – tick one or more)</span></div><div class="kgrid3"><label class="mwc kc dl on"><input type="checkbox" id="fDaily" checked><span class="mwbx"></span><span class="mwt"><b>ദൈനംദിന ശുചീകരണം</b><span class="en">🧹 Daily cleaning</span></span></label><label class="mwc kc"><input type="checkbox" id="fMass"><span class="mwbx"></span><span class="mwt"><b>മാസ് വർക്ക്</b><span class="en">💪 Mass work</span></span></label><label class="mwc kc sp"><input type="checkbox" id="fSpecial"><span class="mwbx"></span><span class="mwt"><b>സ്പെഷ്യൽ വർക്ക്</b><span class="en">⭐ Special work</span></span></label></div><p class="hint" id="fCatHint" style="display:none;margin:6px 2px 0;color:#b45309">⚠️ ഒരു വിഭാഗമെങ്കിലും ടിക്ക് ചെയ്യുക (tick at least one)</p></div>
       <label class="f">സ്ഥലം / വാർഡ് <span class="en">(Place / Ward)</span></label>
       <select id="fType" style="margin-bottom:8px"></select>
       <select id="fPlace"></select>
       <div class="hint" id="fPlaceHint"></div>
       <div id="fOneOffWrap" class="mwone" style="display:none"><span class="hint" style="flex:1 1 100%;margin:0">✍️ സ്ഥലത്തിൻ്റെ പേര്, വാർഡ്, ഏരിയ താഴെ "ചെയ്ത സ്ഥലം" ഭാഗത്ത് എഴുതുക <span class="en">(type the place, ward and area under "Place where done" below)</span></span></div>
-      <div id="fRegWrap"><label class="f">ചെയ്ത ജോലി <span class="en">(Work done)</span></label>
+      <div id="fRegWrap"><label class="f">🧹 ദൈനംദിന ശുചീകരണം – ചെയ്ത ജോലി <span class="en">(Daily cleaning – work done)</span></label>
       <div class="chips" id="fWork"></div>
       <input type="text" id="fWorkOther" placeholder="മറ്റുള്ളവ എഴുതുക (Other work)" style="margin-top:8px;display:none"></div>
       <div id="fMassWrap" class="mwwrap" style="display:none"><label class="f">📍 ചെയ്ത സ്ഥലം <span class="en">(Place where done)</span></label><input type="text" id="fMassPlace" maxlength="160" placeholder="ഉദാ: KSRTC ബസ് സ്റ്റാൻഡും പരിസരവും">
       <div class="row mwloc"><div><label class="f">വാർഡ് <span class="en">(Ward)</span></label><input type="text" id="fMassWard" maxlength="80" list="wardList" placeholder="ഉദാ: വാർഡ് 5"></div><div><label class="f">ഏരിയ <span class="en">(Area)</span></label><input type="text" id="fMassArea" maxlength="80" list="areaList" placeholder="ഉദാ: സൗത്ത്"></div></div>
-      <label class="f">🧹 ചെയ്ത ജോലികൾ <span class="en">(Works done – tick all that apply)</span></label>
+      <label class="f">💪⭐ മാസ് / സ്പെഷ്യൽ വർക്കിൽ ചെയ്ത ജോലികൾ <span class="en">(Mass / special works done – one common list, tick all that apply)</span></label>
       <div class="mwchips" id="fMassWork"></div>
       <label class="f">മറ്റുള്ളവ <span class="en">(Other works – optional)</span></label><input type="text" id="fMassOther" maxlength="300" placeholder="മറ്റുള്ളവ എഴുതുക (Other works done)"></div>
       <div id="fCrewWrap" class="crwrap"><label class="f">👥 തൊഴിലാളികളുടെ പേരുകൾ <span class="en">(Workers' names – tick who worked)</span> <span class="crn" id="fCrewN"></span></label>
