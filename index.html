@@ -191,7 +191,7 @@
 
   <!-- DETAIL -->
   <section id="v-detail" class="view">
-    <div class="detpdf noprint"><button class="btn big" id="detPdf"><svg class="ic"><use href="#i-share"/></svg><span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share this entry)</small></span></button>
+    <div class="detpdf noprint"><div class="pdf3"><button class="btn" id="detPdf"><svg class="ic"><use href="#i-share"/></svg><span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share)</small></span></button><button class="btn sec" id="detSave"><svg class="ic"><use href="#i-download"/></svg><span>PDF സേവ് <small class="en">(Save)</small></span></button><button class="btn sec" id="detPrint"><svg class="ic"><use href="#i-print"/></svg><span>പ്രിൻ്റ് <small class="en">(Print)</small></span></button></div>
       <div class="pdfprog" id="detPdfProg" hidden><div class="bar"><i></i></div><span id="detPdfMsg"></span></div></div>
     <div id="detOut"></div>
     <div class="card" id="detRemarks"></div>
@@ -258,7 +258,7 @@
       <input type="month" id="rMonth" style="display:none;margin-bottom:10px">
       <div class="ractions">
         <button class="btn big" id="rPdf"><svg class="ic"><use href="#i-share"/></svg><span>PDF ഷെയർ / WhatsApp <small class="en">(Share PDF)</small></span></button>
-        <div class="row"><button class="btn sec" id="rPrint"><svg class="ic"><use href="#i-print"/></svg>PDF / പ്രിൻ്റ്</button><button class="btn out" id="rMake"><svg class="ic"><use href="#i-refresh"/></svg>തയ്യാറാക്കുക <span class="en">(Generate)</span></button></div>
+        <div class="row actions3 rpdf2"><button class="btn sec" id="rSave"><svg class="ic"><use href="#i-download"/></svg><span>PDF സേവ് <small class="en">(Save)</small></span></button><button class="btn sec" id="rPrint"><svg class="ic"><use href="#i-print"/></svg><span>പ്രിൻ്റ് <small class="en">(Print)</small></span></button><button class="btn out" id="rMake"><svg class="ic"><use href="#i-refresh"/></svg>തയ്യാറാക്കുക <span class="en">(Generate)</span></button></div>
         <div class="row actions3"><button class="btn out sm" id="rShare"><svg class="ic sm"><use href="#i-share"/></svg>ടെക്സ്റ്റ് <span class="en">(Text)</span></button><button class="btn sm wa" id="rWa"><svg class="ic sm"><use href="#i-chat"/></svg>WhatsApp</button><button class="btn out sm" id="rCopy"><svg class="ic sm"><use href="#i-copy"/></svg>കോപ്പി <span class="en">(Copy)</span></button></div>
         <div class="pdfprog" id="rPdfProg" hidden><div class="bar"><i></i></div><span id="rPdfMsg"></span></div>
       </div>
@@ -266,7 +266,7 @@
       <div class="row wrap"><select id="rArea"></select><select id="rWard"></select><select id="rPlace"></select><select id="rWorker"></select><select id="rType"></select></div>
       <label class="switch" style="margin-top:12px"><input type="checkbox" id="rPhotos" checked><span class="tr"></span>ഫോട്ടോകൾ ഉൾപ്പെടുത്തുക <span class="en">(Include photos)</span></label>
       </details>
-      <p class="hint" style="margin-bottom:0">📄 <b>PDF ഷെയർ</b>: ഫോണിൽ തന്നെ PDF ഉണ്ടാക്കി WhatsApp-ലേക്ക് അയക്കാം. <span class="en">(Creates a PDF on this phone and opens the share sheet; otherwise downloads it.)</span></p>
+      <p class="hint" style="margin-bottom:0">📄 <b>PDF ഷെയർ</b>: ഫോണിൽ തന്നെ PDF ഉണ്ടാക്കി WhatsApp-ലേക്ക് അയക്കാം. <span class="en">(Creates a PDF on this phone and opens the share sheet; otherwise downloads it.)</span> <b>PDF സേവ്</b>: ഫോണിൽ (Downloads) സൂക്ഷിക്കാം. <span class="en">(Saves the PDF file to the phone.)</span></p>
     </div>
     <div id="reportOut"></div>
   </section>

@@ -1,4 +1,4 @@
-const APP_VER='v18';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v19';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -148,8 +148,8 @@ function renderDash(){fillFilters();const list=filtered('d');const st=stats(list
   if(!$('#dStats .dash-more').textContent.trim())$('#dStats .dash-more').remove();
   if(!list.length){$('#dList').innerHTML=emptyHTML('inbox','ഈ കാലയളവിൽ ജോലികൾ ഇല്ല','No entries for this period');return}
   let h='',last='';for(const e of list){if(e.date!==last){h+=`<div class="dayhead">${ico('cal','sm')} ${fmtDate(e.date)}</div>`;last=e.date}const r=RATE[e.lastRating];
-    h+=`<div class="card entry" data-id="${e.id}">${e.thumb?`<img class="thumb" src="${e.thumb}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.placeName)} <span class="en">${esc(e.time||'')}</span></div><div>${e.mass?'<span class="badge mwb">💪 മാസ് വർക്ക്</span> ':''}${typeBadge(placeTypeOf(e),e)}</div><div class="s">👷 ${esc(e.workerName)} · ${esc(e.ward||'')}</div><div class="s">${esc(worksText(e))}</div><div>${e.photoCount?`<span class="badge">📷 ${e.photoCount}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:'<span class="badge">💬 അഭിപ്രായം ബാക്കി</span>'}${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">${e.score}</span>`:''}${e._pending?'<span class="badge r-ok">⏫ സിങ്ക് ബാക്കി</span>':''}</div></div><button class="epdf" data-epdf="${e.id}" aria-label="PDF അയയ്ക്കുക / WhatsApp" title="PDF അയയ്ക്കുക / WhatsApp">${ico('share')}<span>PDF</span></button></div>`}
-  $('#dList').innerHTML=h;$$('#dList .entry').forEach(el=>el.onclick=()=>openDetail(el.dataset.id));$$('#dList [data-epdf]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();shareEntryPdf(b.dataset.epdf,b)})}
+    h+=`<div class="card entry" data-id="${e.id}">${e.thumb?`<img class="thumb" src="${e.thumb}" alt="">`:'<div class="thumb">🧹</div>'}<div class="info"><div class="t">📍 ${esc(e.placeName)} <span class="en">${esc(e.time||'')}</span></div><div>${e.mass?'<span class="badge mwb">💪 മാസ് വർക്ക്</span> ':''}${typeBadge(placeTypeOf(e),e)}</div><div class="s">👷 ${esc(e.workerName)} · ${esc(e.ward||'')}</div><div class="s">${esc(worksText(e))}</div><div>${e.photoCount?`<span class="badge">📷 ${e.photoCount}</span>`:''}${r?`<span class="badge ${r[2]}">${r[0]}</span>`:'<span class="badge">💬 അഭിപ്രായം ബാക്കി</span>'}${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">${e.score}</span>`:''}${e._pending?'<span class="badge r-ok">⏫ സിങ്ക് ബാക്കി</span>':''}</div></div><button class="epdf" data-epdf="${e.id}" aria-label="PDF – അയയ്ക്കുക / സേവ് / പ്രിൻ്റ് (Share / Save / Print)" aria-haspopup="menu" title="PDF – അയയ്ക്കുക / സേവ് / പ്രിൻ്റ്">${ico('share')}<span>PDF</span></button></div>`}
+  $('#dList').innerHTML=h;$$('#dList .entry').forEach(el=>el.onclick=()=>openDetail(el.dataset.id));$$('#dList [data-epdf]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();entryPdfMenu(b.dataset.epdf,b)})}
 
 /* ---------- places & users (admin) ---------- */
 let editingPlace=null;
@@ -336,7 +336,7 @@ function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊ�
     ${withPhotos?grid('before')+grid('after'):''}${remarks?remarksHTML(remarks):''}</div>`}
 function remarksHTML(rs){if(!rs.length)return '';return `<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div>`+rs.map(r=>{const t=RATE[r.rating];return `<div class="remark"><b>${esc(r.officerName)}</b>${r.desig?', '+esc(r.desig):''} ${t?`<span class="badge ${t[2]}">${t[0]} (${t[1]})</span>`:''}<div>${esc(r.text)}</div>${r.signature?`<img src="${r.signature}" alt="signature">`:''}<div class="hint">${r.createdAt?new Date(r.createdAt.seconds*1000).toLocaleString('en-IN'):''}</div></div>`}).join('')}
 function renderDetail(){const e=entries.find(x=>x.id===detailId);if(!e){$('#detOut').innerHTML=skelHTML(1);return}
-  $('#detOut').innerHTML=entryHTML(e,detPhotos,null);{const b=$('#detPdf');if(!b.classList.contains('ready')){b.innerHTML=EPDF_LABEL;b.onclick=()=>shareEntryPdf(e.id,b)}}
+  $('#detOut').innerHTML=entryHTML(e,detPhotos,null);{const b=$('#detPdf');if(!b.classList.contains('ready')||b.dataset.id!==e.id){b.classList.remove('ready');b.dataset.id=e.id;b.innerHTML=EPDF_LABEL;b.onclick=()=>entryPdfAction(e.id,'share',b)}$('#detSave').onclick=()=>entryPdfAction(e.id,'save',$('#detSave'));$('#detPrint').onclick=()=>entryPdfAction(e.id,'print',$('#detPrint'))}
   $('#detRemarks').innerHTML=`<h2>${hic('badge','earth')}അഭിപ്രായങ്ങൾ <span class="en">(Remarks – live)</span></h2>`+(detRemarks.length?remarksHTML(detRemarks).replace(/^<div class="rp-sub">.*?<\/div>/,''):'<p class="hint">ഇതുവരെ അഭിപ്രായം ഇല്ല (No remarks yet)</p>');
   const own=e.workerUid===me.uid;$('#detEdit').style.display=(own&&can.work())||can.sup()?'flex':'none';$('#detDel').style.display=(own&&can.work())||can.sup()?'flex':'none'}
 $('#detEdit').onclick=()=>{const e=entries.find(x=>x.id===detailId);if(e)editEntry(e)};
@@ -473,11 +473,7 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);toast('�
 $('#rShare').onclick=async()=>{const t=await ensureShare();if(navigator.share){try{await navigator.share({title:'ഭദ്രം ഈ ഭൂമി – റിപ്പോർട്ട്',text:t});return}catch(e){if(e.name==='AbortError')return}}copyText(t)};
 $('#rWa').onclick=async()=>{const t=await ensureShare();window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener')};
 $('#rCopy').onclick=async()=>copyText(await ensureShare());
-$('#rPrint').onclick=async()=>{if(!$('#reportOut .rp-h')||reportKey()!==lastReportKey)await makeReport();
-  let ps=$('#printSheet');if(!ps){ps=document.createElement('div');ps.id='printSheet';document.body.appendChild(ps)}
-  const meta=reportMeta();ps.className='fsheet';ps.innerHTML=formalHTML($('#reportOut').innerHTML,meta);
-  await Promise.all([...ps.querySelectorAll('img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
-  document.body.classList.add('pf');const done=()=>{document.body.classList.remove('pf');window.removeEventListener('afterprint',done)};window.addEventListener('afterprint',done);print()};
+$('#rPrint').onclick=async()=>{if(!$('#reportOut .rp-h')||reportKey()!==lastReportKey)await makeReport();await printFormal($('#reportOut').innerHTML,reportMeta())};
 /* ---------- on-device PDF (html2canvas + jsPDF, vendored for offline) ---------- */
 let pdfReady=null,pdfBusy=false;
 const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[data-src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.dataset.src=src;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s)});
@@ -525,20 +521,44 @@ function entryPdfHTML(e,photos,remarks){
   ${entryWorkTypesHTML(e)}
   ${ph.length?`<div class="rp-sub" style="font-size:15px">📷 ഫോട്ടോകൾ (Photos): ${ph.length}</div><div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt=""><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
   ${remarks&&remarks.length?remarksHTML(remarks):'<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div><p class="hint">ഇതുവരെ ഇല്ല (None yet)</p>'}`+CREDIT()}
-let entryPdfBusy=false;const EPDF_LABEL='<svg class="ic"><use href="#i-share"/></svg><span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share this entry)</small></span>';
+let entryPdfBusy=false;const EPDF_LABEL='<svg class="ic"><use href="#i-share"/></svg><span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share)</small></span>';
 function detProg(on,msg,frac){const w=$('#detPdfProg');if(!w)return;w.hidden=!on;if(msg!=null)$('#detPdfMsg').textContent=msg;if(frac!=null)w.querySelector('.bar i').style.width=Math.round(frac*100)+'%'}
-async function shareEntryPdf(id,btn){if(entryPdfBusy)return;entryPdfBusy=true;const b=btn||$('#detPdf');if(b)b.disabled=true;detProg(true,'PDF തയ്യാറാക്കുന്നു… (Creating PDF)',0.05);if(b&&b.dataset.epdf)toast('📄 PDF തയ്യാറാക്കുന്നു… (Creating PDF)',3500);
-  try{let e=entries.find(x=>x.id===id);if(!e){const d=await getDoc(doc(db,'entries',id));if(!d.exists())throw new Error('entry not found');e={id,...d.data({serverTimestamps:'estimate'})}}
-    const [ps,rs]=await Promise.all([getDocs(collection(db,'entries',id,'photos')),getDocs(collection(db,'entries',id,'remarks'))]);
-    const photos=ps.docs.map(d=>d.data()),remarks=rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0));
-    const title=`Work entry ${(e.date||'').split('-').reverse().join('/')} ${e.time||''}`;
-    const pdf=await htmlToPdf(entryPdfHTML(e,photos,remarks),title,detProg,{titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' (മാസ് വർക്ക്)':''}`,titleEn:`Work Entry Report – ${(e.date||'').split('-').reverse().join('/')}${e.time?' '+e.time:''}${e.mass?' (Mass cleaning work)':''}`,id:`BEB-WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`});detProg(true,'✅ PDF തയ്യാർ (Ready)',1);
-    const name=`Bhadram-Ee-Bhoomi-Entry-${e.date||''}-${(e.time||'').replace(':','')}-${id.slice(0,5)}.pdf`;const blob=pdf.output('blob');
-    const r={file:new File([blob],name,{type:'application/pdf'}),blob,name,title,pages:pdf.getNumberOfPages()};window.__lastEntryPdf=r;
-    if(b)b.disabled=false;entryPdfBusy=false;const res=await sharePdf(r,b&&b.id==='detPdf'?'#detPdf':'#__none','ജോലി റിപ്പോർട്ട്');
-    if(res==='needtap'&&b&&b.id==='detPdf'){b.onclick=async()=>{await sharePdf(r,'#'+b.id,'ജോലി റിപ്പോർട്ട്');b.classList.remove('ready');b.innerHTML=EPDF_LABEL;b.onclick=()=>shareEntryPdf(id,b)}}}
+async function entryData(id){let e=entries.find(x=>x.id===id);if(!e){const d=await getDoc(doc(db,'entries',id));if(!d.exists())throw new Error('entry not found');e={id,...d.data({serverTimestamps:'estimate'})}}
+  const [ps,rs]=await Promise.all([getDocs(collection(db,'entries',id,'photos')),getDocs(collection(db,'entries',id,'remarks'))]);
+  const photos=ps.docs.map(d=>d.data()),remarks=rs.docs.map(d=>d.data({serverTimestamps:'estimate'})).sort((x,z)=>(x.createdAt?.seconds||0)-(z.createdAt?.seconds||0));
+  const dd=(e.date||'').split('-').reverse().join('/');
+  const meta={titleMl:`ജോലി റിപ്പോർട്ട് – ${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.mass?' (മാസ് വർക്ക്)':''}`,titleEn:`Work Entry Report – ${dd}${e.time?' '+e.time:''}${e.mass?' (Mass cleaning work)':''}`,id:`BEB-WE-${(e.date||'').replace(/-/g,'')}-${(e.time||'').replace(':','')}-${id.slice(0,6).toUpperCase()}`};
+  return {e,html:entryPdfHTML(e,photos,remarks),meta,title:`Work entry ${dd} ${e.time||''}`,sig:JSON.stringify([e.updatedAt||e.createdAt||null,photos.length,remarks.length,remarks.map(r=>r.text||'').join('|').length])}}
+let entryPdfCache=null;
+async function buildEntryPdf(id){await Promise.all([loadScript('vendor/html2canvas.min.js'),loadScript('vendor/jspdf.umd.min.js')]);
+  const d=await entryData(id);if(entryPdfCache&&entryPdfCache.id===id&&entryPdfCache.sig===d.sig){detProg(true,'✅ PDF തയ്യാർ (Ready)',1);return entryPdfCache.r}
+  const pdf=await htmlToPdf(d.html,d.title,detProg,d.meta);detProg(true,'✅ PDF തയ്യാർ (Ready)',1);
+  const name=`Bhadram-Ee-Bhoomi-Entry-${d.meta.id}.pdf`;const blob=pdf.output('blob');
+  const r={file:new File([blob],name,{type:'application/pdf'}),blob,name,title:d.title,id:d.meta.id,pages:pdf.getNumberOfPages()};window.__lastEntryPdf=r;entryPdfCache={id,sig:d.sig,r};return r}
+/* action: 'share' | 'save' | 'print' */
+async function entryPdfAction(id,act,btn){if(entryPdfBusy)return;entryPdfBusy=true;const b=btn||null;if(b)b.disabled=true;
+  detProg(true,act==='print'?'പ്രിൻ്റ് തയ്യാറാക്കുന്നു… (Preparing print)':'PDF തയ്യാറാക്കുന്നു… (Creating PDF)',0.05);if(b&&!b.closest('.detpdf'))toast(act==='print'?'🖨️ പ്രിൻ്റ് തയ്യാറാക്കുന്നു… (Preparing print)':'📄 PDF തയ്യാറാക്കുന്നു… (Creating PDF)',3500);
+  try{if(act==='print'){const d=await entryData(id);entryPdfBusy=false;if(b)b.disabled=false;detProg(false);await printFormal(d.html,d.meta);return}
+    const r=await buildEntryPdf(id);if(b)b.disabled=false;entryPdfBusy=false;
+    if(act==='save'){downloadPdf(r);return}
+    const sb=b&&b.id==='detPdf'?b:null;const res=await sharePdf(r,sb?'#detPdf':'#__none','ജോലി റിപ്പോർട്ട്');
+    if(res==='needtap'&&sb){sb.onclick=async()=>{await sharePdf(r,'#detPdf','ജോലി റിപ്പോർട്ട്');sb.classList.remove('ready');sb.innerHTML=EPDF_LABEL;sb.onclick=()=>entryPdfAction(id,'share',sb)}}}
   catch(err){console.error(err);$$('.pdfpage').forEach(x=>x.remove());toast('⚠️ PDF ഉണ്ടാക്കാനായില്ല (PDF failed): '+(err.message||err),5000);detProg(false)}
   finally{entryPdfBusy=false;if(b)b.disabled=false;setTimeout(()=>{if(!entryPdfBusy)detProg(false)},4000)}}
+const shareEntryPdf=(id,btn)=>entryPdfAction(id,'share',btn);
+/* small menu on list cards: Share / Save / Print */
+function entryPdfMenu(id,btn){let m=$('#epMenu');if(m){const same=m.dataset.id===id;m.remove();if(same)return}
+  m=document.createElement('div');m.id='epMenu';m.className='epmenu noprint';m.dataset.id=id;m.setAttribute('role','menu');
+  m.innerHTML=`<button data-a="share" role="menuitem">${ico('share','sm')}<span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share)</small></span></button><button data-a="save" role="menuitem">${ico('download','sm')}<span>PDF സേവ് <small class="en">(Save)</small></span></button><button data-a="print" role="menuitem">${ico('print','sm')}<span>പ്രിൻ്റ് <small class="en">(Print)</small></span></button>`;
+  document.body.appendChild(m);const rc=btn.getBoundingClientRect(),mw=m.offsetWidth,mh=m.offsetHeight;
+  let top=rc.bottom+6;if(top+mh>innerHeight-8)top=Math.max(8,rc.top-mh-6);m.style.top=(top+scrollY)+'px';m.style.left=Math.max(8,Math.min(innerWidth-mw-8,rc.right-mw))+'px';
+  m.querySelectorAll('button').forEach(x=>x.onclick=ev=>{ev.stopPropagation();m.remove();entryPdfAction(id,x.dataset.a,btn)});
+  setTimeout(()=>{const close=ev=>{if(!m.contains(ev.target)){m.remove();document.removeEventListener('click',close,true)}};document.addEventListener('click',close,true)},0)}
+/* formal print view (reports and single entries) */
+async function printFormal(html,meta){let ps=$('#printSheet');if(!ps){ps=document.createElement('div');ps.id='printSheet';document.body.appendChild(ps)}
+  ps.className='fsheet';ps.innerHTML=formalHTML(html,meta);
+  await Promise.all([...ps.querySelectorAll('img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
+  document.body.classList.add('pf');const done=()=>{document.body.classList.remove('pf');window.removeEventListener('afterprint',done)};window.addEventListener('afterprint',done);print()}
 /* ---------- formal (letterhead) layout shared by all PDFs and the print view ---------- */
 const EMOJI_RE=/(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\uFE0F|\u200D\p{Extended_Pictographic}\uFE0F?|[\u{1F3FB}-\u{1F3FF}])*\uFE0F?[ \u00A0]?/gu;
 const noEmoji=t=>String(t||'').replace(/[\u00A9\u00AE\u2122]/g,m=>m).replace(EMOJI_RE,'').replace(/\uFE0F/g,'').replace(/\s{2,}/g,' ').trim();
@@ -620,6 +640,13 @@ $('#rPdf').onclick=async()=>{if(pdfBusy)return;
   if(pdfReady&&pdfReady.key===reportKey()){await sharePdf(pdfReady);return}
   pdfBusy=true;const b=$('#rPdf');b.disabled=true;pdfProg(true,'PDF തയ്യാറാക്കുന്നു… (Creating PDF)',0.05);
   try{pdfReady=await buildReportPdf();window.__lastPdf=pdfReady;b.disabled=false;pdfBusy=false;await sharePdf(pdfReady)}
+  catch(e){console.error(e);$$('.pdfpage').forEach(x=>x.remove());toast('⚠️ PDF ഉണ്ടാക്കാനായില്ല (PDF failed): '+(e.message||e),5000);pdfProg(false)}
+  finally{pdfBusy=false;b.disabled=false;setTimeout(()=>{if(!pdfBusy)pdfProg(false)},4000)}};
+
+$('#rSave').onclick=async()=>{if(pdfBusy)return;
+  if(pdfReady&&pdfReady.key===reportKey()){downloadPdf(pdfReady);return}
+  pdfBusy=true;const b=$('#rSave');b.disabled=true;pdfProg(true,'PDF തയ്യാറാക്കുന്നു… (Creating PDF)',0.05);
+  try{pdfReady=await buildReportPdf();window.__lastPdf=pdfReady;downloadPdf(pdfReady)}
   catch(e){console.error(e);$$('.pdfpage').forEach(x=>x.remove());toast('⚠️ PDF ഉണ്ടാക്കാനായില്ല (PDF failed): '+(e.message||e),5000);pdfProg(false)}
   finally{pdfBusy=false;b.disabled=false;setTimeout(()=>{if(!pdfBusy)pdfProg(false)},4000)}};
 
