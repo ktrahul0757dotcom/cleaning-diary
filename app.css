@@ -529,3 +529,11 @@ body.pf #printSheet .rvwrap{display:block}
   body.pf #printSheet .rv-ct td.rvq{width:47%;font-size:11.5px}body.pf #printSheet .rv-ct .rvx{width:11%}body.pf #printSheet .rv-ct .rvw{width:25%}
   body.pf #printSheet .rv-sub{margin:6px 0 4px}body.pf #printSheet .rv-by{margin-top:6px}
 }
+/* v25: officers' evaluation inside the entry form */
+.rvform{margin-top:14px;border:1.5px solid #d6c6f5;background:#faf7ff;border-radius:12px;padding:0 10px}
+details.more.rvform>summary{display:flex;align-items:flex-start;gap:8px;padding:11px 2px;font-weight:700;line-height:1.4;cursor:pointer}
+details.more.rvform>summary .ic{flex:0 0 auto;margin-top:2px}
+.rvform .rvs-t{min-width:0;word-break:keep-all;overflow-wrap:break-word}
+.rvform .rvs-d{display:block;font-weight:600;font-size:12.5px;color:var(--text-2);margin-top:2px}.rvform .rvs-d b{color:#0a7a3e;margin-left:4px}
+.rvform[open]{padding-bottom:12px}
+#fRvBody .rvc{background:#fff}

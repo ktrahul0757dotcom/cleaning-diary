@@ -1,4 +1,4 @@
-const APP_VER='v24';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v25';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -324,31 +324,51 @@ async function renderReviewCard(){const box=$('#rvBody');if(!box)return;const to
   const r=await getReview(d);if(tok!==rvTok)return;rvCur={d,r};
   $('#rvEdit').style.display=can.sup()?'flex':'none';$('#rvEdit').innerHTML=ico('edit')+(r?'മാറ്റം വരുത്തുക <span class="en">(Edit)</span>':'പൂരിപ്പിക്കുക <span class="en">(Fill in)</span>');
   if(!r){box.innerHTML=`<p class="hint" style="margin:0">⏳ ഈ ദിവസം വിലയിരുത്തൽ പൂരിപ്പിച്ചിട്ടില്ല. <span class="en">(Not filled for this day – PDFs show a blank form for pen filling.)</span></p>`;return}
-  const of=rvOfficers(r),cr=rvCrit(r);
-  box.innerHTML=`<div class="rv-ofl">${of.map((o,i)=>`<div class="rv-or"><span class="no">${i+1}</span><span><b>${esc(o.name)}</b>${o.desig?` <span class="en">· ${esc(o.desig)}</span>`:''}</span></div>`).join('')||'<p class="hint">ഓഫീസർമാരുടെ പേര് ഇല്ല (no officers)</p>'}</div>
+  box.innerHTML=rvReadHTML(r)}
+function rvRowHTML(o,i){return `<div class="rvo"><span class="no">${i+1}</span><div class="rvo-f"><input type="text" class="rvn" maxlength="80" list="offDl" placeholder="പേര് (Name)" value="${esc(o?.name||'')}"><input type="text" class="rvd" maxlength="80" list="offDesDl" placeholder="തസ്തിക (Designation)" value="${esc(o?.desig||'')}"></div></div>`}
+/* shared review editor pieces (Reports card + entry form) */
+function rvReadHTML(r){const of=rvOfficers(r),cr=rvCrit(r);
+  return `<div class="rv-ofl">${of.map((o,i)=>`<div class="rv-or"><span class="no">${i+1}</span><span><b>${esc(o.name)}</b>${o.desig?` <span class="en">· ${esc(o.desig)}</span>`:''}</span></div>`).join('')||'<p class="hint">ഓഫീസർമാരുടെ പേര് ഇല്ല (no officers)</p>'}</div>
     ${cr.map((c,i)=>`<div class="rv-sr"><span class="rvq"><b>${i+1}.</b> ${RV_C[i]}</span><span class="rv-cnt">${c.v==='good'?`<span class="g">✓ ${RV_G}</span>`:c.v==='poor'?`<span class="p">✗ ${RV_P}</span>`:'<span class="n">— ടിക്ക് ഇല്ല (not ticked)</span>'}</span>${c.why?`<span class="rv-why">കാരണം <span class="en">(Reason)</span>: ${esc(c.why)}</span>`:''}</div>`).join('')}
     <p class="hint" style="margin:8px 0 0">✍️ ${esc(r.byName||'')}${r.updatedAt?.toDate?' · '+fmtGen(r.updatedAt.toDate()):''}</p>`}
-function rvRowHTML(o,i){return `<div class="rvo"><span class="no">${i+1}</span><div class="rvo-f"><input type="text" class="rvn" maxlength="80" list="offDl" placeholder="പേര് (Name)" value="${esc(o?.name||'')}"><input type="text" class="rvd" maxlength="80" list="offDesDl" placeholder="തസ്തിക (Designation)" value="${esc(o?.desig||'')}"></div></div>`}
-function openReviewEditor(){if(!can.sup()||!rvCur)return;rvEditing=true;const {d,r}=rvCur;
-  const base=r?rvOfficers(r):activeOff().map(o=>({id:o.id,name:o.name,desig:o.desig||''}));const rows=base.concat(Array(Math.max(0,RV_MIN-base.length)).fill(null));const cr=rvCrit(r);
+function rvEditorHTML(d,r,pfx){const base=r?rvOfficers(r):activeOff().map(o=>({id:o.id,name:o.name,desig:o.desig||''}));const rows=base.concat(Array(Math.max(0,RV_MIN-base.length)).fill(null));const cr=rvCrit(r);
   $('#offDl').innerHTML=activeOff().map(o=>`<option value="${esc(o.name)}">`).join('');fillDesDl();
+  return `<p class="hint" style="margin-top:0">🗓️ <b>${fmtDate(d)}</b> – ഓഫീസർമാരുടെ പേരും തസ്തികയും <span class="en">(officers' names & designations)</span></p>
+    <div id="${pfx}Rows" class="rvRows">${rows.map(rvRowHTML).join('')}</div>
+    <button class="btn out sm rvAddRow" id="${pfx}AddRow" type="button">${ico('plus','sm')}വരി ചേർക്കുക <span class="en">(Add row)</span></button>
+    <div class="rv-crit">${cr.map((c,i)=>`<div class="rvc" data-i="${i}"><div class="rvq"><b>${i+1}.</b> ${RV_C[i]}</div><div class="rvt"><label class="mwc rvg${c.v==='good'?' on':''}"><input type="checkbox" data-v="good"${c.v==='good'?' checked':''}><span class="mwbx"></span><span>${RV_G}</span></label><label class="mwc rvp${c.v==='poor'?' on':''}"><input type="checkbox" data-v="poor"${c.v==='poor'?' checked':''}><span class="mwbx"></span><span>${RV_P}</span></label></div><textarea class="rvw" rows="2" maxlength="300" placeholder="കാരണം (Reason)">${esc(c.why)}</textarea></div>`).join('')}</div>`}
+function bindRvEditor(root){const rowsEl=root.querySelector('.rvRows');
+  root.querySelector('.rvAddRow').onclick=()=>{const n=rowsEl.querySelectorAll('.rvo').length;if(n>=40)return toast('⚠️ പരമാവധി 40 (Max 40)');rowsEl.insertAdjacentHTML('beforeend',rvRowHTML(null,n));[...rowsEl.querySelectorAll('.rvn')].at(-1).focus();root.dispatchEvent(new Event('input',{bubbles:true}))};
+  rowsEl.addEventListener('change',e=>{if(!e.target.classList.contains('rvn'))return;const o=activeOff().find(x=>x.name.toLowerCase()===e.target.value.trim().toLowerCase());const dz=e.target.closest('.rvo').querySelector('.rvd');if(o&&o.desig&&!dz.value.trim())dz.value=o.desig});
+  root.querySelectorAll('.rvc').forEach(c=>c.addEventListener('change',e=>{const t=e.target;if(t.type!=='checkbox')return;if(t.checked)c.querySelectorAll('input[type=checkbox]').forEach(x=>{if(x!==t)x.checked=false});c.querySelectorAll('.mwc').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked))}))}
+function collectRv(root){const officers=[...root.querySelectorAll('.rvRows .rvo')].map(x=>({name:x.querySelector('.rvn').value.trim().replace(/\s+/g,' ').slice(0,80),desig:x.querySelector('.rvd').value.trim().replace(/\s+/g,' ').slice(0,80)})).filter(o=>o.name).map(o=>{const m=offNames.find(x=>x.name.toLowerCase()===o.name.toLowerCase());return m?{id:m.id,...o}:o});
+  const crit=[...root.querySelectorAll('.rvc')].map(c=>({v:c.querySelector('input[data-v=good]').checked?'good':c.querySelector('input[data-v=poor]').checked?'poor':'',why:c.querySelector('.rvw').value.trim().slice(0,300)}));
+  return {officers,crit,empty:!officers.length&&!crit.some(c=>c.v||c.why)}}
+const saveRv=(d,v)=>setDoc(doc(db,'reviews',d),{date:d,officers:v.officers,crit:v.crit,by:me.uid,byName:meDoc.name||me.email||'',updatedAt:serverTimestamp()});
+function openReviewEditor(){if(!can.sup()||!rvCur)return;rvEditing=true;const {d,r}=rvCur;
   $('#rvEdit').style.display='none';
-  $('#rvBody').innerHTML=`<p class="hint" style="margin-top:0">🗓️ <b>${fmtDate(d)}</b> – ഓഫീസർമാരുടെ പേരും തസ്തികയും <span class="en">(officers' names & designations)</span></p>
-    <div id="rvRows">${rows.map(rvRowHTML).join('')}</div>
-    <button class="btn out sm" id="rvAddRow" type="button">${ico('plus','sm')}വരി ചേർക്കുക <span class="en">(Add row)</span></button>
-    <div class="rv-crit">${cr.map((c,i)=>`<div class="rvc" data-i="${i}"><div class="rvq"><b>${i+1}.</b> ${RV_C[i]}</div><div class="rvt"><label class="mwc rvg${c.v==='good'?' on':''}"><input type="checkbox" data-v="good"${c.v==='good'?' checked':''}><span class="mwbx"></span><span>${RV_G}</span></label><label class="mwc rvp${c.v==='poor'?' on':''}"><input type="checkbox" data-v="poor"${c.v==='poor'?' checked':''}><span class="mwbx"></span><span>${RV_P}</span></label></div><textarea class="rvw" rows="2" maxlength="300" placeholder="കാരണം (Reason)">${esc(c.why)}</textarea></div>`).join('')}</div>
-    <div class="row" style="margin-top:12px"><button class="btn out" id="rvCancel" type="button">${ico('x')}റദ്ദാക്കുക</button><button class="btn block" id="rvSave" type="button">${ico('save')}സേവ് ചെയ്യുക <span class="en">(Save)</span></button></div>
+  $('#rvBody').innerHTML=rvEditorHTML(d,r,'rv')+`<div class="row" style="margin-top:12px"><button class="btn out" id="rvCancel" type="button">${ico('x')}റദ്ദാക്കുക</button><button class="btn block" id="rvSave" type="button">${ico('save')}സേവ് ചെയ്യുക <span class="en">(Save)</span></button></div>
     ${r?`<button class="btn out sm" id="rvClear" type="button" style="margin-top:10px">${ico('trash','sm')}ഈ ദിവസത്തെ വിലയിരുത്തൽ മായ്ക്കുക <span class="en">(Clear)</span></button>`:''}`;
-  $('#rvAddRow').onclick=()=>{const n=$$('#rvRows .rvo').length;if(n>=40)return toast('⚠️ പരമാവധി 40 (Max 40)');$('#rvRows').insertAdjacentHTML('beforeend',rvRowHTML(null,n));$$('#rvRows .rvn').at(-1).focus()};
-  $('#rvRows').addEventListener('change',e=>{if(!e.target.classList.contains('rvn'))return;const o=activeOff().find(x=>x.name.toLowerCase()===e.target.value.trim().toLowerCase());const dz=e.target.closest('.rvo').querySelector('.rvd');if(o&&o.desig&&!dz.value.trim())dz.value=o.desig});
-  $$('#rvBody .rvc').forEach(c=>c.addEventListener('change',e=>{const t=e.target;if(t.type!=='checkbox')return;if(t.checked)c.querySelectorAll('input[type=checkbox]').forEach(x=>{if(x!==t)x.checked=false});c.querySelectorAll('.mwc').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked))}));
+  bindRvEditor($('#rvBody'));
   $('#rvCancel').onclick=()=>{rvEditing=false;renderReviewCard()};
-  $('#rvSave').onclick=async()=>{const officers=$$('#rvRows .rvo').map(x=>({name:x.querySelector('.rvn').value.trim().replace(/\s+/g,' ').slice(0,80),desig:x.querySelector('.rvd').value.trim().replace(/\s+/g,' ').slice(0,80)})).filter(o=>o.name).map(o=>{const m=offNames.find(x=>x.name.toLowerCase()===o.name.toLowerCase());return m?{id:m.id,...o}:o});
-    const crit=$$('#rvBody .rvc').map(c=>({v:c.querySelector('input[data-v=good]').checked?'good':c.querySelector('input[data-v=poor]').checked?'poor':'',why:c.querySelector('.rvw').value.trim().slice(0,300)}));
-    if(!officers.length&&!crit.some(c=>c.v||c.why))return toast('⚠️ ഒന്നും പൂരിപ്പിച്ചിട്ടില്ല (Nothing filled)');
-    const b=$('#rvSave');b.disabled=true;try{await setDoc(doc(db,'reviews',d),{date:d,officers,crit,by:me.uid,byName:meDoc.name||me.email||'',updatedAt:serverTimestamp()});toast('✅ വിലയിരുത്തൽ സേവ് ചെയ്തു (Evaluation saved)');rvEditing=false;resetPdfBtn();renderReviewCard()}catch(e){toast('⚠️ '+(e.code||e.message))}finally{b.disabled=false}};
+  $('#rvSave').onclick=async()=>{const v=collectRv($('#rvBody'));if(v.empty)return toast('⚠️ ഒന്നും പൂരിപ്പിച്ചിട്ടില്ല (Nothing filled)');
+    const b=$('#rvSave');b.disabled=true;try{await saveRv(d,v);toast('✅ വിലയിരുത്തൽ സേവ് ചെയ്തു (Evaluation saved)');rvEditing=false;resetPdfBtn();renderReviewCard()}catch(e){toast('⚠️ '+(e.code||e.message))}finally{b.disabled=false}};
   if($('#rvClear'))$('#rvClear').onclick=async()=>{if(!await ask(`${fmtDate(d)} – വിലയിരുത്തൽ മായ്ക്കണോ? (Clear this day's evaluation?)`,{danger:true,yes:'മായ്ക്കുക (Clear)'}))return;try{await deleteDoc(doc(db,'reviews',d));toast('🗑️ മായ്ച്ചു (Cleared)');rvEditing=false;resetPdfBtn();renderReviewCard()}catch(e){toast('⚠️ '+(e.code||e.message))}};
   $('#rvCard').scrollIntoView({block:'start'})}
+/* entry form section: same reviews/{entry date} record; loaded when opened / date changes; saved with the entry only if touched */
+let fRv={d:null,r:null,touched:false,tok:0,loaded:false};
+async function loadFormReview(){const box=$('#fRvBody');if(!box)return;const d=$('#fDate').value||today();const tok=++fRv.tok;fRv={...fRv,d,touched:false,loaded:false};
+  $('#fRvDate').textContent=fmtDate(d);if(!$('#fRvWrap').open){$('#fRvState').textContent='';box.innerHTML='';return}
+  box.innerHTML='<p class="hint">…</p>';const r=await getReview(d);if(tok!==fRv.tok)return;fRv.r=r;fRv.loaded=true;
+  $('#fRvState').textContent=r?'✓ പൂരിപ്പിച്ചു (filled)':'';
+  if(can.sup()){box.innerHTML=rvEditorHTML(d,r,'fRv')+`<p class="hint" style="margin:10px 0 0">💾 ജോലി സേവ് ചെയ്യുമ്പോൾ ഈ വിലയിരുത്തലും സേവ് ആകും (${fmtDate(d)} – റിപ്പോർട്ടിലെ അതേ വിലയിരുത്തൽ). <span class="en">(Saved together with the entry; same record as the Reports card.)</span></p>`;bindRvEditor(box)}
+  else box.innerHTML=r?rvReadHTML(r):`<p class="hint" style="margin:0">⏳ ഈ ദിവസം വിലയിരുത്തൽ പൂരിപ്പിച്ചിട്ടില്ല. അഡ്മിൻ / സൂപ്പർവൈസർ പൂരിപ്പിക്കും. <span class="en">(Not filled yet – admin / supervisor fills it.)</span></p>`}
+$('#fRvWrap').addEventListener('toggle',()=>{if($('#fRvWrap').open&&(!fRv.loaded||fRv.d!==($('#fDate').value||today())))loadFormReview()});
+$('#fRvBody').addEventListener('input',()=>{if(fRv.loaded)fRv.touched=true});$('#fRvBody').addEventListener('change',()=>{if(fRv.loaded)fRv.touched=true});
+$('#fDate').addEventListener('change',async()=>{const nd=$('#fDate').value||today();if(nd===fRv.d)return;
+  if(fRv.touched&&can.sup()&&!await ask(`വിലയിരുത്തലിലെ മാറ്റങ്ങൾ സേവ് ചെയ്തിട്ടില്ല. ${fmtDate(nd)} ലെ വിലയിരുത്തൽ തുറക്കണോ? (Unsaved evaluation changes will be dropped – load ${dmy(nd)}?)`)){$('#fDate').value=fRv.d;return}
+  loadFormReview()});
+function resetFormReview(){fRv={d:null,r:null,touched:false,tok:fRv.tok+1,loaded:false};const w=$('#fRvWrap');if(w){w.open=false;$('#fRvBody').innerHTML='';$('#fRvState').textContent='';$('#fRvDate').textContent=fmtDate($('#fDate').value||today())}}
 $('#rvEdit').onclick=openReviewEditor;
 $('#rvJump').onclick=()=>$('#rvCard').scrollIntoView({block:'start',behavior:'smooth'});
 /* officers' names manager (Settings) – admin/supervisor; soft remove keeps old reviews (they store a snapshot) */
@@ -452,9 +472,9 @@ $('#fPlace').addEventListener('change',syncMassForm);
 function resetForm(){editing=null;curPhotos=[];gps=null;$('#fDate').value=today();$('#fTime').value=nowTime();{const ap=activePlaces();$('#fPlace').value=ap.length===1?ap[0].id:''}
   $$('#fWork input').forEach(i=>{i.checked=false;i.closest('.chip').classList.remove('on')});$('#fWorkOther').value='';$('#fWorkOther').style.display='none';
   ['#fWorkers','#fWaste','#fNotes','#fMassOther','#fMassPlace','#fMassWard','#fMassArea','#fCrewOther'].forEach(s=>$(s).value='');$('#fWorkers').dataset.manual='';$$('#fCrew input').forEach(i=>i.checked=false);renderCrewChips();$('#fDaily').checked=true;$('#fMass').checked=false;$('#fSpecial').checked=false;$$('#fMassWork input').forEach(i=>i.checked=false);renderMassChips();syncMassForm();$('#fWasteUnit').selectedIndex=0;renderFormPhotos();renderGPS();
-  $('#formTitle').innerHTML='📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span>';$('#cancelEdit').style.display='none'}
+  $('#formTitle').innerHTML='📝 പുതിയ ജോലി <span class="en">(New Work Entry)</span>';$('#cancelEdit').style.display='none';resetFormReview()}
 $('#cancelEdit').onclick=()=>{resetForm();show('v-dash')};
-async function editEntry(e){resetForm();editing=e;if(e.placeId&&!isActivePlace(places.find(p=>p.id===e.placeId)))renderPlaces();$('#fDate').value=e.date;$('#fTime').value=e.time||'';$('#fPlace').value=e.placeId||'';
+async function editEntry(e){resetForm();editing=e;if(e.placeId&&!isActivePlace(places.find(p=>p.id===e.placeId)))renderPlaces();$('#fDate').value=e.date;resetFormReview();$('#fTime').value=e.time||'';$('#fPlace').value=e.placeId||'';
   $$('#fWork input').forEach(i=>{i.checked=(e.works||[]).includes(i.value);i.closest('.chip').classList.toggle('on',i.checked)});$('#fWorkOther').value=e.workOther||'';$('#fWorkOther').style.display=(e.works||[]).includes('other')?'block':'none';
   $('#fWorkers').value=e.workers??'';$('#fWaste').value=e.waste??'';if(e.wasteUnit)$('#fWasteUnit').value=e.wasteUnit;$('#fNotes').value=e.notes||'';gps=e.gps||null;renderGPS();
   const ps=await getDocs(collection(db,'entries',e.id,'photos'));curPhotos=ps.docs.map(d=>({id:d.id,...d.data(),isNew:false,src:d.data().url||d.data().data}));renderFormPhotos();
@@ -482,7 +502,9 @@ $('#saveBtn').onclick=async()=>{const mass=massOn(),mKind=mass?['mass','special'
     const b=writeBatch(db);
     if(editing)b.update(ref,data);else b.set(ref,{...data,workerUid:me.uid,workerName:meDoc.name||me.displayName||'',remarkCount:0,score:null,lastRating:'',createdAt:serverTimestamp()});
     for(const p of curPhotos){const pr=doc(db,'entries',ref.id,'photos',p.id);if(p.removed){if(!p.isNew)b.delete(pr)}else if(p.isNew)b.set(pr,{kind:p.kind,ts:p.ts,by:me.uid,...(p.url?{url:p.url,path:p.path}:{data:p.inline})})}
+    const rvV=(fRv.touched&&fRv.loaded&&can.sup()&&$('#fRvBody .rvRows'))?collectRv($('#fRvBody')):null,rvD=data.date;
     const commit=b.commit();const wasEdit=!!editing;
+    if(rvV&&!rvV.empty){if(rvD!==fRv.d)toast('⚠️ തീയതി മാറി – വിലയിരുത്തൽ സേവ് ചെയ്തില്ല (date changed – evaluation not saved)');else saveRv(rvD,rvV).then(()=>{toast('✅ വിലയിരുത്തലും സേവ് ചെയ്തു (Evaluation saved too)');resetPdfBtn()}).catch(e=>toast('⚠️ വിലയിരുത്തൽ: '+(e.code||e.message),5000))}
     const res=await Promise.race([commit.then(()=>'ok'),new Promise(r=>setTimeout(()=>r('later'),5000))]);
     commit.catch(e=>toast('⚠️ സേവ് പരാജയപ്പെട്ടു: '+e.code,5000));
     toast(res==='ok'?(wasEdit?'✅ മാറ്റങ്ങൾ സേവ് ചെയ്തു (Updated)':'✅ സേവ് ചെയ്തു (Saved)'):'💾 ഫോണിൽ സേവ് ചെയ്തു – നെറ്റ് വന്നാൽ സിങ്ക് ആകും (Saved offline, will sync)',4000);
