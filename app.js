@@ -1,4 +1,4 @@
-const APP_VER='v26';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v27';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -81,6 +81,19 @@ const {collection,doc,setDoc,getDoc,getDocs,updateDoc,deleteDoc,writeBatch,onSna
 /* ---------- state ---------- */
 let me=null,meDoc=null,users=[],places=[],entries=[],editing=null,curPhotos=[],gps=null,unsubs=[],entryUnsub=null,detailId=null,detailUnsubs=[],notifs=[],notifReady=false;
 const role=()=>meDoc?.role||'none';
+/* photo kinds: before, after, and present status (ഇപ്പോഴത്തെ അവസ്ഥ). Old entries have only before/after. */
+const PH_KIND={before:['📷','മുമ്പ്','Before'],after:['✨','ശേഷം','After'],present:['📍','ഇപ്പോഴത്തെ അവസ്ഥ','Present Status']};
+const PH_ORDER=['before','after','present'];
+const phCap=k=>{const t=PH_KIND[k]||['','',k];return `${t[0]} ${t[1]} (${t[2]})`};
+const phRank=k=>{const i=PH_ORDER.indexOf(k);return i<0?99:i};
+const phSort=(x,z)=>phRank(x.kind)-phRank(z.kind)||(x.ts||0)-(z.ts||0);
+const hasPres=e=>!!(e&&e.hasPresent);
+function photoStatus(e){const b=!!e.hasBefore,a=!!e.hasAfter,p=hasPres(e);
+  if(b&&a)return '✅ മുമ്പും ശേഷവും ഫോട്ടോ (Before+after)'+(p?' · 📍 ഇപ്പോഴത്തെ അവസ്ഥ (Present status)':'');
+  if(p&&!b&&!a)return '✅ ഇപ്പോഴത്തെ അവസ്ഥ ഫോട്ടോ (Present status)';
+  if(p||b||a)return '⚠️ ഭാഗിക ഫോട്ടോ'+(p?' + ഇപ്പോഴത്തെ അവസ്ഥ (Partial + Present status)':' (Partial photos)');
+  return '❌ ഫോട്ടോ ഇല്ല (No photos)'}
+const photoProof=e=>!!((e.hasBefore&&e.hasAfter)||e.hasPresent);
 const can={staff:()=>['admin','supervisor','officer'].includes(role()),moderate:()=>['admin','officer'].includes(role()),work:()=>['admin','supervisor','worker'].includes(role()),remark:()=>['admin','supervisor','officer'].includes(role()),sup:()=>['admin','supervisor'].includes(role()),admin:()=>role()==='admin'};
 function setNet(){$('#net').textContent=navigator.onLine?'ഓൺലൈൻ':'ഓഫ്‌ലൈൻ';$('#net').classList.toggle('off',!navigator.onLine)}
 addEventListener('online',setNet);addEventListener('offline',setNet);setNet();
@@ -155,7 +168,7 @@ function fillFilters(){for(const p of ['d','r']){const ar=$(`#${p}Area`),wd=$(`#
 function filtered(p='d'){const ty=$(`#${p}Type`).value,a=$(`#${p}Area`).value,w=$(`#${p}Ward`).value,k=$(`#${p}Worker`).value,q=p==='d'?$('#dSearch').value.trim().toLowerCase():'';
   return entries.filter(e=>(!ty||placeTypeOf(e)===ty)&&(!a||e.area===a)&&(!w||e.ward===w)&&(!k||e.workerUid===k)&&(!q||[e.placeName,e.area,e.ward,e.workerName,e.notes,worksText(e),worksText(e,1),fmtDate(e.date)].join(' ').toLowerCase().includes(q)))}
 function stats(list){const scored=list.filter(e=>e.score!=null);const avg=scored.length?Math.round(scored.reduce((s,e)=>s+e.score,0)/scored.length):null;
-  const proof=list.length?Math.round(100*list.filter(e=>e.hasBefore&&e.hasAfter).length/list.length):0;
+  const proof=list.length?Math.round(100*list.filter(e=>photoProof(e)).length/list.length):0;
   const waste={};list.forEach(e=>{if(e.waste!=null){const u=e.wasteUnit||'kg';waste[u]=(waste[u]||0)+e.waste}});
   return{avg,proof,scored:scored.length,awaiting:list.filter(e=>!e.remarkCount).length,days:new Set(list.map(e=>e.date)).size,places:new Set(list.map(e=>e.placeId||e.placeName)).size,workers:list.reduce((s,e)=>s+(e.workers||0),0),waste,photos:list.reduce((s,e)=>s+(e.photoCount||0),0)}}
 function ringHTML(v){const r=52,c=2*Math.PI*r,p=v==null?0:Math.max(0,Math.min(1,v/100));return `<div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="${r}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="11"/>${p>0?`<circle cx="60" cy="60" r="${r}" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(c*p).toFixed(1)} ${c.toFixed(1)}"/>`:''}</svg><div class="v">${v??'–'}</div></div>`}
@@ -447,7 +460,7 @@ window.__compressPhoto=compressPhoto;
 $$('input[type=file][data-kind]').forEach(inp=>inp.onchange=async()=>{const fs=[...inp.files];inp.value='';if(!fs.length)return;toast('⏳ ഫോട്ടോ ചേർക്കുന്നു...');
   for(const f of fs){try{const p=await compressPhoto(f);curPhotos.push({id:doc(collection(db,'x')).id,kind:inp.dataset.kind,isNew:true,ts:Date.now(),...p,src:p.inline})}catch(e){toast('⚠️ ഫോട്ടോ ചേർക്കാനായില്ല')}}
   renderFormPhotos();toast('✅ ഫോട്ടോ ചേർത്തു')});
-function renderFormPhotos(){for(const k of ['before','after'])(k==='before'?$('#phBefore'):$('#phAfter')).innerHTML=curPhotos.filter(p=>p.kind===k&&!p.removed).map(p=>`<div class="ph"><img src="${p.src}" alt=""><button type="button" data-id="${p.id}">×</button></div>`).join('');
+function renderFormPhotos(){for(const k of PH_ORDER){const box=$(k==='before'?'#phBefore':k==='after'?'#phAfter':'#phPresent');if(box)box.innerHTML=curPhotos.filter(p=>p.kind===k&&!p.removed).map(p=>`<div class="ph"><img src="${p.src}" alt=""><button type="button" data-id="${p.id}">×</button></div>`).join('')}
   $$('#v-new .ph button').forEach(b=>b.onclick=()=>{const p=curPhotos.find(x=>x.id===b.dataset.id);if(p)p.removed=true;renderFormPhotos()})}
 
 /* ---------- form ---------- */
@@ -494,11 +507,11 @@ $('#saveBtn').onclick=async()=>{const mass=massOn(),mKind=mass?['mass','special'
   try{const ref=editing?doc(db,'entries',editing.id):doc(collection(db,'entries'));const live=curPhotos.filter(p=>!p.removed);
     const useStorage=storage&&navigator.onLine;const newPh=live.filter(p=>p.isNew);
     if(useStorage){toast('⏫ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുന്നു...');for(const p of newPh){try{const sr=S.ref(storage,`photos/${ref.id}/${p.id}.jpg`);await S.uploadBytes(sr,p.blob,{contentType:'image/jpeg'});p.url=await S.getDownloadURL(sr);p.path=sr.fullPath}catch(e){console.warn('storage upload failed, inline fallback',e)}}}
-    const thumbP=live.find(p=>p.kind==='after')||live[0];let thumb=editing?.thumb||'';if(thumbP&&thumbP.thumb)thumb=thumbP.thumb;else if(!live.length)thumb='';
+    const thumbP=live.find(p=>p.kind==='after')||live.find(p=>p.kind==='present')||live[0];let thumb=editing?.thumb||'';if(thumbP&&thumbP.thumb)thumb=thumbP.thumb;else if(!live.length)thumb='';
     else if(thumbP&&thumbP.id!==editing?.thumbId){try{thumb=(await toCanvasBlob(await loadImage(thumbP.src),240,0.6)).c.toDataURL('image/jpeg',0.6)}catch(e){}}
     const data={date:$('#fDate').value||today(),time:$('#fTime').value,placeId:pl.id,placeName:pl.name,area:pl.area||'',ward:pl.ward||'',placeType:pl.type||'other',placeTypeOther:pl.typeOther||'',works,workOther:daily?$('#fWorkOther').value.trim():'',cats:[...(daily?['daily']:[]),...mKind],mass,massWorks:mIds,massLabels:mIds.map(id=>massById(id)?.ml||id),massOther:mOther,oneOff,massKind:mKind,massPlace:mPlace,massWard:mWard,massArea:mArea,crew:cIds,crewNames:cIds.map((id,i)=>crewById(id)?.name||(editing?.crewNames||[])[(editing?.crew||[]).indexOf(id)]||id),crewOther:$('#fCrewOther').value.trim().slice(0,500),
       workers:$('#fWorkers').value===''?null:+$('#fWorkers').value,waste:$('#fWaste').value===''?null:+$('#fWaste').value,wasteUnit:$('#fWasteUnit').value,notes:$('#fNotes').value.trim(),gps:gps||null,
-      photoCount:live.length,hasBefore:live.some(p=>p.kind==='before'),hasAfter:live.some(p=>p.kind==='after'),thumb,thumbId:thumbP?.id||'',updatedAt:serverTimestamp()};
+      photoCount:live.length,hasBefore:live.some(p=>p.kind==='before'),hasAfter:live.some(p=>p.kind==='after'),hasPresent:live.some(p=>p.kind==='present'),thumb,thumbId:thumbP?.id||'',updatedAt:serverTimestamp()};
     const b=writeBatch(db);
     if(editing)b.update(ref,data);else b.set(ref,{...data,workerUid:me.uid,workerName:meDoc.name||me.displayName||'',remarkCount:0,score:null,lastRating:'',createdAt:serverTimestamp()});
     for(const p of curPhotos){const pr=doc(db,'entries',ref.id,'photos',p.id);if(p.removed){if(!p.isNew)b.delete(pr)}else if(p.isNew)b.set(pr,{kind:p.kind,ts:p.ts,by:me.uid,...(p.url?{url:p.url,path:p.path}:{data:p.inline})})}
@@ -520,9 +533,9 @@ function openDetail(id){detailId=id;detailUnsubs.forEach(u=>u());detPhotos=[];de
   $('#remarkForm').style.display=can.remark()?'block':'none';resetRemark();show('v-detail');setTimeout(()=>sig.size(),50)}
 function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🗂️ വിഭാഗം (Category)',catMarks(e)],['🧹 ദൈനംദിന ജോലി (Daily work)',regWorksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Names)',crewOf(e).join(', ')],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
   const gpsRow=e.gps?`<tr><td>🛰️ GPS</td><td><a href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank" rel="noopener">${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}</a></td></tr>`:'';
-  const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy" data-cap="${k==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'}">`).join('')}</div>`:''};
+  const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${phCap(k)}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy" data-cap="${phCap(k)}">`).join('')}</div>`:''};
   return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.placeName)} ${kindBadge(e)} ${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:''}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${esc(x[1])}</td></tr>`).join('')}${gpsRow}</table>${e.mass?massBlockHTML(e):''}
-    ${withPhotos?grid('before')+grid('after'):''}${remarks?remarksHTML(remarks):''}</div>`}
+    ${withPhotos?PH_ORDER.map(grid).join(''):''}${remarks?remarksHTML(remarks):''}</div>`}
 function remarksHTML(rs){if(!rs.length)return '';return `<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div>`+rs.map(r=>{const t=RATE[r.rating];return `<div class="remark"><b>${esc(r.officerName)}</b>${r.desig?', '+esc(r.desig):''} ${t?`<span class="badge ${t[2]}">${t[0]} (${t[1]})</span>`:''}<div>${esc(r.text)}</div>${r.signature?`<img src="${r.signature}" alt="signature">`:''}<div class="hint">${r.createdAt?new Date(r.createdAt.seconds*1000).toLocaleString('en-IN'):''}</div></div>`}).join('')}
 function renderDetail(){const e=entries.find(x=>x.id===detailId);if(!e){$('#detOut').innerHTML=skelHTML(1);return}
   $('#detOut').innerHTML=entryHTML(e,detPhotos,null);{const b=$('#detPdf');if(!b.classList.contains('ready')||b.dataset.id!==e.id){b.classList.remove('ready');b.dataset.id=e.id;b.innerHTML=EPDF_LABEL;b.onclick=()=>entryPdfAction(e.id,'share',b)}$('#detSave').onclick=()=>entryPdfAction(e.id,'save',$('#detSave'));$('#detPrint').onclick=()=>entryPdfAction(e.id,'print',$('#detPrint'))}
@@ -583,15 +596,15 @@ async function rangeFeedback(from,to,a,w,ty,pl){try{const s=await getDocs(query(
 const REPORT_HEAD=t=>`<div class="rp-h"><div class="rp-brand"><span class="mark">${MARK_SVG}</span><b>ഭദ്രം ഈ ഭൂമി – ദൈനംദിന ശുചീകരണം</b></div><div class="en">Bhadram Ee Bhoomi – Daily Cleaning</div><h2>${t}</h2>${jdReportHTML()}`;
 const CREDIT=()=>`<p class="hint center">തയ്യാറാക്കിയത് (Generated): ${new Date().toLocaleString('en-IN')} · ${esc(meDoc?.name||'')} · ഭദ്രം ഈ ഭൂമി (Bhadram Ee Bhoomi)<br>ആപ്പ് ഡെവലപ്പർ: രാഹുൽ കെ.ടി. (Grok സഹായത്തോടെ) · Developed by Rahul K T with Grok</p>`;
 function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:`<span class="badge pend">⏳ അഭിപ്രായം ബാക്കി (Awaiting remark)</span>`;
-  const proof=e.hasBefore&&e.hasAfter?'✅ മുമ്പും ശേഷവും ഫോട്ടോ (Before+after)':e.hasBefore||e.hasAfter?'⚠️ ഭാഗിക ഫോട്ടോ (Partial photos)':'❌ ഫോട്ടോ ഇല്ല (No photos)';
-  const ph=photos.slice().sort((x,z)=>(x.kind===z.kind?0:x.kind==='before'?-1:1)||x.ts-z.ts);
+  const proof=photoStatus(e);
+  const ph=photos.slice().sort(phSort);
   return `<div class="dr-e"><div class="hd"><span>📍 ${esc(e.placeName)}${e.ward?' · '+esc(e.ward):''}</span><span>🕐 ${esc(e.time||'')}</span></div>
   <div>${kindBadge(e)}${typeBadge(placeTypeOf(e),e)} ${sc}</div>
   <table class="rp-tbl" style="margin:6px 0"><tr><td style="width:34%">👷 തൊഴിലാളി (Worker)</td><td>${esc(e.workerName||'')}${e.workers?` · 👥 ${e.workers}`:''}</td></tr>${crewOf(e).length?`<tr><td>👥 തൊഴിലാളികളുടെ പേരുകൾ (Names)</td><td>${esc(crewOf(e).join(', '))}</td></tr>`:''}
   <tr><td>🗂️ വിഭാഗം (Category)</td><td class="catm">${esc(catMarks(e))}</td></tr>
   <tr><td>🧹 ജോലി (Work done)</td><td>${(e.works||[]).length?esc(regWorksText(e)):''}${e.mass?massBlockHTML(e,true):''}${e.waste!=null?` · 🗑️ ${e.waste} ${esc(e.wasteUnit||'')}`:''}</td></tr>
   <tr><td>📋 നില (Status)</td><td>${proof}${e.remarkCount?` · 💬 ${e.remarkCount}`:''}</td></tr>${e.notes?`<tr><td>📝 കുറിപ്പ് (Notes)</td><td>${esc(e.notes)}</td></tr>`:''}</table>
-  ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
+  ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=phCap(p.kind);return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
   ${remarksHTML(rs)}</div>`}
 function dayFbHTML(list){if(!list.length)return '<p class="hint">ഈ ദിവസം സ്ഥലവാസികളുടെ അഭിപ്രായം ഇല്ല (No resident feedback this day)</p>';
   return list.map(f=>`<div class="dr-fb">${starsHTML(f.rating)} <b>${f.rating}/5</b> · <b>${esc(f.placeName||'')}</b>${f.ward?' · '+esc(f.ward):''} <span class="hint">${fbDate(f)?fbDate(f).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):''}${f.name?' · '+esc(f.name):''}</span>
@@ -712,19 +725,19 @@ function entryWorkTypesHTML(e){const works=e.works||[],mw=e.massWorks||[];
   <div class="pcl ewt">${boxItem(!!massWardOf(e),`വാർഡ് <span class="en">(Ward)</span>: ${massWardOf(e)?`<b>${esc(massWardOf(e))}</b>`:'<span class="sg-line"></span>'}`)}${boxItem(!!massAreaOf(e),`ഏരിയ <span class="en">(Area)</span>: ${massAreaOf(e)?`<b>${esc(massAreaOf(e))}</b>`:'<span class="sg-line"></span>'}`)}</div>
   <div class="ewt-h">💪 മാസ് / സ്പെഷ്യൽ വർക്ക് ജോലികൾ <span class="en">(Mass / special work types)</span></div><div class="pcl ewt">${mass}${massOther}</div>`}
 function entryPdfHTML(e,photos,remarks){
-  const proof=e.hasBefore&&e.hasAfter?'✅ മുമ്പും ശേഷവും ഫോട്ടോ (Before+after)':e.hasBefore||e.hasAfter?'⚠️ ഭാഗിക ഫോട്ടോ (Partial photos)':'❌ ഫോട്ടോ ഇല്ല (No photos)';
+  const proof=photoStatus(e);
   const t=typeInfo(placeTypeOf(e),e);
   const rows=[['📅 തീയതി (Date)',esc(fmtDate(e.date))],['🕐 സമയം (Time)',esc(e.time||'')],['📍 സ്ഥലം / വാർഡ് (Place / ward)',esc([e.placeName,e.ward,e.area].filter(Boolean).join(', '))+(e.mass&&!e.placeId?' <span class="en">(one-off)</span>':'')],
     ['🏷️ സ്ഥല തരം (Place type)',esc(t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))],['👷 തൊഴിലാളി (Worker)',esc(e.workerName||'')],['👥 തൊഴിലാളികളുടെ എണ്ണം (Workers)',e.workers!=null?esc(e.workers):''],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Workers\' names)',crewOf(e).length?crewOf(e).map((n,i)=>`${i+1}. ${esc(n)}`).join('<br>'):''],
     ['🗑️ മാലിന്യം (Waste)',e.waste!=null?esc(e.waste+' '+(e.wasteUnit||'')):''],['📋 നില (Status)',proof+(e.score!=null?` · സ്കോർ (Score) <b>${e.score}</b>`:'')],
     ['🛰️ ലൊക്കേഷൻ (Location)',e.gps?`${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}${e.gps.acc?` (±${Math.round(e.gps.acc)} m)`:''}<br><span class="en">maps.google.com/?q=${e.gps.lat.toFixed(5)},${e.gps.lng.toFixed(5)}</span>`:'<span class="en">– (GPS ഇല്ല / not recorded)</span>'],
     ['📝 കുറിപ്പ് (Remarks / notes)',esc(e.notes||'')]].filter(x=>x[1]!=='');
-  const ph=photos.slice().sort((x,z)=>(x.kind===z.kind?0:x.kind==='before'?-1:1)||x.ts-z.ts);
+  const ph=photos.slice().sort(phSort);
   return REPORT_HEAD(`🧾 ജോലി റിപ്പോർട്ട് (Work entry) – ${fmtDate(e.date)}${e.time?' · '+esc(e.time):''}`)+`</div>
   ${e.mass?`<div style="margin:6px 0">${kindBadge(e)}</div>`:''}
   <table class="rp-tbl" style="margin:8px 0"><tbody>${rows.map(r=>`<tr><td style="width:36%">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>
   ${entryWorkTypesHTML(e)}
-  ${ph.length?`<div class="rp-sub" style="font-size:15px">📷 ഫോട്ടോകൾ (Photos): ${ph.length}</div><div class="dr-ph">${ph.map(p=>{const c=p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)';return `<figure><img src="${p.url||p.data}" alt=""><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
+  ${ph.length?`<div class="rp-sub" style="font-size:15px">📷 ഫോട്ടോകൾ (Photos): ${ph.length}</div><div class="dr-ph">${ph.map(p=>{const c=phCap(p.kind);return `<figure><img src="${p.url||p.data}" alt=""><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
   ${remarks&&remarks.length?remarksHTML(remarks):'<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div><p class="hint">ഇതുവരെ ഇല്ല (None yet)</p>'}`+CREDIT()}
 let entryPdfBusy=false;const EPDF_LABEL='<svg class="ic"><use href="#i-share"/></svg><span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share)</small></span>';
 function detProg(on,msg,frac){const w=$('#detPdfProg');if(!w)return;w.hidden=!on;if(msg!=null)$('#detPdfMsg').textContent=msg;if(frac!=null)w.querySelector('.bar i').style.width=Math.round(frac*100)+'%'}
@@ -1118,11 +1131,11 @@ addEventListener('keydown',e=>{if(!$('#viewer').classList.contains('show'))retur
 document.addEventListener('click',async e=>{const im=e.target.closest('img');if(!im||im.id==='vwImg')return;
   const grid=im.closest('.rp-ph,.photos,.dr-ph');
   if(grid){e.preventDefault();e.stopPropagation();const imgs=[...grid.closest('.dr-e,.rp-e,.card,#v-new')?.querySelectorAll('.rp-ph img,.photos img,.dr-ph img')||grid.querySelectorAll('img')];
-    const list=imgs.map(x=>({src:x.src,cap:x.closest('.photos')?.id==='phBefore'?'📷 മുമ്പ് (Before)':x.closest('.photos')?.id==='phAfter'?'✨ ശേഷം (After)':(x.dataset.cap||'')}));openViewer(list,imgs.indexOf(im));return}
+    const list=imgs.map(x=>({src:x.src,cap:x.closest('.photos')?.id==='phBefore'?phCap('before'):x.closest('.photos')?.id==='phAfter'?phCap('after'):x.closest('.photos')?.id==='phPresent'?phCap('present'):(x.dataset.cap||'')}));openViewer(list,imgs.indexOf(im));return}
   if(im.classList.contains('fbph')){e.stopPropagation();openViewer([{src:im.src,cap:'🗣️ സ്ഥലവാസിയുടെ ഫോട്ടോ (Resident photo)'}]);return}
   if(im.classList.contains('thumb')){const card=im.closest('.entry');if(!card)return;e.stopPropagation();toast('⏳');
-    try{const s=await getDocs(collection(db,'entries',card.dataset.id,'photos'));const ps=s.docs.map(d=>d.data()).sort((a,b)=>(a.kind===b.kind?0:a.kind==='before'?-1:1)||a.ts-b.ts);
-      if(ps.length)openViewer(ps.map(p=>({src:p.url||p.data,cap:p.kind==='before'?'📷 മുമ്പ് (Before)':'✨ ശേഷം (After)'})),0);else openDetail(card.dataset.id)}catch(err){openDetail(card.dataset.id)}}},true);
+    try{const s=await getDocs(collection(db,'entries',card.dataset.id,'photos'));const ps=s.docs.map(d=>d.data()).sort(phSort);
+      if(ps.length)openViewer(ps.map(p=>({src:p.url||p.data,cap:phCap(p.kind)})),0);else openDetail(card.dataset.id)}catch(err){openDetail(card.dataset.id)}}},true);
 
 /* ---------- tabs & SW ---------- */
 $$('nav.tabs button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='v-new'&&!editing)resetForm();show(b.dataset.v)});
@@ -1146,4 +1159,4 @@ if('serviceWorker'in navigator&&location.protocol.startsWith('http')&&!EMU){
     // safety net: if the server already has a newer version than this page, reload once (or offer the button while a form is open)
     latestVer().then(L=>{if(L&&L!==APP_VER){check();if(formBusy())showUpdateBar();else if(sessionStorage.getItem('updTried')!==L){sessionStorage.setItem('updTried',L);setTimeout(()=>forceUpdate(),1500)}}})
   }).catch(()=>{})}
-window.__app={reviewPdfHTML,htmlToPdf,reviewMonthHTML,get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML,formalHTML,fs:{getDocs,getDoc,collection,doc,updateDoc}};
+window.__app={reviewPdfHTML,htmlToPdf,reviewMonthHTML,phCap,photoStatus,photoProof,get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML,formalHTML,fs:{getDocs,getDoc,collection,doc,updateDoc}};

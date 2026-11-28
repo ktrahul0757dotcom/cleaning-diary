@@ -113,7 +113,7 @@
     </div>
     <div class="card login-card">
       <ul class="feat">
-        <li><span class="hic"><svg class="ic"><use href="#i-camera"/></svg></span><div>ദിവസേനയുള്ള ജോലിയും ഫോട്ടോകളും<span class="en">Daily work with before / after photos</span></div></li>
+        <li><span class="hic"><svg class="ic"><use href="#i-camera"/></svg></span><div>ദിവസേനയുള്ള ജോലിയും ഫോട്ടോകളും<span class="en">Daily work with Before, After and Present Status photos</span></div></li>
         <li><span class="hic earth"><svg class="ic"><use href="#i-badge"/></svg></span><div>ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം, ലൈവ്<span class="en">Officer remarks & scores, live</span></div></li>
         <li><span class="hic info"><svg class="ic"><use href="#i-report"/></svg></span><div>ദിവസ / മാസ റിപ്പോർട്ടുകൾ<span class="en">Daily & monthly reports, PDF</span></div></li>
       </ul>
@@ -181,12 +181,16 @@
     </div>
     <div class="card step-card" data-step="2">
       <h2><span class="stepno">2</span>ഫോട്ടോകൾ <span class="en">(Photos)</span></h2>
-      <div class="phgroup"><div class="phlabel"><span class="dot before"></span>മുമ്പ് <span class="en">(Before)</span></div>
+      <div class="phgroup"><div class="phlabel"><span class="dot before"></span><span class="phtxt">മുമ്പ് <span class="en">(Before)</span></span></div>
         <div class="phbtns"><label class="tile"><svg class="ic lg"><use href="#i-camera"/></svg><span>ക്യാമറ<small>Camera</small></span><input type="file" accept="image/*" capture="environment" hidden data-kind="before"></label><label class="tile alt"><svg class="ic lg"><use href="#i-image"/></svg><span>ഗാലറി<small>Gallery</small></span><input type="file" accept="image/*" multiple hidden data-kind="before"></label></div>
         <div class="photos" id="phBefore"></div></div>
-      <div class="phgroup"><div class="phlabel"><span class="dot after"></span>ശേഷം <span class="en">(After)</span></div>
+      <div class="phgroup"><div class="phlabel"><span class="dot after"></span><span class="phtxt">ശേഷം <span class="en">(After)</span></span></div>
         <div class="phbtns"><label class="tile"><svg class="ic lg"><use href="#i-camera"/></svg><span>ക്യാമറ<small>Camera</small></span><input type="file" accept="image/*" capture="environment" hidden data-kind="after"></label><label class="tile alt"><svg class="ic lg"><use href="#i-image"/></svg><span>ഗാലറി<small>Gallery</small></span><input type="file" accept="image/*" multiple hidden data-kind="after"></label></div>
         <div class="photos" id="phAfter"></div></div>
+      <div class="phgroup"><div class="phlabel"><span class="dot present"></span><span class="phtxt">ഇപ്പോഴത്തെ അവസ്ഥ <span class="en">(Present Status)</span></span></div>
+        <div class="phbtns"><label class="tile"><svg class="ic lg"><use href="#i-camera"/></svg><span>ക്യാമറ<small>Camera</small></span><input type="file" accept="image/*" capture="environment" hidden data-kind="present"></label><label class="tile alt"><svg class="ic lg"><use href="#i-image"/></svg><span>ഗാലറി<small>Gallery</small></span><input type="file" accept="image/*" multiple hidden data-kind="present"></label></div>
+        <div class="photos" id="phPresent"></div></div>
+      <p class="hint" id="phHint">മുമ്പ് / ശേഷം ഇല്ലെങ്കിൽ ഇപ്പോഴത്തെ അവസ്ഥ മാത്രം ചേർക്കാം. മൂന്നും ഒരുമിച്ചും ചേർക്കാം. <span class="en">(You can add Present Status photos alone, or together with Before / After.)</span></p>
       <p class="hint" id="phMode"></p>
     </div>
     <div class="card step-card" data-step="3">
