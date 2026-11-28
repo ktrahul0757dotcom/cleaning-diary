@@ -1,4 +1,4 @@
-const APP_VER='v29';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v30';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -85,6 +85,9 @@ const role=()=>meDoc?.role||'none';
 const PH_KIND={before:['📷','മുമ്പ്','Before'],after:['✨','ശേഷം','After'],present:['📍','ഇപ്പോഴത്തെ അവസ്ഥ','Present Status']};
 const PH_ORDER=['before','after','present'];
 const phCap=k=>{const t=PH_KIND[k]||['','',k];return `${t[0]} ${t[1]} (${t[2]})`};
+const PH_NOTE_MAX=200;
+const phNoteOf=p=>String(p&&p.note||'').replace(/\s+/g,' ').trim().slice(0,PH_NOTE_MAX);
+const phNoteHTML=p=>{const n=phNoteOf(p);return n?`<div class="phn">${esc(n)}</div>`:''};
 const phRank=k=>{const i=PH_ORDER.indexOf(k);return i<0?99:i};
 const phSort=(x,z)=>phRank(x.kind)-phRank(z.kind)||(x.ts||0)-(z.ts||0);
 const hasPres=e=>!!(e&&e.hasPresent);
@@ -461,8 +464,10 @@ window.__compressPhoto=compressPhoto;
 $$('input[type=file][data-kind]').forEach(inp=>inp.onchange=async()=>{const fs=[...inp.files];inp.value='';if(!fs.length)return;toast('⏳ ഫോട്ടോ ചേർക്കുന്നു...');
   for(const f of fs){try{const p=await compressPhoto(f);curPhotos.push({id:doc(collection(db,'x')).id,kind:inp.dataset.kind,isNew:true,ts:Date.now(),...p,src:p.inline})}catch(e){toast('⚠️ ഫോട്ടോ ചേർക്കാനായില്ല')}}
   renderFormPhotos();toast('✅ ഫോട്ടോ ചേർത്തു')});
-function renderFormPhotos(){for(const k of PH_ORDER){const box=$(k==='before'?'#phBefore':k==='after'?'#phAfter':'#phPresent');if(box)box.innerHTML=curPhotos.filter(p=>p.kind===k&&!p.removed).map(p=>`<div class="ph"><img src="${p.src}" alt=""><button type="button" data-id="${p.id}">×</button></div>`).join('')}
-  $$('#v-new .ph button').forEach(b=>b.onclick=()=>{const p=curPhotos.find(x=>x.id===b.dataset.id);if(p)p.removed=true;renderFormPhotos()})}
+function renderFormPhotos(){for(const k of PH_ORDER){const box=$(k==='before'?'#phBefore':k==='after'?'#phAfter':'#phPresent');if(!box)continue;
+    box.innerHTML=curPhotos.filter(p=>p.kind===k&&!p.removed).map(p=>`<div class="phitem"><div class="ph"><img src="${p.src}" alt=""><button type="button" data-id="${p.id}" aria-label="remove">×</button></div><textarea class="phnote" lang="ml" rows="2" maxlength="${PH_NOTE_MAX}" placeholder="ഫോട്ടോയെക്കുറിച്ച് എഴുതുക (വേണമെങ്കിൽ)" data-id="${p.id}">${esc(p.note||'')}</textarea></div>`).join('')}
+  $$('#v-new .ph button').forEach(b=>b.onclick=()=>{const p=curPhotos.find(x=>x.id===b.dataset.id);if(p)p.removed=true;renderFormPhotos()});
+  $$('#v-new textarea.phnote').forEach(t=>t.addEventListener('input',()=>{const p=curPhotos.find(x=>x.id===t.dataset.id);if(p)p.note=t.value.slice(0,PH_NOTE_MAX)}))}
 
 /* ---------- form ---------- */
 $('#fWork').innerHTML=WORKS.map(w=>`<label class="chip"><input type="checkbox" value="${w[0]}"><span>${w[1]}<br><span class="en">${w[2]}</span></span></label>`).join('');
@@ -491,7 +496,7 @@ $('#cancelEdit').onclick=()=>{resetForm();show('v-dash')};
 async function editEntry(e){resetForm();editing=e;if(e.placeId&&!isActivePlace(places.find(p=>p.id===e.placeId)))renderPlaces();$('#fDate').value=e.date;resetFormReview();$('#fTime').value=e.time||'';$('#fPlace').value=e.placeId||'';
   $$('#fWork input').forEach(i=>{i.checked=(e.works||[]).includes(i.value);i.closest('.chip').classList.toggle('on',i.checked)});$('#fWorkOther').value=e.workOther||'';$('#fWorkOther').style.display=(e.works||[]).includes('other')?'block':'none';
   $('#fWorkers').value=e.workers??'';$('#fWaste').value=e.waste??'';if(e.wasteUnit)$('#fWasteUnit').value=e.wasteUnit;$('#fNotes').value=e.notes||'';gps=e.gps||null;renderGPS();
-  const ps=await getDocs(collection(db,'entries',e.id,'photos'));curPhotos=ps.docs.map(d=>({id:d.id,...d.data(),isNew:false,src:d.data().url||d.data().data}));renderFormPhotos();
+  const ps=await getDocs(collection(db,'entries',e.id,'photos'));curPhotos=ps.docs.map(d=>{const x=d.data();return {id:d.id,...x,isNew:false,src:x.url||x.data,note:x.note||'',note0:phNoteOf(x)}});renderFormPhotos();
   renderCrewChips();$$('#fCrew input').forEach(i=>{i.checked=(e.crew||[]).includes(i.value);i.closest('.mwc').classList.toggle('on',i.checked)});$('#fCrewOther').value=e.crewOther||'';{const n=crewCount();$('#fWorkers').dataset.manual=(e.workers??null)!==(n||null)&&e.workers!=null?'1':'';$('#fWorkers').value=e.workers??'';$('#fCrewN').textContent=n?`✓ ${n} പേര് (names)`:''}
   {const ks=kindsOf(e);$('#fDaily').checked=ks.includes('daily');$('#fMass').checked=ks.includes('mass');$('#fSpecial').checked=ks.includes('special')}$('#fMassPlace').value=massPlaceOf(e);$('#fMassWard').value=massWardOf(e);$('#fMassArea').value=massAreaOf(e);renderMassChips();$$('#fMassWork input').forEach(i=>{i.checked=(e.massWorks||[]).includes(i.value);i.closest('.mwc').classList.toggle('on',i.checked)});$('#fMassOther').value=e.massOther||'';syncMassForm();
   if(e.mass&&!e.placeId){$('#fPlace').value='__oneoff';syncMassForm()}
@@ -515,7 +520,7 @@ $('#saveBtn').onclick=async()=>{const mass=massOn(),mKind=mass?['mass','special'
       photoCount:live.length,hasBefore:live.some(p=>p.kind==='before'),hasAfter:live.some(p=>p.kind==='after'),hasPresent:live.some(p=>p.kind==='present'),thumb,thumbId:thumbP?.id||'',updatedAt:serverTimestamp()};
     const b=writeBatch(db);
     if(editing)b.update(ref,data);else b.set(ref,{...data,workerUid:me.uid,workerName:meDoc.name||me.displayName||'',remarkCount:0,score:null,lastRating:'',createdAt:serverTimestamp()});
-    for(const p of curPhotos){const pr=doc(db,'entries',ref.id,'photos',p.id);if(p.removed){if(!p.isNew)b.delete(pr)}else if(p.isNew)b.set(pr,{kind:p.kind,ts:p.ts,by:me.uid,...(p.url?{url:p.url,path:p.path}:{data:p.inline})})}
+    for(const p of curPhotos){const pr=doc(db,'entries',ref.id,'photos',p.id);if(p.removed){if(!p.isNew)b.delete(pr)}else if(p.isNew){const n=phNoteOf(p);b.set(pr,{kind:p.kind,ts:p.ts,by:me.uid,...(p.url?{url:p.url,path:p.path}:{data:p.inline}),...(n?{note:n}:{})})}else{const n=phNoteOf(p),was=p.note0||'';if(n!==was)b.update(pr,{note:n})}}
     const rvV=(fRv.touched&&fRv.loaded&&can.sup()&&$('#fRvBody .rvRows'))?collectRv($('#fRvBody')):null,rvD=data.date;
     const commit=b.commit();const wasEdit=!!editing;
     if(rvV&&!rvV.empty){if(rvD!==fRv.d)toast('⚠️ തീയതി മാറി – വിലയിരുത്തൽ സേവ് ചെയ്തില്ല (date changed – evaluation not saved)');else saveRv(rvD,rvV).then(()=>{toast('✅ വിലയിരുത്തലും സേവ് ചെയ്തു (Evaluation saved too)');resetPdfBtn()}).catch(e=>toast('⚠️ വിലയിരുത്തൽ: '+(e.code||e.message),5000))}
@@ -534,7 +539,7 @@ function openDetail(id){detailId=id;detailUnsubs.forEach(u=>u());detPhotos=[];de
   $('#remarkForm').style.display=can.remark()?'block':'none';resetRemark();show('v-detail');setTimeout(()=>sig.size(),50)}
 function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🗂️ വിഭാഗം (Category)',catMarks(e)],['🧹 ദൈനംദിന ജോലി (Daily work)',regWorksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Names)',crewOf(e).join(', ')],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📋 നില (Status)',photoStatus(e)],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
   const gpsRow=e.gps?`<tr><td>🛰️ GPS</td><td><a href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank" rel="noopener">${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}</a></td></tr>`:'';
-  const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${phCap(k)}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy" data-cap="${phCap(k)}">`).join('')}</div>`:''};
+  const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${phCap(k)}</div><div class="rp-ph">${a.map(p=>`<figure><img src="${p.url||p.data}" alt="" loading="lazy" data-cap="${phCap(k)}">${phNoteHTML(p)}</figure>`).join('')}</div>`:''};
   return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.placeName)} ${kindBadge(e)} ${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:''}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${esc(x[1])}</td></tr>`).join('')}${gpsRow}</table>${e.mass?massBlockHTML(e):''}
     ${withPhotos?PH_ORDER.map(grid).join(''):''}${remarks?remarksHTML(remarks):''}</div>`}
 function remarksHTML(rs){if(!rs.length)return '';return `<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div>`+rs.map(r=>{const t=RATE[r.rating];return `<div class="remark"><b>${esc(r.officerName)}</b>${r.desig?', '+esc(r.desig):''} ${t?`<span class="badge ${t[2]}">${t[0]} (${t[1]})</span>`:''}<div>${esc(r.text)}</div>${r.signature?`<img src="${r.signature}" alt="signature">`:''}<div class="hint">${r.createdAt?new Date(r.createdAt.seconds*1000).toLocaleString('en-IN'):''}</div></div>`}).join('')}
@@ -605,7 +610,7 @@ function dailyEntryHTML(e,photos,rs,withPh){const sc=e.score!=null?`<span class=
   <tr><td>🗂️ വിഭാഗം (Category)</td><td class="catm">${esc(catMarks(e))}</td></tr>
   <tr><td>🧹 ജോലി (Work done)</td><td>${(e.works||[]).length?esc(regWorksText(e)):''}${e.mass?massBlockHTML(e,true):''}${e.waste!=null?` · 🗑️ ${e.waste} ${esc(e.wasteUnit||'')}`:''}</td></tr>
   <tr><td>📋 നില (Status)</td><td>${proof}${e.remarkCount?` · 💬 ${e.remarkCount}`:''}</td></tr>${e.notes?`<tr><td>📝 കുറിപ്പ് (Notes)</td><td>${esc(e.notes)}</td></tr>`:''}</table>
-  ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=phCap(p.kind);return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
+  ${withPh&&ph.length?`<div class="dr-ph">${ph.map(p=>{const c=phCap(p.kind);return `<figure><img src="${p.url||p.data}" alt="" data-cap="${c}"><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption>${phNoteHTML(p)}</figure>`}).join('')}</div>`:''}
   ${remarksHTML(rs)}</div>`}
 function dayFbHTML(list){if(!list.length)return '<p class="hint">ഈ ദിവസം സ്ഥലവാസികളുടെ അഭിപ്രായം ഇല്ല (No resident feedback this day)</p>';
   return list.map(f=>`<div class="dr-fb">${starsHTML(f.rating)} <b>${f.rating}/5</b> · <b>${esc(f.placeName||'')}</b>${f.ward?' · '+esc(f.ward):''} <span class="hint">${fbDate(f)?fbDate(f).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):''}${f.name?' · '+esc(f.name):''}</span>
@@ -738,7 +743,7 @@ function entryPdfHTML(e,photos,remarks){
   ${e.mass?`<div style="margin:6px 0">${kindBadge(e)}</div>`:''}
   <table class="rp-tbl" style="margin:8px 0"><tbody>${rows.map(r=>`<tr><td style="width:36%">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>
   ${entryWorkTypesHTML(e)}
-  ${ph.length?`<div class="rp-sub" style="font-size:15px">📷 ഫോട്ടോകൾ (Photos): ${ph.length}</div><div class="dr-ph">${ph.map(p=>{const c=phCap(p.kind);return `<figure><img src="${p.url||p.data}" alt=""><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption></figure>`}).join('')}</div>`:''}
+  ${ph.length?`<div class="rp-sub" style="font-size:15px">📷 ഫോട്ടോകൾ (Photos): ${ph.length}</div><div class="dr-ph">${ph.map(p=>{const c=phCap(p.kind);return `<figure><img src="${p.url||p.data}" alt=""><figcaption>${c} · ${esc(e.placeName)}${e.time?' · '+esc(e.time):''}</figcaption>${phNoteHTML(p)}</figure>`}).join('')}</div>`:''}
   ${remarks&&remarks.length?remarksHTML(remarks):'<div class="rp-sub">👮 ഉദ്യോഗസ്ഥരുടെ അഭിപ്രായം (Officer remarks)</div><p class="hint">ഇതുവരെ ഇല്ല (None yet)</p>'}`+CREDIT()}
 let entryPdfBusy=false;const EPDF_LABEL='<svg class="ic"><use href="#i-share"/></svg><span>PDF അയയ്ക്കുക / WhatsApp <small class="en">(Share)</small></span>';
 function detProg(on,msg,frac){const w=$('#detPdfProg');if(!w)return;w.hidden=!on;if(msg!=null)$('#detPdfMsg').textContent=msg;if(frac!=null)w.querySelector('.bar i').style.width=Math.round(frac*100)+'%'}
@@ -855,9 +860,12 @@ async function htmlToPdf(html,title,prog,meta){if(meta)html=formalHTML(html,meta
   const pages=paginate(sheet);
   if(rvSheet){const kids=[...rvSheet.children];const h=spanH(kids[0],kids[kids.length-1]);
     let rp;if(!kids.length)rp=[];else if(h<=PAGE_H||(h/PAGE_H)<=1/FIT)rp=[kids];else rp=paginate(rvSheet);
-    if(pages.length>=2)pages.splice(pages.length-1,0,...rp);
-    else{const last=pages[0]||[];const sg=last.find(n=>n.classList&&n.classList.contains('sigblk'));
-      if(sg&&last.length>1){last.splice(last.indexOf(sg),1);pages.push(...rp,[sg])}else pages.unshift(...rp)}}
+    /* keep signature as the last page; leftover photos/remarks stay on the preceding content page */
+    const last=pages[pages.length-1]||[];
+    const sg=last.find(n=>n.classList&&n.classList.contains('sigblk'));
+    if(sg&&last.length>1){last.splice(last.indexOf(sg),1);pages.push(...rp,[sg])}
+    else if(pages.length>=2)pages.splice(pages.length-1,0,...rp);
+    else pages.unshift(...rp)}
   const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
   for(let i=0;i<pages.length;i++){prog(true,`PDF തയ്യാറാക്കുന്നു… ${i+1}/${pages.length} പേജ് (Creating PDF)`,(i+.3)/pages.length);
     const pg=document.createElement('div');pg.className='pdfpage'+(meta?' fsheet':'');pages[i].forEach(n=>pg.appendChild(n));document.body.appendChild(pg);
@@ -1153,11 +1161,11 @@ addEventListener('keydown',e=>{if(!$('#viewer').classList.contains('show'))retur
 document.addEventListener('click',async e=>{const im=e.target.closest('img');if(!im||im.id==='vwImg')return;
   const grid=im.closest('.rp-ph,.photos,.dr-ph');
   if(grid){e.preventDefault();e.stopPropagation();const imgs=[...grid.closest('.dr-e,.rp-e,.card,#v-new')?.querySelectorAll('.rp-ph img,.photos img,.dr-ph img')||grid.querySelectorAll('img')];
-    const list=imgs.map(x=>({src:x.src,cap:x.closest('.photos')?.id==='phBefore'?phCap('before'):x.closest('.photos')?.id==='phAfter'?phCap('after'):x.closest('.photos')?.id==='phPresent'?phCap('present'):(x.dataset.cap||'')}));openViewer(list,imgs.indexOf(im));return}
+    const list=imgs.map(x=>{const n=x.closest('figure')?.querySelector('.phn')?.textContent||'';const cap=x.closest('.photos')?.id==='phBefore'?phCap('before'):x.closest('.photos')?.id==='phAfter'?phCap('after'):x.closest('.photos')?.id==='phPresent'?phCap('present'):(x.dataset.cap||'');return {src:x.src,cap:cap+(n?' – '+n.trim():'')}});openViewer(list,imgs.indexOf(im));return}
   if(im.classList.contains('fbph')){e.stopPropagation();openViewer([{src:im.src,cap:'🗣️ സ്ഥലവാസിയുടെ ഫോട്ടോ (Resident photo)'}]);return}
   if(im.classList.contains('thumb')){const card=im.closest('.entry');if(!card)return;e.stopPropagation();toast('⏳');
     try{const s=await getDocs(collection(db,'entries',card.dataset.id,'photos'));const ps=s.docs.map(d=>d.data()).sort(phSort);
-      if(ps.length)openViewer(ps.map(p=>({src:p.url||p.data,cap:phCap(p.kind)})),0);else openDetail(card.dataset.id)}catch(err){openDetail(card.dataset.id)}}},true);
+      if(ps.length)openViewer(ps.map(p=>({src:p.url||p.data,cap:phCap(p.kind)+(phNoteOf(p)?' – '+phNoteOf(p):'')})),0);else openDetail(card.dataset.id)}catch(err){openDetail(card.dataset.id)}}},true);
 
 /* ---------- tabs & SW ---------- */
 $$('nav.tabs button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='v-new'&&!editing)resetForm();show(b.dataset.v)});
@@ -1181,4 +1189,4 @@ if('serviceWorker'in navigator&&location.protocol.startsWith('http')&&!EMU){
     // safety net: if the server already has a newer version than this page, reload once (or offer the button while a form is open)
     latestVer().then(L=>{if(L&&L!==APP_VER){check();if(formBusy())showUpdateBar();else if(sessionStorage.getItem('updTried')!==L){sessionStorage.setItem('updTried',L);setTimeout(()=>forceUpdate(),1500)}}})
   }).catch(()=>{})}
-window.__app={reviewPdfHTML,htmlToPdf,reviewMonthHTML,phCap,photoStatus,photoProof,get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML,formalHTML,fs:{getDocs,getDoc,collection,doc,updateDoc}};
+window.__app={reviewPdfHTML,htmlToPdf,reviewMonthHTML,phCap,phNoteOf,photoStatus,photoProof,get entries(){return entries},get meDoc(){return meDoc},get me(){return me},db,F,entryPdfHTML,formalHTML,fs:{getDocs,getDoc,collection,doc,updateDoc}};
