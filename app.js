@@ -1,4 +1,4 @@
-const APP_VER='v27';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v28';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -816,10 +816,23 @@ async function htmlToPdf(html,title,prog,meta){if(meta)html=formalHTML(html,meta
   const sheet=document.createElement('div');sheet.className='pdfpage'+(meta?' fsheet':'');sheet.innerHTML=html;document.body.appendChild(sheet);
   await Promise.all([...sheet.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):0));
   // split blocks taller than a page: group their children into page-sized chunks, each wrapped in a shallow copy of the parent
-  const LIM=PAGE_H*0.92;
-  const hd=c=>c.classList.contains('rp-sub')||c.classList.contains('ewt-h')||/^H[1-4]$/.test(c.tagName);const isHead=el=>hd(el)||(el.children.length>0&&el.children.length<=2&&[...el.children].every(hd));
+  const LIM=PAGE_H*0.92, FIT=0.85;
+  const hd=c=>c.classList.contains('rp-sub')||c.classList.contains('ewt-h')||c.classList.contains('rv-h')||c.classList.contains('rv-sub')||/^H[1-4]$/.test(c.tagName);const isHead=el=>hd(el)||(el.children.length>0&&el.children.length<=2&&[...el.children].every(hd));
   const outerH=el=>{const cs=getComputedStyle(el);return el.getBoundingClientRect().height+(parseFloat(cs.marginTop)||0)+(parseFloat(cs.marginBottom)||0)};
-  const split=el=>{if(el.offsetHeight<=LIM||!el.children.length||/^(TABLE|IMG|FIGURE|UL)$/.test(el.tagName))return [el];
+  const spanH=(a,b)=>!a||!b?0:(b.offsetTop+b.offsetHeight)-a.offsetTop;
+  const splitTable=table=>{if(table.offsetHeight<=LIM||!table.rows||table.rows.length<3)return [table];
+    const rows=[...table.rows];const headRows=[],bodyRows=[];
+    rows.forEach((r,i)=>{if(r.parentElement&&r.parentElement.tagName==='THEAD'||i===0&&[...r.cells].every(c=>c.tagName==='TH'))headRows.push(r);else bodyRows.push(r)});
+    if(!bodyRows.length)return [table];
+    const headH=headRows.reduce((n,r)=>n+outerH(r),0),shell=Math.max(0,table.offsetHeight-rows.reduce((n,r)=>n+outerH(r),0));
+    const chunks=[];let cur=[],acc=shell+headH;
+    for(const r of bodyRows){const h=outerH(r);if(cur.length&&acc+h>LIM){chunks.push(cur);cur=[r];acc=shell+headH+h}else{cur.push(r);acc+=h}}
+    if(cur.length)chunks.push(cur);if(chunks.length<=1)return [table];
+    return chunks.map(ch=>{const w=table.cloneNode(false);
+      if(headRows.length){const hdEl=document.createElement('thead');headRows.forEach(r=>hdEl.appendChild(r.cloneNode(true)));w.appendChild(hdEl)}
+      const tb=document.createElement('tbody');ch.forEach(r=>tb.appendChild(r));w.appendChild(tb);return w})};
+  const split=el=>{if(el.tagName==='TABLE')return splitTable(el);
+    if(el.offsetHeight<=LIM||!el.children.length||/^(IMG|FIGURE|UL)$/.test(el.tagName))return [el];
     const kids=[...el.children].map(k=>({k,h:outerH(k)}));if(getComputedStyle(el).display==='grid'){const gap=parseFloat(getComputedStyle(el).rowGap)||0;let row=null;for(const x of kids){if(row&&Math.abs(x.k.offsetTop-row.k.offsetTop)<2){row.h=Math.max(row.h,x.h+gap);x.h=0}else{x.h+=gap;row=x}}}const shellPad=el.offsetHeight-kids.reduce((n,x)=>n+x.h,0);
     const chunks=[];let cur=[],acc=Math.max(0,shellPad);
     for(const x of kids){if(x.h>LIM){if(cur.length){chunks.push(cur);cur=[];acc=Math.max(0,shellPad)}split(x.k).forEach(piece=>chunks.push([piece]));continue}
@@ -829,31 +842,39 @@ async function htmlToPdf(html,title,prog,meta){if(meta)html=formalHTML(html,meta
   const paginate=sh=>{for(const el of [...sh.children]){const parts=split(el);if(parts.length>1||parts[0]!==el){const f=document.createDocumentFragment();parts.forEach(x=>f.appendChild(x));el.replaceWith(f)}}
     const items=[...sh.children];const pages=[];let cur=[],start=0;
     for(const it of items){const top=it.offsetTop,bot=top+it.offsetHeight;if(!cur.length){cur=[it];start=top;continue}
-      if(bot-start>PAGE_H){const carry=[];while(cur.length>1&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());pages.push(cur);cur=[...carry,it];start=(carry[0]||it).offsetTop}else cur.push(it)}
+      const h=bot-start;
+      if(h>PAGE_H){const ratio=h/PAGE_H;
+        /* keep a slightly-over block on this page (we'll scale the raster) rather than leave a near-empty next page */
+        if(ratio<=1/FIT){cur.push(it);continue}
+        const carry=[];while(cur.length>1&&isHead(cur[cur.length-1]))carry.unshift(cur.pop());pages.push(cur);cur=[...carry,it];start=(carry[0]||it).offsetTop}else cur.push(it)}
     if(cur.length)pages.push(cur);return pages};
-  // officers' evaluation: laid out on its own page(s), placed immediately before the last page
+  /* officers' evaluation: one page when possible, placed immediately before the last (signature) page */
   const rvEl=sheet.querySelector(':scope>.rvwrap');let rvSheet=null;
   if(rvEl){rvSheet=document.createElement('div');rvSheet.className=sheet.className;while(rvEl.firstChild)rvSheet.appendChild(rvEl.firstChild);rvEl.remove();document.body.appendChild(rvSheet)}
   const pages=paginate(sheet);
-  if(rvSheet){const rp=paginate(rvSheet);
+  if(rvSheet){const kids=[...rvSheet.children];const h=spanH(kids[0],kids[kids.length-1]);
+    let rp;if(!kids.length)rp=[];else if(h<=PAGE_H||(h/PAGE_H)<=1/FIT)rp=[kids];else rp=paginate(rvSheet);
     if(pages.length>=2)pages.splice(pages.length-1,0,...rp);
     else{const last=pages[0]||[];const sg=last.find(n=>n.classList&&n.classList.contains('sigblk'));
       if(sg&&last.length>1){last.splice(last.indexOf(sg),1);pages.push(...rp,[sg])}else pages.unshift(...rp)}}
   const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
   for(let i=0;i<pages.length;i++){prog(true,`PDF തയ്യാറാക്കുന്നു… ${i+1}/${pages.length} പേജ് (Creating PDF)`,(i+.3)/pages.length);
     const pg=document.createElement('div');pg.className='pdfpage'+(meta?' fsheet':'');pages[i].forEach(n=>pg.appendChild(n));document.body.appendChild(pg);
-    const firstM=parseFloat(getComputedStyle(pg.firstElementChild).marginTop)||0;pg.firstElementChild.style.marginTop='0';
+    if(pg.firstElementChild){const firstM=parseFloat(getComputedStyle(pg.firstElementChild).marginTop)||0;pg.firstElementChild.style.marginTop='0'}
     // every page is rendered at 3x so Malayalam stays sharp; photos use a slightly higher JPEG quality
     const hasPh=!!pg.querySelector('.dr-ph img,.rp-ph img,.dr-fb img,img.fbph'),S=3,Q=hasPh?0.92:0.88;
     const cv=await window.html2canvas(pg,{scale:S,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1024,onclone:fixCloneColors});
-    pg.remove();if(i)pdf.addPage();
+    pg.remove();
     let hmm=cv.height/S*MM;
-    if(hmm<=277.5){const im=pageImg(cv,hasPh,Q);pdf.addImage(im.data,im.fmt,10,10,190,hmm,undefined,'FAST')}
-    else{// very tall single block: slice across pages
-      const sliceH=Math.floor(277/MM*S);let y=0,first=true;
-      while(y<cv.height){const h=Math.min(sliceH,cv.height-y);const c=document.createElement('canvas');c.width=cv.width;c.height=h;c.getContext('2d').drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
-        if(!first)pdf.addPage();const im=pageImg(c,hasPh,Q);pdf.addImage(im.data,im.fmt,10,10,190,h/S*MM,undefined,'FAST');y+=h;first=false}}
+    const add=(im,wmm,hmm2)=>{pdf.addImage(im.data,im.fmt,10+(190-wmm)/2,10,wmm,hmm2,undefined,'FAST')};
+    if(hmm<=0.8){/* skip nearly empty raster leftover */}
+    else if(hmm<=277.5){if(i)pdf.addPage();const im=pageImg(cv,hasPh,Q);add(im,190,hmm)}
+    else if(277.5/hmm>=FIT){if(i)pdf.addPage();const sc=277.5/hmm,im=pageImg(cv,hasPh,Q);add(im,190*sc,277.5)}
+    else{const sliceH=Math.floor(277/MM*S);let y=0,first=true;
+      while(y<cv.height){const h=Math.min(sliceH,cv.height-y);if(h<8)break;const c=document.createElement('canvas');c.width=cv.width;c.height=h;c.getContext('2d').drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+        if(!first||i)pdf.addPage();const im=pageImg(c,hasPh,Q);pdf.addImage(im.data,im.fmt,10,10,190,h/S*MM,undefined,'FAST');y+=h;first=false}}
     await new Promise(r=>setTimeout(r,0))}
+
   sheet.remove();rvSheet?.remove();
   const n=pdf.getNumberOfPages();
   for(let i=1;i<=n;i++){pdf.setPage(i);

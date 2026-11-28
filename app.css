@@ -577,3 +577,39 @@ body.pf #printSheet{font-size:16px;line-height:1.5;color:#111}
 /* v27: Present Status photos (ഇപ്പോഴത്തെ അവസ്ഥ) */
 .dot.present{background:var(--info,#1d5f99)}
 #phHint{margin:10px 2px 4px;line-height:1.45}
+
+/* v28: officers' evaluation (and its evaluated-by line) must fit on one A4 page.
+   Keep v26 type size; tighten spacing, compact reason-box min-height, give questions more width. */
+.pdfpage.fsheet .rv-h{padding:7px 10px;margin:0 0 6px}
+.pdfpage.fsheet .rv-h b{font-size:20px;line-height:1.3;color:#111}
+.pdfpage.fsheet .rv-h .rv-h2{font-size:15.5px;line-height:1.4;margin-top:3px;font-weight:700;color:#111}
+.pdfpage.fsheet .rv-h .rv-dt{font-size:14.5px;margin-top:3px;color:#111}
+.pdfpage.fsheet .rv-sub{margin:5px 0 3px!important;font-size:16px!important;line-height:1.3}
+.pdfpage.fsheet .rv-of td,.pdfpage.fsheet .rv-of th,.pdfpage.fsheet .rv-ct td,.pdfpage.fsheet .rv-ct th{padding:3px 6px;line-height:1.35;color:#111}
+.pdfpage.fsheet .rv-of td{height:auto}
+.pdfpage.fsheet .rv-ct td{height:auto}
+.pdfpage.fsheet .rv-of td,.pdfpage.fsheet .rv-of th{font-size:15px}
+.pdfpage.fsheet .rv-ct td,.pdfpage.fsheet .rv-ct th{font-size:15px}
+.pdfpage.fsheet .rv-ct td.rvq{font-size:15px;line-height:1.35;width:52%}
+.pdfpage.fsheet .rv-ct th.rvx,.pdfpage.fsheet .rv-ct td.rvx{width:11%;font-size:13px;line-height:1.25}
+.pdfpage.fsheet .rv-ct th.rvw,.pdfpage.fsheet .rv-ct td.rvw{width:22%}
+.pdfpage.fsheet .rv-of th.rvn,.pdfpage.fsheet .rv-of td.rvn,.pdfpage.fsheet .rv-ct th.rvn,.pdfpage.fsheet .rv-ct td.rvn{width:44px}
+.pdfpage.fsheet .rv-by{margin-top:6px;font-size:14.5px;color:#111}
+.pdfpage.fsheet .rv-bx{width:18px;height:18px;line-height:16px;font-size:15px}
+
+@media print{
+  body.pf #printSheet .rvwrap{break-before:page;break-after:page;break-inside:avoid;page-break-inside:avoid}
+  body.pf #printSheet .rv-h{padding:4px 8px;margin-bottom:3px}
+  body.pf #printSheet .rv-h b{font-size:16.5px;line-height:1.25}
+  body.pf #printSheet .rv-h .rv-h2{font-size:14px;line-height:1.28;margin-top:2px;font-weight:700}
+  body.pf #printSheet .rv-h .rv-dt{margin-top:2px;font-size:13.5px;color:#111}
+  body.pf #printSheet .rv-of td,body.pf #printSheet .rv-ct td,body.pf #printSheet .rv-of th,body.pf #printSheet .rv-ct th{padding:2px 5px;font-size:14.5px;line-height:1.28;color:#111}
+  body.pf #printSheet .rv-of td{height:auto!important}
+  body.pf #printSheet .rv-ct td{height:auto!important}
+  body.pf #printSheet .rv-ct td.rvq{width:52%;font-size:14.5px}
+  body.pf #printSheet .rv-ct .rvx{width:11%}
+  body.pf #printSheet .rv-ct .rvw{width:22%}
+  body.pf #printSheet .rv-sub{margin:2px 0 1px;font-size:15.5px!important}
+  body.pf #printSheet .rv-by{margin-top:3px;font-size:14.5px;color:#111;break-before:avoid;page-break-before:avoid}
+  body.pf #printSheet .rv-ct tr,body.pf #printSheet .rv-of tr,body.pf #printSheet .rv-h,body.pf #printSheet .rv-by{break-inside:avoid;page-break-inside:avoid}
+}
