@@ -1,4 +1,4 @@
-const APP_VER='v28';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
+const APP_VER='v29';const V='13.4.0',CDN=`https://www.gstatic.com/firebasejs/${V}/`;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -88,10 +88,11 @@ const phCap=k=>{const t=PH_KIND[k]||['','',k];return `${t[0]} ${t[1]} (${t[2]})`
 const phRank=k=>{const i=PH_ORDER.indexOf(k);return i<0?99:i};
 const phSort=(x,z)=>phRank(x.kind)-phRank(z.kind)||(x.ts||0)-(z.ts||0);
 const hasPres=e=>!!(e&&e.hasPresent);
+const PH_PRIOR_ML='മുമ്പ് കാണപ്പെട്ടിരുന്ന അവസ്ഥ',PH_PRIOR_EN='Previously observed condition';
 function photoStatus(e){const b=!!e.hasBefore,a=!!e.hasAfter,p=hasPres(e);
   if(b&&a)return '✅ മുമ്പും ശേഷവും ഫോട്ടോ (Before+after)'+(p?' · 📍 ഇപ്പോഴത്തെ അവസ്ഥ (Present status)':'');
   if(p&&!b&&!a)return '✅ ഇപ്പോഴത്തെ അവസ്ഥ ഫോട്ടോ (Present status)';
-  if(p||b||a)return '⚠️ ഭാഗിക ഫോട്ടോ'+(p?' + ഇപ്പോഴത്തെ അവസ്ഥ (Partial + Present status)':' (Partial photos)');
+  if(p||b||a)return '⚠️ '+PH_PRIOR_ML+(p?' + ഇപ്പോഴത്തെ അവസ്ഥ ('+PH_PRIOR_EN+' + Present status)':' ('+PH_PRIOR_EN+')');
   return '❌ ഫോട്ടോ ഇല്ല (No photos)'}
 const photoProof=e=>!!((e.hasBefore&&e.hasAfter)||e.hasPresent);
 const can={staff:()=>['admin','supervisor','officer'].includes(role()),moderate:()=>['admin','officer'].includes(role()),work:()=>['admin','supervisor','worker'].includes(role()),remark:()=>['admin','supervisor','officer'].includes(role()),sup:()=>['admin','supervisor'].includes(role()),admin:()=>role()==='admin'};
@@ -531,7 +532,7 @@ function openDetail(id){detailId=id;detailUnsubs.forEach(u=>u());detPhotos=[];de
     onSnapshot(collection(db,'entries',id,'remarks'),s=>{detRemarks=s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));renderDetail()},e=>console.error(e))];
   getDoc(doc(db,'entries',id)).then(s=>{if(s.exists()&&!entries.find(e=>e.id===id))entries.push({id,...s.data({serverTimestamps:'estimate'})});renderDetail()});
   $('#remarkForm').style.display=can.remark()?'block':'none';resetRemark();show('v-detail');setTimeout(()=>sig.size(),50)}
-function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🗂️ വിഭാഗം (Category)',catMarks(e)],['🧹 ദൈനംദിന ജോലി (Daily work)',regWorksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Names)',crewOf(e).join(', ')],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
+function entryHTML(e,photos,remarks,withPhotos=true){const rows=[['👷 തൊഴിലാളി (Worker)',e.workerName],['🕐 സമയം (Time)',e.time],['📍 സ്ഥലം (Place)',[e.placeName,e.ward,e.area].filter(Boolean).join(', ')],['🏷️ തരം (Type)',(t=>t.icon+' '+t.ml+(t.en?' ('+t.en+')':''))(typeInfo(placeTypeOf(e),e))],['🗂️ വിഭാഗം (Category)',catMarks(e)],['🧹 ദൈനംദിന ജോലി (Daily work)',regWorksText(e)],['👥 തൊഴിലാളികൾ (Workers)',e.workers],['📝 തൊഴിലാളികളുടെ പേരുകൾ (Names)',crewOf(e).join(', ')],['🗑️ മാലിന്യം (Waste)',e.waste!=null?e.waste+' '+(e.wasteUnit||''):''],['📋 നില (Status)',photoStatus(e)],['📝 കുറിപ്പ് (Notes)',e.notes]].filter(x=>x[1]!==''&&x[1]!=null);
   const gpsRow=e.gps?`<tr><td>🛰️ GPS</td><td><a href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank" rel="noopener">${e.gps.lat.toFixed(5)}, ${e.gps.lng.toFixed(5)}</a></td></tr>`:'';
   const grid=k=>{const a=photos.filter(p=>p.kind===k);return a.length?`<div class="rp-sub">${phCap(k)}</div><div class="rp-ph">${a.map(p=>`<img src="${p.url||p.data}" alt="" loading="lazy" data-cap="${phCap(k)}">`).join('')}</div>`:''};
   return `<div class="rp-e card"><div class="rp-sub" style="font-size:16px">📅 ${fmtDate(e.date)} · ${esc(e.placeName)} ${kindBadge(e)} ${e.score!=null?`<span class="badge" style="background:${scoreColor(e.score)};color:#fff">സ്കോർ ${e.score}</span>`:''}</div><table>${rows.map(x=>`<tr><td>${x[0]}</td><td>${esc(x[1])}</td></tr>`).join('')}${gpsRow}</table>${e.mass?massBlockHTML(e):''}
@@ -940,7 +941,7 @@ function renderFeedback(){if(!can.staff())return;const sel=$('#fbPlace'),cur=sel
 /* ---------- squad inspection feedback (one-time personal links) ---------- */
 let squadFb=[],squadLinks=[],sqLinkFilter='open',fbMode='res';const sqPhoneCache=new Map();
 const SQ_OVR={good:['✅','തൃപ്തികരം','Satisfactory'],partial:['⚠️','ഭാഗികമായി തൃപ്തികരം','Partly satisfactory'],poor:['❌','തൃപ്തികരമല്ല','Not satisfactory']};
-const sqOvrBadge=o=>{const v=SQ_OVR[o];return v?`<span class="ovb ${o}">${v[0]} ${v[1]} <span class="en">(${v[2]})</span></span>`:''};
+const sqOvrBadge=o=>{const v=SQ_OVR[o];if(!v)return '';const ml=o==='partial'?PH_PRIOR_ML:v[1],en=o==='partial'?PH_PRIOR_EN:v[2];return `<span class="ovb ${o}">${v[0]} ${ml} <span class="en">(${en})</span></span>`};
 const sqToken=()=>{const b=crypto.getRandomValues(new Uint8Array(24));return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
 const sqUrl=t=>{const u=new URL('squad.html',location.href);u.search='';u.hash='';u.searchParams.set('t',t);if(EMU)u.searchParams.set('emulator','1');return u.toString()};
 const sqWhere=l=>esc(l.placeName||l.route||'')+(l.placeName&&l.route?` <span class="en">· ${esc(l.route)}</span>`:'');
@@ -1034,8 +1035,8 @@ function sqDayHTML(list){if(!list.length)return sqHead+'<p class="hint">ഈ ദ�
     ${f.concerns?`<div>🔎 <b>ശ്രദ്ധിക്കേണ്ടവ (Needs attention):</b> ${esc(f.concerns)}</div>`:''}${f.suggestions?`<div>💡 <b>നിർദ്ദേശങ്ങൾ (Suggestions):</b> ${esc(f.suggestions)}</div>`:''}${f.photo?`<img class="fbph" src="${f.photo}" alt="">`:''}</div>`).join('')}
 function sqMonthHTML(list){if(!list.length)return sqHead+'<p class="hint">ഈ മാസം SPHI / PHI / സ്ക്വാഡ് പരിശോധന ഫീഡ്‌ബാക്ക് ഇല്ല (No inspection feedback this month)</p>';
   const avg=list.reduce((s,f)=>s+f.rating,0)/list.length;const c=k=>list.filter(f=>f.overall===k).length;
-  return sqHead+`<div class="sq-dist sq-sumrow"><span class="ovb tot">ആകെ (Total) ${list.length}</span><span class="ovb good">✅ തൃപ്തികരം ${c('good')}</span><span class="ovb partial">⚠️ ഭാഗികം ${c('partial')}</span><span class="ovb poor">❌ തൃപ്തികരമല്ല ${c('poor')}</span><span class="ovb tot">★ ${avg.toFixed(1)}/5</span></div>
-  <table class="rp-tbl sq-tbl"><tr><th style="width:30%">തീയതി · സ്ഥലം <span class="en">(Date · Place)</span></th><th style="width:36%">പേര് / പദവി <span class="en">(Official)</span></th><th style="width:34%">നില <span class="en">(Status)</span></th></tr>${list.map(f=>`<tr><td><b>${f.inspDate?fmtDate(f.inspDate):''}</b><br>${sqWhere(f)}</td><td>${esc(f.officialName)}<br><span class="en">${esc(f.designation)} – ${esc(f.institution)}</span></td><td>${SQ_OVR[f.overall]?SQ_OVR[f.overall][0]+' '+(f.overall==='partial'?'ഭാഗികം':SQ_OVR[f.overall][1]):''}<br>★ ${f.rating}/5</td></tr>`).join('')}</table>`+
+  return sqHead+`<div class="sq-dist sq-sumrow"><span class="ovb tot">ആകെ (Total) ${list.length}</span><span class="ovb good">✅ തൃപ്തികരം ${c('good')}</span><span class="ovb partial">⚠️ ${PH_PRIOR_ML} ${c('partial')}</span><span class="ovb poor">❌ തൃപ്തികരമല്ല ${c('poor')}</span><span class="ovb tot">★ ${avg.toFixed(1)}/5</span></div>
+  <table class="rp-tbl sq-tbl"><tr><th style="width:30%">തീയതി · സ്ഥലം <span class="en">(Date · Place)</span></th><th style="width:36%">പേര് / പദവി <span class="en">(Official)</span></th><th style="width:34%">നില <span class="en">(Status)</span></th></tr>${list.map(f=>`<tr><td><b>${f.inspDate?fmtDate(f.inspDate):''}</b><br>${sqWhere(f)}</td><td>${esc(f.officialName)}<br><span class="en">${esc(f.designation)} – ${esc(f.institution)}</span></td><td>${SQ_OVR[f.overall]?SQ_OVR[f.overall][0]+' '+(f.overall==='partial'?PH_PRIOR_ML:SQ_OVR[f.overall][1]):''}<br>★ ${f.rating}/5</td></tr>`).join('')}</table>`+
   (list.some(f=>f.concerns||f.suggestions)?`<div class="rp-sub">🔎 ശ്രദ്ധിക്കേണ്ടവ / 💡 നിർദ്ദേശങ്ങൾ (Attention points / suggestions)</div><ul style="font-size:13px;margin-top:2px">${list.filter(f=>f.concerns||f.suggestions).map(f=>`<li><b>${sqWhere(f)}</b> (${esc(f.officialName)}, ${fmtDate(f.inspDate)}): ${f.concerns?'🔎 '+esc(f.concerns):''}${f.concerns&&f.suggestions?' · ':''}${f.suggestions?'💡 '+esc(f.suggestions):''}</li>`).join('')}</ul>`:'')}
 async function monthFeedback(m,last,a,w,ty){const from=new Date(m+'-01T00:00:00'),to=new Date(last+'T23:59:59.999');
   try{const s=await getDocs(query(collection(db,'feedback'),where('createdAt','>=',from),where('createdAt','<=',to),orderBy('createdAt')));return s.docs.map(d=>d.data()).filter(f=>f.status!=='hidden'&&(!a||f.area===a)&&(!w||f.ward===w)&&(!ty||placeTypeOf(f)===ty))}catch(e){console.error(e);return []}}

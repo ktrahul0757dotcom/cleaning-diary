@@ -613,3 +613,8 @@ body.pf #printSheet{font-size:16px;line-height:1.5;color:#111}
   body.pf #printSheet .rv-by{margin-top:3px;font-size:14.5px;color:#111;break-before:avoid;page-break-before:avoid}
   body.pf #printSheet .rv-ct tr,body.pf #printSheet .rv-of tr,body.pf #printSheet .rv-h,body.pf #printSheet .rv-by{break-inside:avoid;page-break-inside:avoid}
 }
+
+/* v29: longer status label മുമ്പ് കാണപ്പെട്ടിരുന്ന അവസ്ഥ wraps cleanly */
+.ovb.partial{white-space:normal;word-break:keep-all;overflow-wrap:break-word;border-radius:12px;line-height:1.35;max-width:100%}
+#reportOut .sq-tbl td,.pdfpage .sq-tbl td,#printSheet .sq-tbl td{word-break:keep-all;overflow-wrap:break-word}
+.pdfpage.fsheet td,.fsheet td{overflow-wrap:break-word}
